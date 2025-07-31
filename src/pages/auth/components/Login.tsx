@@ -1,5 +1,4 @@
 "use client";
-import type React from "react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +14,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { login } from "../lib/auth.actions";
+import { errorToast, successToast } from "@/lib/core.function";
+import { useNavigate } from "react-router-dom";
 
 const formSchema = z.object({
   username: z
@@ -30,6 +32,8 @@ const formSchema = z.object({
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -39,21 +43,24 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setIsLoading(true);
+   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
-      // Simulate login process
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Login successful");
-      // Here you would call your login function
-      // await login({
-      //   username: form.getValues("username"),
-      //   password: form.getValues("password"),
-      // })
+      const response = await login({
+        username: data.username,
+        password: data.password,
+      });
+
+      console.log("Inicio de sesión exitoso:", response);
+      successToast("Inicio de sesión exitoso");
+      navigate("/inicio");
     } catch (error: any) {
-      console.error("Login error:", error);
-    } finally {
+      const errorMessage =
+        error.response?.data?.message || "Error al iniciar sesión.";
+      console.log("Error al iniciar sesión:", errorMessage);
+      console.error("Detalles del error:", error);
+      errorToast("Error al iniciar sesión", errorMessage);
+    }
+    finally{
       setIsLoading(false);
     }
   };
@@ -72,7 +79,7 @@ export default function LoginPage() {
 
           {/* Login Form */}
           <Form {...form}>
-            <form onSubmit={onSubmit} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <h3 className="flex justify-start text-black text-lg font-extrabold font-nunito text-center mb-6">
                 Iniciar sesión
               </h3>
@@ -121,9 +128,9 @@ export default function LoginPage() {
                           className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-primary"
                         >
                           {showPassword ? (
-                            <EyeOff size={18} />
+                            <EyeOff size={18} className="text-primary" />
                           ) : (
-                            <Eye size={18} />
+                            <Eye size={18}  />
                           )}
                         </button>
                       </div>

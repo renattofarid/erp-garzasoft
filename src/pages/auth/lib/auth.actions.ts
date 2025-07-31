@@ -10,13 +10,13 @@ export interface LoginBody {
 
 export async function login(body: LoginBody): Promise<AuthResponse> {
   try {
-    const { data } = await api.post<AuthResponse>("/auth/login", body);
+    const { data } = await api.post<AuthResponse>("/login", body);
     console.log("login -> data", data);
 
     const { setToken, setUser } = useAuthStore.getState();
 
     setToken(data.access_token);
-    setUser(data.user);
+    setUser(data.usuario);
 
     return data;
   } catch (error) {
@@ -30,7 +30,7 @@ export async function authenticate(): Promise<AuthResponse> {
     const { data } = await api.get<AuthResponse>("/authenticate");
     const { setUser } = useAuthStore.getState();
 
-    setUser(data.user);
+    setUser(data.usuario);
 
     return data;
   } catch (error) {

@@ -1,8 +1,8 @@
 import axios from "axios";
 import { errorToast } from "./core.function";
 
-const baseURL = "https://develop.garzasoft.com:5556/api/v1/";
-export const prodAssetURL = "https://develop.garzasoft.com:5556/";
+const baseURL = "http://146.190.133.37:83/erp-mrsoft-backend/public/api";
+export const prodAssetURL = "http://146.190.133.37:83/erp-mrsoft-backend/public/api";
 
 export const api = axios.create({
   baseURL,
@@ -13,7 +13,6 @@ export const api = axios.create({
   },
 });
 
-// Interceptor para incluir el token en cada solicitud
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");

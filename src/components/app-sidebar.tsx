@@ -21,9 +21,13 @@ import {
 import { TeamSwitcher } from "./team-switcher";
 import { NavMain } from "./nav-main";
 
-// This is sample data.
 const data = {
   navMain: [
+    {
+      title: "Dashboard",
+      url: "/inicio",
+      icon: PieChart,
+    },
     {
       title: "Playground",
       url: "#",

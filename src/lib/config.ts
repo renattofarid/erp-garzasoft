@@ -1,8 +1,9 @@
 import axios from "axios";
 import { errorToast } from "./core.function";
 
-const baseURL = "http://146.190.133.37:83/erp-mrsoft-backend/public/api";
-export const prodAssetURL = "http://146.190.133.37:83/erp-mrsoft-backend/public/api";
+const baseURL = "https://sunat-visor.com:83/erp-mrsoft-backend/public/api";
+export const prodAssetURL =
+  "https://sunat-visor.com:83/erp-mrsoft-backend/public/api";
 
 export const api = axios.create({
   baseURL,

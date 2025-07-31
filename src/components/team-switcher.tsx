@@ -20,7 +20,7 @@ export function TeamSwitcher() {
                 <Command className="size-4" />
               </div> */}
               <div className="hidden md:grid flex-1 place-items-center text-left text-sm leading-tight">
-                <span className="truncate font-bold text-primary">Mr. Soft</span>
+                <span className="truncate font-extrabold text-primary">Mr. Soft</span>
                 <span className="truncate text-xs">ERP System</span>
               </div>
             </a>

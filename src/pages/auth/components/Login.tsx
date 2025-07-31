@@ -32,8 +32,7 @@ const formSchema = z.object({
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-    const navigate = useNavigate();
-
+  const navigate = useNavigate();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -43,10 +42,10 @@ export default function LoginPage() {
     },
   });
 
-   const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
       const response = await login({
-        username: data.username,
+        usuario: data.username,
         password: data.password,
       });
 
@@ -59,8 +58,7 @@ export default function LoginPage() {
       console.log("Error al iniciar sesión:", errorMessage);
       console.error("Detalles del error:", error);
       errorToast("Error al iniciar sesión", errorMessage);
-    }
-    finally{
+    } finally {
       setIsLoading(false);
     }
   };
@@ -119,7 +117,7 @@ export default function LoginPage() {
                             {...field}
                             type={showPassword ? "text" : "password"}
                             placeholder="••••••••••"
-                          className="h-11 text-sm text-black border-gray-200 rounded-lg focus:outline-none focus-visible:ring-0 focus-visible:ring-transparent"
+                            className="h-11 text-sm text-black border-gray-200 rounded-lg focus:outline-none focus-visible:ring-0 focus-visible:ring-transparent"
                           />
                         </FormControl>
                         <button
@@ -130,7 +128,7 @@ export default function LoginPage() {
                           {showPassword ? (
                             <EyeOff size={18} className="text-primary" />
                           ) : (
-                            <Eye size={18}  />
+                            <Eye size={18} />
                           )}
                         </button>
                       </div>

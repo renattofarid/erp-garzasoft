@@ -4,7 +4,7 @@ import type { AuthResponse } from "./auth.interface";
 
 // Define el tipo para los datos de inicio de sesión
 export interface LoginBody {
-  username: string;
+  usuario: string;
   password: string;
 }
 

@@ -31,6 +31,7 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
 
   return <LayoutComponent>{children}</LayoutComponent>;
 }
+
 export default function App() {
   const { token } = useAuthStore();
   return (

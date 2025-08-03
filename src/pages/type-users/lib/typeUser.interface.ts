@@ -29,6 +29,12 @@ export interface TypeUserResource {
   deleted_at: null;
 }
 
+export interface TypeUserResourceById {
+  status: number;
+  message: string;
+  data: TypeUserResource;
+}
+
 export interface getTypeUserProps {
   params?: Record<string, any>;
 }

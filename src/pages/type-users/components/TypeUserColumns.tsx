@@ -4,7 +4,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Pencil, Trash2 } from "lucide-react";
 import { deleteTypeUser } from "../lib/typeUser.actions";
 import { errorToast, successToast } from "@/lib/core.function";
-import { TypeUserResource } from "../lib/typeUser.interface";
+import { TypeUserEditRoute, TypeUserResource } from "../lib/typeUser.interface";
 import { useNavigate } from "react-router-dom";
 import { SimpleDeleteDialog } from "@/components/SimpleDeleteDialog";
 import { useTypeUsers } from "../lib/typeUser.hook";
@@ -66,14 +66,14 @@ export const typeUserColumns: TypeUserColumns[] = [
           <SelectActions>
             <DropdownMenuGroup>
               <DropdownMenuItem
-                onClick={() => router(`/tipo-usuarios/actualizar/${id}`)}
+                onClick={() => router(`${TypeUserEditRoute}/${id}`)}
               >
-                <Pencil className="size-5" />
+                <Pencil />
                 Editar
               </DropdownMenuItem>
               <DropdownMenuItem>Permisos</DropdownMenuItem>
               <DropdownMenuItem onSelect={() => setOpenDialog(true)}>
-                <Trash2 className="size-5 text-destructive" />
+                <Trash2 className="text-destructive" />
                 Eliminar
               </DropdownMenuItem>
             </DropdownMenuGroup>

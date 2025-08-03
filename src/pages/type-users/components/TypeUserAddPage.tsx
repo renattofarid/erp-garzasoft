@@ -25,7 +25,7 @@ export default function TypeUserAddPage() {
   };
 
   return (
-    <div className="max-w-(--breakpoint-xl) w-full mx-auto p-4 space-y-6">
+    <div className="max-w-(--breakpoint-md) w-full mx-auto p-4 space-y-6">
       <TitleFormComponent
         title={TypeUserTitle}
         mode="create"

@@ -16,3 +16,18 @@ export function useTypeUsers() {
     refetch: fetchTypeUsers,
   };
 }
+
+export function useTypeUser(id: string) {
+  const { typeUser, isLoading, error, fetchTypeUser } = useTypeUserStore();
+
+  useEffect(() => {
+    fetchTypeUser(id);
+  }, [id]);
+
+  return {
+    data: typeUser,
+    isLoading,
+    error,
+    refetch: () => fetchTypeUser(id),
+  };
+}

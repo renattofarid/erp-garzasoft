@@ -2,6 +2,7 @@ import { AxiosRequestConfig } from "axios";
 import {
   getTypeUserProps,
   TypeUserResource,
+  TypeUserResourceById,
   TypeUserResponse,
 } from "./typeUser.interface";
 import { api } from "@/lib/config";
@@ -30,8 +31,8 @@ export async function getAllTypeUsers(): Promise<TypeUserResource[]> {
   return data;
 }
 
-export async function findTypeUserById(id: string): Promise<TypeUserResource> {
-  const response = await api.get<TypeUserResource>(`${ENDPOINT}/${id}`);
+export async function findTypeUserById(id: string): Promise<TypeUserResourceById> {
+  const response = await api.get<TypeUserResourceById>(`${ENDPOINT}/${id}`);
   return response.data;
 }
 

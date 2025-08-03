@@ -29,6 +29,7 @@ import {
   TypeUserRoute,
 } from "./pages/type-users/lib/typeUser.interface";
 import TypeUserAddPage from "./pages/type-users/components/TypeUserAddPage";
+import TypeUserEditPage from "./pages/type-users/components/TypeUserEditPage";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { token } = useAuthStore();
@@ -92,7 +93,7 @@ export default function App() {
             path={`${TypeUserEditRoute}/:id`}
             element={
               <ProtectedRoute>
-                <HomePage />
+                <TypeUserEditPage />
               </ProtectedRoute>
             }
           />

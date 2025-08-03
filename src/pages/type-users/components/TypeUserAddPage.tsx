@@ -1,33 +1,27 @@
-"use client";
-
-import TitleFormComponent from "@/components/TitleFormComponent";
 import { useNavigate } from "react-router-dom";
 import { TypeUserSchema } from "../lib/typeUser.schema";
-import { TypeUserForm } from "./TypeUserForm";
 import {
   TypeUserIconName,
-  TypeUserRouter,
+  TypeUserRoute,
   TypeUserTitle,
 } from "../lib/typeUser.interface";
 import { errorToast, successToast } from "@/lib/core.function";
-import { storeTypeUser } from "../lib/typeUser.actions";
+import TitleFormComponent from "@/components/TitleFormComponent";
+import { TypeUserForm } from "./TypeUserForm";
+import { useTypeUserStore } from "../lib/typeUsers.store";
 
-export default function CreateTypeUserPage() {
+export default function TypeUserAddPage() {
   const router = useNavigate();
+  const { isSubmitting, createTypeUser } = useTypeUserStore();
 
-  const { mutate, isPending } = useMutation({
-    mutationFn: storeTypeUser,
-    onSuccess: () => {
+  const handleSubmit = async (data: TypeUserSchema) => {
+    try {
+      await createTypeUser(data);
       successToast("Tipo de Usuario creado exitosamente");
-      router(TypeUserRouter);
-    },
-    onError: () => {
+      router(TypeUserRoute);
+    } catch {
       errorToast("Hubo un error al crear el Tipo de Usuario");
-    },
-  });
-
-  const handleSubmit = (data: TypeUserSchema) => {
-    mutate(data);
+    }
   };
 
   return (
@@ -38,11 +32,9 @@ export default function CreateTypeUserPage() {
         icon={TypeUserIconName}
       />
       <TypeUserForm
-        defaultValues={{
-          nombre: "",
-        }}
+        defaultValues={{ nombre: "" }}
         onSubmit={handleSubmit}
-        isSubmitting={isPending}
+        isSubmitting={isSubmitting}
         mode="create"
       />
     </div>

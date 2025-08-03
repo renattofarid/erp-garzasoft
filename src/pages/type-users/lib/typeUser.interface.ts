@@ -3,9 +3,9 @@
 import { PersonStanding } from "lucide-react";
 
 export const TypeUserIcon = PersonStanding;
-export const TypeUserRouter = "/tipo-usuarios";
-export const TypeUserAddRouter = "/tipo-usuarios/agregar";
-export const TypeUserEditRouter = "/tipo-usuarios/editar";
+export const TypeUserRoute = "/tipo-usuarios";
+export const TypeUserAddRoute = "/tipo-usuarios/agregar";
+export const TypeUserEditRoute = "/tipo-usuarios/editar";
 export const TypeUserIconName = "PersonStanding";
 export const TypeUserTitle = "Tipos de Usuario";
 export const TypeUserDescription =

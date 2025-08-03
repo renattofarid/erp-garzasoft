@@ -24,10 +24,11 @@ import { useAuthStore } from "./pages/auth/lib/auth.store";
 import LoginPage from "./pages/auth/components/Login";
 import TypeUserPage from "./pages/type-users/components/TypeUserPage";
 import {
-  TypeUserAddRouter,
-  TypeUserEditRouter,
-  TypeUserRouter,
+  TypeUserAddRoute,
+  TypeUserEditRoute,
+  TypeUserRoute,
 } from "./pages/type-users/lib/typeUser.interface";
+import TypeUserAddPage from "./pages/type-users/components/TypeUserAddPage";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { token } = useAuthStore();
@@ -70,7 +71,7 @@ export default function App() {
           />
 
           <Route
-            path={TypeUserRouter}
+            path={TypeUserRoute}
             element={
               <ProtectedRoute>
                 <TypeUserPage />
@@ -79,16 +80,16 @@ export default function App() {
           />
 
           <Route
-            path={TypeUserAddRouter}
+            path={TypeUserAddRoute}
             element={
               <ProtectedRoute>
-                <HomePage />
+                <TypeUserAddPage />
               </ProtectedRoute>
             }
           />
 
           <Route
-            path={`${TypeUserEditRouter}/:id`}
+            path={`${TypeUserEditRoute}/:id`}
             element={
               <ProtectedRoute>
                 <HomePage />

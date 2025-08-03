@@ -19,6 +19,7 @@ import {
 } from "../lib/typeUser.schema.ts";
 import { Loader } from "lucide-react";
 import { Link } from "react-router-dom";
+import { TypeUserRoute } from "../lib/typeUser.interface.ts";
 
 interface MetricFormProps {
   defaultValues: Partial<TypeUserSchema>;
@@ -69,7 +70,7 @@ export const TypeUserForm = ({
         </pre> */}
 
         <div className="flex gap-4 w-full justify-end">
-          <Link to={mode === "create" ? "./" : "../"}>
+          <Link to={TypeUserRoute}>
             <Button type="button" variant="outline">
               Cancelar
             </Button>

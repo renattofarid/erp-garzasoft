@@ -1,11 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "./styles/nunito.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --font-inter: "Inter", sans-serif;
   --font-nunito: "Nunito", sans-serif;
+  --font-paytone-one: "Paytone One", sans-serif;
   --font-display--font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   --font-display--font-variation-settings: "opsz" 32;
   --radius-sm: calc(var(--radius) - 4px);
@@ -95,12 +96,14 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.4992 0.1261 255.81);
+  --primary: oklch(0.6949 0.1267 223.27);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.6949 0.1267 223.27);
+  --secondary: oklch(0.4992 0.1261 255.81);
   --secondary-foreground: oklch(0.985 0 0);
   --tertiary: oklch(0.9542 0.0204 276.96);
   --tertiary-foreground: oklch(0.145 0 0);
+  --quaternary: oklch(0.205 0 0);
+  --quaternary-foreground: oklch(0.145 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);
@@ -126,7 +129,7 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50 font-nunito;
+    @apply border-border outline-ring/50 font-inter;
   }
   body {
     @apply bg-background text-foreground;

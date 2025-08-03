@@ -1,14 +1,16 @@
 "use client";
 
-import * as React from "react";
 import {
   BookOpen,
-  Bot,
-  Frame,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
+  Box,
+  Cog,
+  LayoutGrid,
+  MessageSquareText,
+  Receipt,
+  ShieldUser,
+  ShoppingBag,
+  Signature,
+  Users,
 } from "lucide-react";
 
 import {
@@ -20,115 +22,70 @@ import {
 } from "@/components/ui/sidebar";
 import { TeamSwitcher } from "./team-switcher";
 import { NavMain } from "./nav-main";
+import { TypeUserIcon } from "@/pages/type-users/lib/typeUser.interface";
 
 const data = {
   navMain: [
     {
       title: "Dashboard",
       url: "/inicio",
-      icon: PieChart,
+      icon: LayoutGrid,
     },
     {
-      title: "Playground",
+      title: "Seguridad",
       url: "#",
-      icon: SquareTerminal,
-      isActive: true,
+      icon: ShieldUser,
       items: [
         {
-          title: "History",
-          url: "#",
+          title: "Usuarios",
+          url: "/usuarios",
+          icon: Users,
         },
         {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
+          title: "Tipo Usuario",
+          url: "/tipo-usuarios",
+          icon: TypeUserIcon,
         },
       ],
     },
     {
-      title: "Models",
+      title: "Mantenimiento",
       url: "#",
-      icon: Bot,
+      icon: Cog,
       items: [
         {
-          title: "Genesis",
+          title: "Productos",
           url: "#",
+          icon: ShoppingBag,
         },
         {
-          title: "Explorer",
+          title: "Clientes",
           url: "#",
+          icon: Receipt,
         },
         {
-          title: "Quantum",
+          title: "Mensajes",
           url: "#",
+          icon: MessageSquareText,
         },
       ],
     },
     {
-      title: "Documentation",
+      title: "Ventas",
       url: "#",
       icon: BookOpen,
       items: [
         {
-          title: "Introduction",
+          title: "Contratos",
           url: "#",
+          icon: Signature,
         },
         {
-          title: "Get Started",
+          title: "Inventario",
           url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
+          icon: Box,
         },
       ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
     },
   ],
 };

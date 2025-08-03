@@ -12,7 +12,7 @@ export default function LayoutComponent({ children }: Props) {
       <AppSidebar />
       <SidebarInset>
         <HeaderComponent />
-        <div className="flex flex-1 flex-col gap-4 p-4">{children}</div>
+        <div className="flex flex-1 flex-col gap-4 p-8">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );

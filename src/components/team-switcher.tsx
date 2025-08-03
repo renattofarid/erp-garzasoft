@@ -1,6 +1,6 @@
 "use client";
 
-import { Command } from "lucide-react";
+// import { Command } from "lucide-react";
 
 import {
   SidebarHeader,
@@ -19,8 +19,10 @@ export function TeamSwitcher() {
               {/* <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                 <Command className="size-4" />
               </div> */}
-              <div className="hidden md:grid flex-1 place-items-center text-left text-sm leading-tight">
-                <span className="truncate font-extrabold text-primary">Mr. Soft</span>
+              <div className="grid flex-1 place-items-center text-left text-sm leading-tight">
+                <span className="truncate text-primary font-paytone-one">
+                  Mr. Soft
+                </span>
                 <span className="truncate text-xs">ERP System</span>
               </div>
             </a>

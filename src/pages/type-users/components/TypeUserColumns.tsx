@@ -26,11 +26,13 @@ export const typeUserColumns = ({
     cell: ({ getValue }) => {
       const date = new Date(getValue() as string);
       return (
-        <span className="text-muted-foreground">
+        <span className="text-muted-foreground capitalize">
           {date.toLocaleDateString("es-ES", {
             year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
           })}
         </span>
       );

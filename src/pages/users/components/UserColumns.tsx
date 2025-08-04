@@ -11,10 +11,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SelectActions } from "@/components/SelectActions";
 import { useState } from "react";
-import { UserResource } from "../lib/User.interface";
 import { deleteUser } from "../lib/User.actions";
 import { useUsers } from "../lib/User.hook";
 import { Badge } from "@/components/ui/badge";
+import { UserResource } from "../lib/User.interface";
 
 export type UserColumns = ColumnDef<UserResource>;
 
@@ -30,7 +30,7 @@ const handleDelelete = async (id: number, refetch: () => Promise<void>) => {
 
 export const UserColumns: UserColumns[] = [
   {
-    id: "usuario",
+    accessorKey: "usuario",
     header: "Usuario",
     cell: ({ row }) => {
       const { usuario } = row.original;
@@ -42,7 +42,7 @@ export const UserColumns: UserColumns[] = [
     },
   },
   {
-    id: "nombres",
+    accessorKey: "nombres",
     header: "Nombres",
     cell: ({ row }) => {
       const { nombres, apellidos } = row.original;
@@ -54,7 +54,7 @@ export const UserColumns: UserColumns[] = [
     },
   },
   {
-    id: "datos",
+    accessorKey: "datos",
     header: "Datos",
     cell: ({ row }) => {
       const { tipo_documento, numero_documento, telefono } = row.original;
@@ -74,7 +74,7 @@ export const UserColumns: UserColumns[] = [
     },
   },
   {
-    id: "rol",
+    accessorKey: "rol",
     header: "Rol",
     cell: ({ row }) => {
       const rol = row.original.tipos_usuario;

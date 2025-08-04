@@ -15,6 +15,8 @@ import {
 } from "./pages/client/lib/client.interface";
 import ClientPage from "./pages/client/components/ClientPage";
 import ClientAddPage from "./pages/client/components/ClientAddPage";
+import ProductPage from "./pages/products/components/ProdcutPage";
+import { ProductRoute } from "./pages/products/lib/product.interface";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { token } = useAuthStore();
@@ -100,6 +102,15 @@ export default function App() {
               </ProtectedRoute>
             }
           /> */}
+
+          <Route
+            path={ProductRoute}
+            element={
+              <ProtectedRoute>
+                <ProductPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* 404 */}
           <Route path="*" element={<Navigate to="/inicio" />} />

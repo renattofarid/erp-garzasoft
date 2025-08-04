@@ -39,7 +39,6 @@ export const ProductColumns = ({
             <DropdownMenuItem onClick={() => onEdit(id)}>
               Editar
             </DropdownMenuItem>
-            <DropdownMenuItem>Permisos</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => onDelete(id)}>
               Eliminar
             </DropdownMenuItem>

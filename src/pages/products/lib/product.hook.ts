@@ -17,7 +17,7 @@ export function useProducts() {
   };
 }
 
-export function useTypeUser(id: number) {
+export function useProduct(id: number) {
   const { Product, isFinding, error, fetchProduct } = useProductStore();
 
   useEffect(() => {

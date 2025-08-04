@@ -6,7 +6,6 @@ import {
   Cog,
   LayoutGrid,
   MessageSquareText,
-  Receipt,
   ShieldUser,
   ShoppingBag,
   Signature,
@@ -22,11 +21,19 @@ import {
 } from "@/components/ui/sidebar";
 import { TeamSwitcher } from "./team-switcher";
 import { NavMain } from "./nav-main";
-import { TypeUserIcon } from "@/pages/type-users/lib/typeUser.interface";
+import {
+  TypeUserIcon,
+  TypeUserRoute,
+  TypeUserTitle,
+} from "@/pages/type-users/lib/typeUser.interface";
 import { useAuthStore } from "@/pages/auth/lib/auth.store";
 import { NavUser } from "./nav-user";
 import { ProductRoute } from "@/pages/products/lib/product.interface";
-import { ClientRoute } from "@/pages/client/lib/client.interface";
+import {
+  ClientIcon,
+  ClientRoute,
+  ClientTitle,
+} from "@/pages/client/lib/client.interface";
 
 const data = {
   navMain: [
@@ -46,8 +53,8 @@ const data = {
           icon: Users,
         },
         {
-          title: "Tipo Usuario",
-          url: "/tipo-usuarios",
+          title: TypeUserTitle,
+          url: TypeUserRoute,
           icon: TypeUserIcon,
         },
       ],
@@ -63,9 +70,9 @@ const data = {
           icon: ShoppingBag,
         },
         {
-          title: "Clientes",
+          title: ClientTitle,
           url: ClientRoute,
-          icon: Receipt,
+          icon: ClientIcon,
         },
         {
           title: "Mensajes",

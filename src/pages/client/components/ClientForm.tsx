@@ -14,8 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   ClientSchema,
-  metricSchemaCreate,
-  metricSchemaUpdate,
+  clientSchemaCreate,
+  clientSchemaUpdate,
 } from "../lib/client.schema.ts";
 import { Loader } from "lucide-react";
 import { FormSelect } from "@/components/FormSelect.tsx";
@@ -37,7 +37,7 @@ export const ClientForm = ({
 }: MetricFormProps) => {
   const form = useForm({
     resolver: zodResolver(
-      mode === "create" ? metricSchemaCreate : metricSchemaUpdate
+      mode === "create" ? clientSchemaCreate : clientSchemaUpdate
     ),
     defaultValues: {
       ...defaultValues,
@@ -48,7 +48,7 @@ export const ClientForm = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 w-full">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 bg-sidebar rounded-lg">
           <FormSelect
             control={form.control}
             name="tipo"
@@ -56,7 +56,7 @@ export const ClientForm = ({
             placeholder="Selecciona el tipo"
             options={[
               { value: "corporacion", label: "Corporación" },
-              { value: "persona-natural", label: "Persona Natural" },
+              { value: "persona natural", label: "Persona Natural" },
             ]}
           />
 
@@ -93,7 +93,7 @@ export const ClientForm = ({
             <Loader
               className={`mr-2 h-4 w-4 ${!isSubmitting ? "hidden" : ""}`}
             />
-            {isSubmitting ? "Guardando" : "Guardar Tipo de Usuario"}
+            {isSubmitting ? "Guardando" : "Guardar"}
           </Button>
         </div>
       </form>

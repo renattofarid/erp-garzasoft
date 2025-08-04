@@ -56,9 +56,7 @@ export function FormSelect({
 
         return (
           <FormItem className="flex flex-col justify-between">
-            <FormLabel className="flex flex-col justify-center h-full">
-              {label}
-            </FormLabel>
+            <FormLabel>{label}</FormLabel>
             {description && (
               <FormDescription className="text-sm text-muted-foreground">
                 {description}
@@ -71,7 +69,7 @@ export function FormSelect({
                     variant="outline"
                     role="combobox"
                     className={cn(
-                      "w-full justify-between min-h-10",
+                      "w-full justify-between min-h-8 border-primary bg-transparent",
                       !field.value && "text-muted-foreground"
                     )}
                   >

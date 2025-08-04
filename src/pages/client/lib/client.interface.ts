@@ -1,12 +1,12 @@
 // import { Links, Meta } from "@/src/shared/lib/pagination.interface";
 
-import { PersonStanding } from "lucide-react";
+import { Receipt } from "lucide-react";
 
-export const ClientIcon = PersonStanding;
+export const ClientIcon = Receipt;
 export const ClientRoute = "/clientes";
 export const ClientAddRoute = "/clientes/agregar";
 export const ClientEditRoute = "/clientes/editar";
-export const ClientIconName = "PersonStanding";
+export const ClientIconName = "Receipt";
 export const ClientTitle = "Clientes";
 export const ClientDescription = "Gestiona los clientes en el sistema.";
 export const ClientDescriptionAdd = "Crea un nuevo cliente para el sistema.";

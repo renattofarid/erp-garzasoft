@@ -12,7 +12,7 @@ export const clientSucursalSchema = z.object({
   nombre: z.string().min(1, "El nombre de la sucursal es requerido"),
 });
 
-export const metricSchemaCreate = z.object({
+export const clientSchemaCreate = z.object({
   tipo: z
     .string()
     .min(1, "El tipo es requerido")
@@ -42,6 +42,6 @@ export const metricSchemaCreate = z.object({
     .min(1, "Debe agregar al menos una sucursal"),
 });
 
-export const metricSchemaUpdate = metricSchemaCreate.partial();
+export const clientSchemaUpdate = clientSchemaCreate.partial();
 
-export type ClientSchema = z.infer<typeof metricSchemaCreate>;
+export type ClientSchema = z.infer<typeof clientSchemaCreate>;

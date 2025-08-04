@@ -2,33 +2,29 @@
 
 import { errorToast, successToast } from "@/lib/core.function";
 import { ClientSchema } from "../lib/client.schema.ts";
-import { TypeUserResource, TypeUserTitle } from "../lib/client.interface.ts";
+import { ClientResource, ClientTitle } from "../lib/client.interface.ts";
 import FormSkeleton from "@/components/FormSkeleton";
 import NotFound from "@/components/not-found";
 import { ClientForm } from "./ClientForm.tsx";
-import { useTypeUserStore } from "../lib/client.store.ts";
-import { useTypeUser, useTypeUsers } from "../lib/client.hook.ts";
+import { useClientStore } from "../lib/client.store.ts";
+import { useClient, useClients } from "../lib/client.hook.ts";
 import { GeneralModal } from "@/components/GeneralModal";
+import { useParams } from "react-router-dom";
 
-export default function ClientEditPage({
-  id,
-  open,
-  setOpen,
-}: {
-  id: number;
-  open: boolean;
-  setOpen: (open: boolean) => void;
-}) {
-  if (!id) return <NotFound />;
+export default function ClientEditPage() {
+  const { id } = useParams<{ id: string }>();
 
-  const { data: typeUser, isFinding } = useTypeUser(id);
-  const { refetch } = useTypeUsers();
-  const { isSubmitting, updateTypeUser } = useTypeUserStore();
+  if (!id || isNaN(Number(id))) {
+    return <NotFound />;
+  }
+
+  const { data: client, isFinding } = useClient(Number(id));
+  const { refetch } = useClients();
+  const { isSubmitting, updateClient } = useClientStore();
 
   const handleSubmit = async (data: ClientSchema) => {
-    await updateTypeUser(id, data)
+    await updateClient(id, data)
       .then(() => {
-        setOpen(false);
         successToast("Tipo de Usuario actualizado exitosamente");
         refetch();
       })
@@ -37,13 +33,11 @@ export default function ClientEditPage({
       });
   };
 
-  const mapTypeUserToForm = (
-    data: TypeUserResource
-  ): Partial<ClientSchema> => ({
+  const mapClientToForm = (data: ClientResource): Partial<ClientSchema> => ({
     nombre: data.nombre,
   });
 
-  if (!typeUser) return <NotFound />;
+  if (!client) return <NotFound />;
 
   return (
     <GeneralModal
@@ -51,14 +45,14 @@ export default function ClientEditPage({
       onClose={() => {
         setOpen(false);
       }}
-      title={"Actualizar " + TypeUserTitle}
+      title={"Actualizar " + ClientTitle}
       maxWidth="max-w-(--breakpoint-lg)"
     >
       {isFinding ? (
         <FormSkeleton />
       ) : (
         <ClientForm
-          defaultValues={mapTypeUserToForm(typeUser)}
+          defaultValues={mapClientToForm(client)}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
           mode="update"

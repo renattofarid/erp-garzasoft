@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SelectActions } from "@/components/SelectActions";
 import { useState } from "react";
-import { UserResource } from "../lib/user.interface";
+import { UserResource } from "../lib/User.interface";
 import { deleteUser } from "../lib/User.actions";
 import { useUsers } from "../lib/User.hook";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +35,7 @@ export const UserColumns: UserColumns[] = [
     cell: ({ row }) => {
       const { usuario } = row.original;
       return (
-        <div className="font-inter py-2 px-2 text-sm font-semibold">
+        <div className="text-sm font-semibold">
           {usuario}
         </div>
       );
@@ -47,7 +47,7 @@ export const UserColumns: UserColumns[] = [
     cell: ({ row }) => {
       const { nombres, apellidos } = row.original;
       return (
-        <div className="font-inter py-2 px-2 text-sm">
+        <div className="text-sm">
           {nombres} {apellidos}
         </div>
       );
@@ -59,7 +59,7 @@ export const UserColumns: UserColumns[] = [
     cell: ({ row }) => {
       const { tipo_documento, numero_documento, telefono } = row.original;
       return (
-        <div className="font-inter py-2 px-4 text-sm">
+        <div className="text-sm">
           <div className="flex gap-2 items-center font-bold">
             <IdCardIcon className="w-5 h-5" />
             {tipo_documento}
@@ -79,7 +79,7 @@ export const UserColumns: UserColumns[] = [
     cell: ({ row }) => {
       const rol = row.original.tipos_usuario;
       return (
-        <div className="font-inter text-center py-2 px-2 text-sm">
+        <div className=" text-sm">
           {rol && rol.nombre && (
             <Badge className="rounded-full">{rol.nombre}</Badge>
           )}

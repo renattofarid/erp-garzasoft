@@ -1,15 +1,15 @@
-import { ColumnDef } from "@tanstack/react-table";
-import { TypeUserResource } from "../lib/typeUser.interface.ts";
+import { TypeUserResource } from "../lib/client.interface.ts";
+import { TypeUserColumns } from "./ClientColumns.tsx";
 import { DataTable } from "@/components/DataTable.tsx";
 
 interface Props {
-  columns: ColumnDef<TypeUserResource>[];
+  columns: TypeUserColumns[];
   data: TypeUserResource[];
   children?: React.ReactNode;
   isLoading?: boolean;
 }
 
-export default function TypeUserTable({
+export default function ClientTable({
   columns,
   data,
   children,

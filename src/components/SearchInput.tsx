@@ -30,6 +30,7 @@ export default function SearchInput({
   return (
     <Input
       className="w-full md:w-64 h-9 text-sm md:text-sm"
+      variant="default"
       placeholder={placeholder}
       value={inputValue}
       onChange={(e) => setInputValue(e.target.value)}

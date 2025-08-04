@@ -1,22 +1,19 @@
-import { TypeUserSchema } from "../lib/typeUser.schema";
-import {
-  TypeUserDescriptionAdd,
-  TypeUserTitle,
-} from "../lib/typeUser.interface";
+import { ClientSchema } from "../lib/client.schema.ts";
+import { TypeUserTitle } from "../lib/client.interface.ts";
 import { errorToast, successToast } from "@/lib/core.function";
-import { TypeUserForm } from "./TypeUserForm";
-import { useTypeUserStore } from "../lib/typeUsers.store";
+import { ClientForm } from "./ClientForm.tsx";
+import { useTypeUserStore } from "../lib/client.store.ts";
 import { GeneralModal } from "@/components/GeneralModal";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useTypeUsers } from "../lib/typeUser.hook";
+import { useTypeUsers } from "../lib/client.hook.ts";
 
-export default function TypeUserAddPage() {
+export default function ClientAddPage() {
   const [open, setOpen] = useState(false);
   const { isSubmitting, createTypeUser } = useTypeUserStore();
   const { refetch } = useTypeUsers();
 
-  const handleSubmit = async (data: TypeUserSchema) => {
+  const handleSubmit = async (data: ClientSchema) => {
     await createTypeUser(data)
       .then(() => {
         setOpen(false);
@@ -38,11 +35,10 @@ export default function TypeUserAddPage() {
         onClose={() => {
           setOpen(false);
         }}
-        title={TypeUserTitle}
-        subtitle={TypeUserDescriptionAdd}
-        maxWidth="!max-w-(--breakpoint-sm)"
+        title={"Agregar " + TypeUserTitle}
+        maxWidth="max-w-(--breakpoint-lg)"
       >
-        <TypeUserForm
+        <ClientForm
           defaultValues={{ nombre: "" }}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}

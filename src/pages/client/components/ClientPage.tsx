@@ -1,17 +1,17 @@
 import { useState } from "react";
-import { useTypeUsers } from "../lib/typeUser.hook";
+import { useTypeUsers } from "../lib/client.hook.ts";
 import TitleComponent from "@/components/TitleComponent";
-import TypeUserActions from "./TypeUserActions";
-import TypeUserTable from "./TypeUserTable";
-import TypeUserOptions from "./TypeUserOptions";
-import { TypeUserDescription, TypeUserIconName, TypeUserTitle } from "../lib/typeUser.interface";
-import { deleteTypeUser } from "../lib/typeUser.actions";
+import ClientActions from "./ClientActions.tsx";
+import ClientTable from "./ClientTable.tsx";
+import { clientColumns } from "./ClientColumns.tsx";
+import ClientOptions from "./ClientOptions.tsx";
+import { TypeUserIconName } from "../lib/client.interface.ts";
+import { deleteTypeUser } from "../lib/client.actions.ts";
 import { SimpleDeleteDialog } from "@/components/SimpleDeleteDialog";
 import { successToast, errorToast } from "@/lib/core.function";
-import TypeUserEditPage from "./TypeUserEditPage";
-import { TypeUserColumns } from "./TypeUserColumns";
+import ClientEditPage from "./ClientEditPage.tsx";
 
-export default function TypeUserPage() {
+export default function ClientPage() {
   const [search, setSearch] = useState("");
   const [editId, setEditId] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -33,28 +33,25 @@ export default function TypeUserPage() {
 
   return (
     <div className="space-y-4">
-      {/* Encabezado */}
       <div className="flex justify-between items-center">
         <TitleComponent
-          title={TypeUserTitle}
-          subtitle={TypeUserDescription}
+          title={"Tipos de Usuario"}
+          subtitle={"Gestiona los tipos de usuario en el sistema."}
           icon={TypeUserIconName}
         />
-        <TypeUserActions />
+        <ClientActions />
       </div>
 
-      {/* Tabla */}
-      <TypeUserTable
+      <ClientTable
         isLoading={isLoading}
-        columns={TypeUserColumns({ onEdit: setEditId, onDelete: setDeleteId })}
+        columns={clientColumns({ onEdit: setEditId, onDelete: setDeleteId })}
         data={data || []}
       >
-        <TypeUserOptions search={search} setSearch={setSearch} />
-      </TypeUserTable>
+        <ClientOptions search={search} setSearch={setSearch} />
+      </ClientTable>
 
-      {/* Formularios */}
       {editId !== null && (
-        <TypeUserEditPage
+        <ClientEditPage
           id={editId}
           open={true}
           setOpen={() => setEditId(null)}

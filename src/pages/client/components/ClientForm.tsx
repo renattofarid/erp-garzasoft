@@ -13,21 +13,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  TypeUserSchema,
+  ClientSchema,
   metricSchemaCreate,
   metricSchemaUpdate,
-} from "../lib/typeUser.schema.ts";
+} from "../lib/client.schema.ts";
 import { Loader } from "lucide-react";
 
 interface MetricFormProps {
-  defaultValues: Partial<TypeUserSchema>;
+  defaultValues: Partial<ClientSchema>;
   onSubmit: (data: any) => void;
   onCancel?: () => void;
   isSubmitting?: boolean;
   mode?: "create" | "update";
 }
 
-export const TypeUserForm = ({
+export const ClientForm = ({
   onCancel,
   defaultValues,
   onSubmit,
@@ -47,7 +47,7 @@ export const TypeUserForm = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 w-full">
-        <div className="grid grid-cols-1 gap-4 bg-sidebar p-4 rounded-lg">
+        <div className="grid grid-cols-1 gap-4">
           <FormField
             control={form.control}
             name="nombre"
@@ -55,11 +55,7 @@ export const TypeUserForm = ({
               <FormItem>
                 <FormLabel>Nombre</FormLabel>
                 <FormControl>
-                  <Input
-                    variant="primary"
-                    placeholder="Ej: Productividad"
-                    {...field}
-                  />
+                  <Input placeholder="Ej: Productividad" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -74,7 +70,7 @@ export const TypeUserForm = ({
         </pre> */}
 
         <div className="flex gap-4 w-full justify-end">
-          <Button type="button" variant="neutral" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={onCancel}>
             Cancelar
           </Button>
 
@@ -85,7 +81,7 @@ export const TypeUserForm = ({
             <Loader
               className={`mr-2 h-4 w-4 ${!isSubmitting ? "hidden" : ""}`}
             />
-            {isSubmitting ? "Guardando" : "Guardar"}
+            {isSubmitting ? "Guardando" : "Guardar Tipo de Usuario"}
           </Button>
         </div>
       </form>

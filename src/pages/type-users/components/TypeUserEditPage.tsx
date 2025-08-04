@@ -2,7 +2,11 @@
 
 import { errorToast, successToast } from "@/lib/core.function";
 import { TypeUserSchema } from "../lib/typeUser.schema";
-import { TypeUserResource, TypeUserTitle } from "../lib/typeUser.interface";
+import {
+  TypeUserDescriptionEdit,
+  TypeUserResource,
+  TypeUserTitle,
+} from "../lib/typeUser.interface";
 import FormSkeleton from "@/components/FormSkeleton";
 import NotFound from "@/components/not-found";
 import { TypeUserForm } from "./TypeUserForm";
@@ -51,7 +55,8 @@ export default function TypeUserEditPage({
       onClose={() => {
         setOpen(false);
       }}
-      title={"Actualizar " + TypeUserTitle}
+      title={TypeUserTitle}
+      subtitle={TypeUserDescriptionEdit}
       maxWidth="max-w-(--breakpoint-lg)"
     >
       {isFinding ? (

@@ -2,7 +2,7 @@ import { EllipsisVertical } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuLabel,
+  // DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Button } from "./ui/button";
@@ -16,7 +16,7 @@ export function SelectActions({ children }: { children: React.ReactNode }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-fit" align="start">
-        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+        {/* <DropdownMenuLabel>Acciones</DropdownMenuLabel> */}
         {children}
       </DropdownMenuContent>
     </DropdownMenu>

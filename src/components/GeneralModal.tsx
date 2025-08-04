@@ -14,6 +14,7 @@ interface GeneralModalProps {
   open: boolean;
   onClose: () => void;
   title?: string;
+  subtitle?: string;
   children: ReactNode;
   maxWidth?: string;
 }
@@ -22,6 +23,7 @@ export function GeneralModal({
   open,
   onClose,
   title,
+  subtitle,
   children,
   maxWidth = "max-w-lg",
 }: GeneralModalProps) {
@@ -32,8 +34,12 @@ export function GeneralModal({
       >
         <DialogHeader>
           {title && <DialogTitle>{title}</DialogTitle>}
+          {subtitle && (
+            <DialogDescription className="text-muted-foreground text-sm">
+              {subtitle}{" "}
+            </DialogDescription>
+          )}
         </DialogHeader>
-        <DialogDescription className="hidden" />
         <div>{children}</div>
       </DialogContent>
     </Dialog>

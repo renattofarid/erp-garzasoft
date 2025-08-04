@@ -1,20 +1,16 @@
 "use client";
 
 import { errorToast, successToast } from "@/lib/core.function";
-import { TypeUserSchema } from "../lib/typeUser.schema";
-import {
-  TypeUserDescriptionEdit,
-  TypeUserResource,
-  TypeUserTitle,
-} from "../lib/typeUser.interface";
+import { ClientSchema } from "../lib/client.schema.ts";
+import { TypeUserResource, TypeUserTitle } from "../lib/client.interface.ts";
 import FormSkeleton from "@/components/FormSkeleton";
 import NotFound from "@/components/not-found";
-import { TypeUserForm } from "./TypeUserForm";
-import { useTypeUserStore } from "../lib/typeUsers.store";
-import { useTypeUser, useTypeUsers } from "../lib/typeUser.hook";
+import { ClientForm } from "./ClientForm.tsx";
+import { useTypeUserStore } from "../lib/client.store.ts";
+import { useTypeUser, useTypeUsers } from "../lib/client.hook.ts";
 import { GeneralModal } from "@/components/GeneralModal";
 
-export default function TypeUserEditPage({
+export default function ClientEditPage({
   id,
   open,
   setOpen,
@@ -29,7 +25,7 @@ export default function TypeUserEditPage({
   const { refetch } = useTypeUsers();
   const { isSubmitting, updateTypeUser } = useTypeUserStore();
 
-  const handleSubmit = async (data: TypeUserSchema) => {
+  const handleSubmit = async (data: ClientSchema) => {
     await updateTypeUser(id, data)
       .then(() => {
         setOpen(false);
@@ -43,7 +39,7 @@ export default function TypeUserEditPage({
 
   const mapTypeUserToForm = (
     data: TypeUserResource
-  ): Partial<TypeUserSchema> => ({
+  ): Partial<ClientSchema> => ({
     nombre: data.nombre,
   });
 
@@ -55,14 +51,13 @@ export default function TypeUserEditPage({
       onClose={() => {
         setOpen(false);
       }}
-      title={TypeUserTitle}
-      subtitle={TypeUserDescriptionEdit}
+      title={"Actualizar " + TypeUserTitle}
       maxWidth="max-w-(--breakpoint-lg)"
     >
       {isFinding ? (
         <FormSkeleton />
       ) : (
-        <TypeUserForm
+        <ClientForm
           defaultValues={mapTypeUserToForm(typeUser)}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}

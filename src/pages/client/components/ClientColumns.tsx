@@ -4,9 +4,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SelectActions } from "@/components/SelectActions";
 import { ColumnDef } from "@tanstack/react-table";
-import { TypeUserResource } from "../lib/typeUser.interface";
+import { TypeUserResource } from "../lib/client.interface.ts";
 
-export const TypeUserColumns = ({
+export const clientColumns = ({
   onEdit,
   onDelete,
 }: {

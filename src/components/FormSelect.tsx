@@ -55,7 +55,7 @@ export function FormSelect({
         const selected = options.find((opt) => opt.value === field.value);
 
         return (
-          <FormItem className="flex flex-col justify-between">
+          <FormItem className="flex flex-col justify-start">
             <FormLabel>{label}</FormLabel>
             {description && (
               <FormDescription className="text-sm text-muted-foreground">

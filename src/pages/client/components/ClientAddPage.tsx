@@ -33,7 +33,19 @@ export default function ClientAddPage() {
         icon={ClientIconName}
       />
       <ClientForm
-        defaultValues={{ tipo: "" }}
+        defaultValues={{
+          sucursales: [{ nombre: "" }],
+          contactos: [{ nombre: "", celular: "", email: "" }],
+          tipo: "",
+          ruc: "",
+          razon_social: "",
+          dueno_nombre: "",
+          dueno_celular: "",
+          dueno_email: "",
+          representante_nombre: "",
+          representante_celular: "",
+          representante_email: "",
+        }}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
         mode="create"

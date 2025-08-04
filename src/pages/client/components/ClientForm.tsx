@@ -17,7 +17,7 @@ import {
   clientSchemaCreate,
   clientSchemaUpdate,
 } from "../lib/client.schema.ts";
-import { Loader } from "lucide-react";
+import { Loader, Plus, Trash } from "lucide-react";
 import { FormSelect } from "@/components/FormSelect.tsx";
 import { Label } from "@/components/ui/label.tsx";
 
@@ -72,7 +72,11 @@ export const ClientForm = ({
               <FormItem>
                 <FormLabel>RUC</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: 20548465321" {...field} />
+                  <Input
+                    maxLength={11}
+                    placeholder="Ej: 20548465321"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -81,7 +85,7 @@ export const ClientForm = ({
 
           <FormField
             control={form.control}
-            name="ruc"
+            name="razon_social"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Razón Social</FormLabel>
@@ -90,6 +94,76 @@ export const ClientForm = ({
                 </FormControl>
                 <FormMessage />
               </FormItem>
+            )}
+          />
+        </div>
+
+        <div className=" gap-4 p-4 bg-sidebar rounded-lg">
+          <Label className="font-semibold mb-2 col-span-3">Sucursales</Label>
+
+          <FormField
+            control={form.control}
+            name="sucursales"
+            render={({ field }) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {field.value?.map((item, index) => (
+                  <FormItem
+                    key={index}
+                    className="flex flex-col md:flex-row items-start gap-2"
+                  >
+                    <div className="w-full flex-1">
+                      <FormControl>
+                        <Input
+                          placeholder="Ej: Sucursal Principal"
+                          value={item.nombre}
+                          onChange={(e) => {
+                            const newValue = [...(field.value || [])];
+                            newValue[index] = { nombre: e.target.value };
+                            field.onChange(newValue);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </div>
+
+                    {field.value !== undefined &&
+                      field.value.length === index + 1 && (
+                        <>
+                          {field.value.length > 1 && (
+                            <Button
+                              type="button"
+                              size="icon"
+                              onClick={() => {
+                                if (!field.value) return;
+                                const newValue = field.value.filter(
+                                  (_, i) => i !== index
+                                );
+                                field.onChange(newValue);
+                              }}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              const current =
+                                form.getValues("sucursales") || [];
+                              form.setValue("sucursales", [
+                                ...current,
+                                { nombre: "" },
+                              ]);
+                            }}
+                            className="col-span-1 md:col-span-2 xl:col-span-3"
+                            size="icon"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                  </FormItem>
+                ))}
+              </div>
             )}
           />
         </div>

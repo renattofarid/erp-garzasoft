@@ -20,11 +20,23 @@ export const clientSchemaCreate = z.object({
       message:
         "Tipo de cliente inválido. Debe ser 'corporacion' o 'persona natural'.",
     }),
-  ruc: z.string().min(1, "El RUC es requerido"),
+  ruc: z
+    .string()
+    .nonempty("Debes ingresar tu documento")
+    .regex(/^[0-9]+$/, { message: "Solo se permiten números" })
+    .refine((val) => val.length === 11, {
+      message: "Debe tener 11 dígitos",
+    }),
   razon_social: z.string().min(1, "La razón social es requerida"),
   dueno_nombre: z.string().min(1, "El nombre del dueño es requerido"),
-  dueno_celular: z.string().min(1, "El celular del dueño es requerido"),
-  dueno_email: z.string().email("El email del dueño es inválido"),
+  dueno_celular: z
+    .string()
+    .nonempty("Debes ingresar tu documento")
+    .regex(/^[0-9]+$/, { message: "Solo se permiten números" })
+    .refine((val) => val.length === 11, {
+      message: "Documento inválido",
+    }),
+  dueno_email: z.email("El email del dueño es inválido"),
   representante_nombre: z
     .string()
     .min(1, "El nombre del representante es requerido"),

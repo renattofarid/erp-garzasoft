@@ -8,7 +8,11 @@ import { successToast, errorToast } from "@/lib/core.function";
 import { ProductColumns } from "./ProductColumns";
 import { useProducts } from "../lib/product.hook";
 import { deleteProduct } from "../lib/product.actions";
-import { ProductDescription, ProductIconName, ProductTitle } from "../lib/product.interface";
+import {
+  ProductDescription,
+  ProductIconName,
+  ProductTitle,
+} from "../lib/product.interface";
 import ProductEditPage from "./ProductEditPage";
 
 export default function ProductPage() {

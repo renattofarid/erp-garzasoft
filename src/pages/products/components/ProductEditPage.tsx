@@ -9,7 +9,11 @@ import { GeneralModal } from "@/components/GeneralModal";
 import { useProduct, useProducts } from "../lib/product.hook";
 import { useProductStore } from "../lib/product.store";
 import { ProductSchema } from "../lib/product.schema";
-import { ProductDescriptionEdit, ProductResource, ProductTitle } from "../lib/product.interface";
+import {
+  ProductDescriptionEdit,
+  ProductResource,
+  ProductTitle,
+} from "../lib/product.interface";
 import { ProductForm } from "./ProductForm";
 
 export default function ProductEditPage({
@@ -31,20 +35,18 @@ export default function ProductEditPage({
     await updateProduct(id, data)
       .then(() => {
         setOpen(false);
-        successToast("Tipo de Usuario actualizado exitosamente");
+        successToast("Producto actualizado exitosamente");
         refetch();
       })
       .catch(() => {
-        errorToast("Hubo un error al actualizar el Tipo de Usuario");
+        errorToast("Hubo un error al actualizar el Producto");
       });
   };
 
-  const mapProductToForm = (
-    data: ProductResource
-  ): Partial<ProductSchema> => ({
+  const mapProductToForm = (data: ProductResource): Partial<ProductSchema> => ({
     nombre: data.nombre,
     descripcion: data.descripcion,
-    modulos: data.modulos
+    modulos: data.modulos,
   });
 
   if (!Product) return <NotFound />;

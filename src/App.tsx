@@ -15,7 +15,7 @@ import {
 } from "./pages/client/lib/client.interface";
 import ClientPage from "./pages/client/components/ClientPage";
 import ClientAddPage from "./pages/client/components/ClientAddPage";
-import ProductPage from "./pages/products/components/ProdcutPage";
+import ProductPage from "./pages/products/components/ProductPage";
 import { ProductRoute } from "./pages/products/lib/product.interface";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {

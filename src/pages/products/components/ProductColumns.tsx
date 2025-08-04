@@ -5,6 +5,7 @@ import {
 import { SelectActions } from "@/components/SelectActions";
 import { ColumnDef } from "@tanstack/react-table";
 import { ProductResource } from "../lib/product.interface";
+import { Modulo } from "../lib/product.interface";
 
 export const ProductColumns = ({
   onEdit,
@@ -26,6 +27,22 @@ export const ProductColumns = ({
     cell: ({ getValue }) => (
       <span className="font-semibold">{getValue() as string}</span>
     ),
+  },
+  {
+    accessorKey: "modulos",
+    header: "Módulos",
+    cell: ({ getValue }) => {
+      const sucursales = getValue() as Modulo[];
+      return (
+        <div className="space-y-1">
+          {sucursales.map((contacto, i) => (
+            <div key={i} className="text-sm">
+              <span className="font-semibold">{contacto.nombre}</span>
+            </div>
+          ))}
+        </div>
+      );
+    },
   },
   {
     id: "actions",

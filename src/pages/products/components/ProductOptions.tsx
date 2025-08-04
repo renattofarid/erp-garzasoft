@@ -2,7 +2,7 @@
 
 import SearchInput from "@/components/SearchInput";
 
-export default function TypeUserOptions({
+export default function ProductOptions({
   search,
   setSearch,
 }: {
@@ -14,7 +14,7 @@ export default function TypeUserOptions({
       <SearchInput
         value={search}
         onChange={setSearch}
-        placeholder="Buscar tipo de usuario..."
+        placeholder="Buscar producto..."
       />
     </div>
   );

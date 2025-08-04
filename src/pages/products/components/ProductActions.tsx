@@ -2,8 +2,7 @@
 
 import ProductAddPage from "./ProductAddPage";
 
-
-export default function TypeUserActions() {
+export default function ProductActions() {
   return (
     <div className="flex items-center gap-2">
       <ProductAddPage />

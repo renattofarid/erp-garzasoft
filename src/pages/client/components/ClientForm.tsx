@@ -19,6 +19,7 @@ import {
 } from "../lib/client.schema.ts";
 import { Loader } from "lucide-react";
 import { FormSelect } from "@/components/FormSelect.tsx";
+import { Label } from "@/components/ui/label.tsx";
 
 interface MetricFormProps {
   defaultValues: Partial<ClientSchema>;
@@ -49,6 +50,10 @@ export const ClientForm = ({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 w-full">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 bg-sidebar rounded-lg">
+          <Label className="font-semibold mb-2 col-span-3">
+            Información básica del cliente
+          </Label>
+
           <FormSelect
             control={form.control}
             name="tipo"
@@ -68,6 +73,20 @@ export const ClientForm = ({
                 <FormLabel>RUC</FormLabel>
                 <FormControl>
                   <Input placeholder="Ej: 20548465321" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="ruc"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Razón Social</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej: Corporacion ABC" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

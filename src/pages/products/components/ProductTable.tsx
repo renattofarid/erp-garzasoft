@@ -9,7 +9,7 @@ interface Props {
   isLoading?: boolean;
 }
 
-export default function TypeUserTable({
+export default function ProductTable({
   columns,
   data,
   children,
@@ -22,8 +22,7 @@ export default function TypeUserTable({
         data={data}
         isLoading={isLoading}
         initialColumnVisibility={{
-          estado_uso: false,
-          status: false,
+          modulos: false,
         }}
       >
         {children}

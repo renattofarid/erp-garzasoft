@@ -1,4 +1,3 @@
-
 import { errorToast, successToast } from "@/lib/core.function";
 import { GeneralModal } from "@/components/GeneralModal";
 import { useState } from "react";
@@ -18,11 +17,11 @@ export default function ProductAddPage() {
     await createProduct(data)
       .then(() => {
         setOpen(false);
-        successToast("Tipo de Usuario creado exitosamente");
+        successToast("Producto creado exitosamente");
         refetch();
       })
       .catch(() => {
-        errorToast("Hubo un error al crear el Tipo de Usuario");
+        errorToast("Hubo un error al crear el Producto");
       });
   };
 

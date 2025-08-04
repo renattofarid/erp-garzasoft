@@ -65,7 +65,7 @@ export default function App() {
             }
           />
 
-          <Route
+          {/* <Route
             path={ClientRoute}
             element={
               <ProtectedRoute>
@@ -90,7 +90,7 @@ export default function App() {
                 <ClientEditPage />
               </ProtectedRoute>
             }
-          />
+          /> */}
 
           {/* 404 */}
           <Route path="*" element={<Navigate to="/inicio" />} />

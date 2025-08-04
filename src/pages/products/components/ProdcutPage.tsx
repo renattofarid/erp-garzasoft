@@ -9,6 +9,7 @@ import { ProductColumns } from "./ProductColumns";
 import { useProducts } from "../lib/product.hook";
 import { deleteProduct } from "../lib/product.actions";
 import { ProductDescription, ProductIconName, ProductTitle } from "../lib/product.interface";
+import ProductEditPage from "./ProductEditPage";
 
 export default function ProductPage() {
   const [search, setSearch] = useState("");
@@ -52,13 +53,13 @@ export default function ProductPage() {
       </ProductTable>
 
       {/* Formularios */}
-      {/* {editId !== null && (
+      {editId !== null && (
         <ProductEditPage
           id={editId}
           open={true}
           setOpen={() => setEditId(null)}
         />
-      )} */}
+      )}
 
       {deleteId !== null && (
         <SimpleDeleteDialog

@@ -23,9 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Loader } from "lucide-react";
-import {
-  useTypeUsers,
-} from "@/pages/type-users/lib/typeUser.hook.ts";
+import { useTypeUsers } from "@/pages/type-users/lib/typeUser.hook.ts";
 
 interface MetricFormProps {
   defaultValues: Partial<UserSchema>;
@@ -65,9 +63,7 @@ export const UserForm = ({
               name="usuario"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-normal font-poopins">
-                    Usuario
-                  </FormLabel>
+                  <FormLabel className="text-sm font-normal">Usuario</FormLabel>
                   <FormControl>
                     <Input placeholder="Usuario" {...field} />
                   </FormControl>
@@ -108,7 +104,7 @@ export const UserForm = ({
                     disabled={isLoading}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Seleccione tipo de usuario" />
                       </SelectTrigger>
                     </FormControl>

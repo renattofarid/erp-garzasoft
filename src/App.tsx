@@ -58,7 +58,8 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          <Route
+
+           <Route
             path={UserRoute}
             element={
               <ProtectedRoute>

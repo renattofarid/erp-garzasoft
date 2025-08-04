@@ -2,8 +2,8 @@ import { z } from "zod";
 
 export const metricSchemaCreate = z.object({
   usuario : z.string().nonempty("El usuario es obligatorio"),
-  contraseña: z.string().nonempty(),
-    tipo_usuario_id: z.number().int().positive(),
+  contraseña: z.string().nonempty("La contraseña es obligatoria"),
+    tipo_usuario_id: z.number().int().positive("El tipo de usuario es obligatorio"),
 
   tipo_documento: z.enum(["", "DNI", "RUC", "CE"]),
   // type_person: z.enum(["", "NATURAL", "JURIDICA"]),

@@ -6,8 +6,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "../lib/Users.store";
 import { useUsers } from "../lib/User.hook";
-import { UserTitle } from "../lib/User.interface";
 import { UserForm } from "./UserForm";
+import { UserTitle } from "../lib/User.interface";
 
 export default function UserAddPage() {
   const [open, setOpen] = useState(false);

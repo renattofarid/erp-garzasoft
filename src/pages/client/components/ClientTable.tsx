@@ -21,7 +21,9 @@ export default function ClientTable({
         columns={columns}
         data={data}
         isLoading={isLoading}
-        initialColumnVisibility={{}}
+        initialColumnVisibility={{
+          sucursales_clientes: false,
+        }}
       >
         {children}
       </DataTable>

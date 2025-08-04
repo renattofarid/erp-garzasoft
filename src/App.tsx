@@ -9,8 +9,12 @@ import TypeUserPage from "./pages/type-users/components/TypeUserPage";
 import { TypeUserRoute } from "./pages/type-users/lib/typeUser.interface";
 import { UserRoute } from "./pages/users/lib/User.interface";
 import UserPage from "./pages/users/components/UserPage";
-import { ClientRoute } from "./pages/client/lib/client.interface";
+import {
+  ClientAddRoute,
+  ClientRoute,
+} from "./pages/client/lib/client.interface";
 import ClientPage from "./pages/client/components/ClientPage";
+import ClientAddPage from "./pages/client/components/ClientAddPage";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { token } = useAuthStore();
@@ -79,7 +83,7 @@ export default function App() {
             }
           />
 
-          {/* <Route
+          <Route
             path={ClientAddRoute}
             element={
               <ProtectedRoute>
@@ -88,7 +92,7 @@ export default function App() {
             }
           />
 
-          <Route
+          {/* <Route
             path={`${ClientEditRoute}/:id`}
             element={
               <ProtectedRoute>

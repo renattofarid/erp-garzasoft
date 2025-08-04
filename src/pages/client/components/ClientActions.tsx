@@ -1,11 +1,21 @@
 "use client";
 
-import ClientAddPage from "./ClientAddPage.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import { Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ClientAddRoute } from "../lib/client.interface.ts";
 
 export default function ClientActions() {
+  const router = useNavigate();
+
+  const handleAddMetric = () => {
+    router(ClientAddRoute);
+  };
   return (
     <div className="flex items-center gap-2">
-      <ClientAddPage />
+      <Button size="sm" className="!px-10" onClick={handleAddMetric}>
+        <Plus className="size-4 mr-2" /> Agregar
+      </Button>
     </div>
   );
 }

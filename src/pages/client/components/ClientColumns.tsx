@@ -11,6 +11,8 @@ import {
   SucursalesCliente,
 } from "../lib/client.interface.ts";
 import { useNavigate } from "react-router-dom";
+import { Mail, Phone } from "lucide-react";
+import { Badge } from "@/components/ui/badge.tsx";
 
 export const ClientColumns = ({
   onDelete,
@@ -32,22 +34,29 @@ export const ClientColumns = ({
     ),
   },
   {
-    accessorKey: "dueno_celular",
-    header: "Teléfono",
-    cell: ({ getValue }) => (
-      <span className="font-semibold">{getValue() as string}</span>
-    ),
-  },
-  {
-    accessorKey: "dueno_email",
-    header: "Email",
-    cell: ({ getValue }) => (
-      <span className="font-semibold">{getValue() as string}</span>
-    ),
+    accessorKey: "datos",
+    header: "Datos",
+    accessorFn: (row) => row,
+    cell: ({ getValue }) => {
+      const client = getValue() as ClientResource;
+
+      return (
+        <div className="flex flex-col gap-1 items-start justify-center">
+          <Badge variant="outline" className="flex gap-1 items-center">
+            <Mail className="h-4 w-4" />
+            <span className="font-semibold">{client.dueno_email}</span>
+          </Badge>
+          <Badge variant="outline" className="flex gap-1 items-center">
+            <Phone className="h-4 w-4" />
+            <span className="font-semibold">{client.dueno_celular}</span>
+          </Badge>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "contactos_clientes",
-    header: "Contactos",
+    header: "Responsables",
     cell: ({ getValue }) => {
       const contactos = getValue() as ContactosCliente[];
       return (
@@ -93,7 +102,6 @@ export const ClientColumns = ({
             >
               Editar
             </DropdownMenuItem>
-            <DropdownMenuItem>Permisos</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => onDelete(id)}>
               Eliminar
             </DropdownMenuItem>

@@ -106,7 +106,7 @@ export function DataTable<TData, TValue>({
                 ) : (
                   <TableRow>
                     <TableCell colSpan={columns.length} className="text-center">
-                      No results.
+                      Sin resultados
                     </TableCell>
                   </TableRow>
                 )}

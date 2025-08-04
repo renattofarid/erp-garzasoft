@@ -43,6 +43,8 @@ export default function ProductEditPage({
     data: ProductResource
   ): Partial<ProductSchema> => ({
     nombre: data.nombre,
+    descripcion: data.descripcion,
+    modulos: data.modulos
   });
 
   if (!Product) return <NotFound />;

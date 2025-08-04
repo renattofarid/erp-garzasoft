@@ -25,6 +25,8 @@ import { NavMain } from "./nav-main";
 import { TypeUserIcon } from "@/pages/type-users/lib/typeUser.interface";
 import { useAuthStore } from "@/pages/auth/lib/auth.store";
 import { NavUser } from "./nav-user";
+import { ProductRoute } from "@/pages/products/lib/product.interface";
+import { ClientRoute } from "@/pages/client/lib/client.interface";
 
 const data = {
   navMain: [
@@ -57,12 +59,12 @@ const data = {
       items: [
         {
           title: "Productos",
-          url: "#",
+          url: ProductRoute,
           icon: ShoppingBag,
         },
         {
           title: "Clientes",
-          url: "/clientes",
+          url: ClientRoute,
           icon: Receipt,
         },
         {

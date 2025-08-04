@@ -1,7 +1,7 @@
 // stores/ProductStore.ts
 import { create } from "zustand";
 import { ProductResource } from "./product.interface";
-import { ProductSchema } from "./prodcut.schema";
+import { ProductSchema } from "./product.schema";
 import { findProductById, getProduct, storeProduct, updateProduct } from "./product.actions";
 
 

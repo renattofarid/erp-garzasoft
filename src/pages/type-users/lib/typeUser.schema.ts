@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const metricSchemaCreate = z.object({
+export const typeUserSchemaCreate = z.object({
   nombre: z
     .string()
     .max(255, {
@@ -11,6 +11,6 @@ export const metricSchemaCreate = z.object({
     }),
 });
 
-export const metricSchemaUpdate = metricSchemaCreate.partial();
+export const typeUserSchemaUpdate = typeUserSchemaCreate.partial();
 
-export type TypeUserSchema = z.infer<typeof metricSchemaCreate>;
+export type TypeUserSchema = z.infer<typeof typeUserSchemaCreate>;

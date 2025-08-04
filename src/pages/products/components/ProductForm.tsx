@@ -14,14 +14,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader, Plus, Trash } from "lucide-react";
 import {
-  metricSchemaCreate,
-  metricSchemaUpdate,
+  productSchemaCreate,
+  productSchemaUpdate,
   ProductSchema,
-} from "../lib/prodcut.schema";
+} from "../lib/product.schema";
 
 interface ProductFormProps {
   defaultValues: Partial<ProductSchema>;
-  onSubmit: (data: ProductSchema) => void;
+  onSubmit: (data: any) => void;
   onCancel?: () => void;
   isSubmitting?: boolean;
   mode?: "create" | "update";
@@ -34,14 +34,11 @@ export const ProductForm = ({
   isSubmitting = false,
   mode = "create",
 }: ProductFormProps) => {
-  const form = useForm<ProductSchema>({
+  const form = useForm({
     resolver: zodResolver(
-      mode === "create" ? metricSchemaCreate : metricSchemaUpdate
+      mode === "create" ? productSchemaCreate : productSchemaUpdate
     ),
     defaultValues: {
-      nombre: "",
-      descripcion: "",
-      modulos: [],
       ...defaultValues,
     },
     mode: "onChange",
@@ -106,7 +103,9 @@ export const ProductForm = ({
             </div>
 
             {modulos.length === 0 && (
-              <p className="text-sm text-muted-foreground">No hay módulos añadidos.</p>
+              <p className="text-sm text-muted-foreground">
+                No hay módulos añadidos.
+              </p>
             )}
 
             {modulos.map((modulo, index) => (

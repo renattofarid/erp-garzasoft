@@ -14,8 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   TypeUserSchema,
-  metricSchemaCreate,
-  metricSchemaUpdate,
+  typeUserSchemaCreate,
+  typeUserSchemaUpdate,
 } from "../lib/typeUser.schema.ts";
 import { Loader } from "lucide-react";
 
@@ -36,7 +36,7 @@ export const TypeUserForm = ({
 }: MetricFormProps) => {
   const form = useForm({
     resolver: zodResolver(
-      mode === "create" ? metricSchemaCreate : metricSchemaUpdate
+      mode === "create" ? typeUserSchemaCreate : typeUserSchemaUpdate
     ),
     defaultValues: {
       ...defaultValues,

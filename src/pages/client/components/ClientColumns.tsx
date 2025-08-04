@@ -4,37 +4,77 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SelectActions } from "@/components/SelectActions";
 import { ColumnDef } from "@tanstack/react-table";
-import { TypeUserResource } from "../lib/client.interface.ts";
+import {
+  ClientEditRoute,
+  ClientResource,
+  ContactosCliente,
+  SucursalesCliente,
+} from "../lib/client.interface.ts";
+import { useNavigate } from "react-router-dom";
 
-export const clientColumns = ({
-  onEdit,
+export const ClientColumns = ({
   onDelete,
 }: {
-  onEdit: (id: number) => void;
   onDelete: (id: number) => void;
-}): ColumnDef<TypeUserResource>[] => [
+}): ColumnDef<ClientResource>[] => [
   {
-    accessorKey: "nombre",
-    header: "Nombre",
+    accessorKey: "dueno_nombre",
+    header: "Nombre y Apellidos",
     cell: ({ getValue }) => (
       <span className="font-semibold">{getValue() as string}</span>
     ),
   },
   {
-    accessorKey: "updated_at",
-    header: "Fecha de Actualización",
+    accessorKey: "razon_social",
+    header: "Razón Social",
+    cell: ({ getValue }) => (
+      <span className="font-semibold">{getValue() as string}</span>
+    ),
+  },
+  {
+    accessorKey: "dueno_celular",
+    header: "Teléfono",
+    cell: ({ getValue }) => (
+      <span className="font-semibold">{getValue() as string}</span>
+    ),
+  },
+  {
+    accessorKey: "dueno_email",
+    header: "Email",
+    cell: ({ getValue }) => (
+      <span className="font-semibold">{getValue() as string}</span>
+    ),
+  },
+  {
+    accessorKey: "contactos_clientes",
+    header: "Contactos",
     cell: ({ getValue }) => {
-      const date = new Date(getValue() as string);
+      const contactos = getValue() as ContactosCliente[];
       return (
-        <span className="text-muted-foreground capitalize">
-          {date.toLocaleDateString("es-ES", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </span>
+        <div className="space-y-1">
+          {contactos.map((contacto, i) => (
+            <div key={i} className="text-sm">
+              <span className="font-semibold">{contacto.nombre}:</span>{" "}
+              <span>{contacto.celular}</span>
+            </div>
+          ))}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "sucursales_clientes",
+    header: "Sucursales",
+    cell: ({ getValue }) => {
+      const sucursales = getValue() as SucursalesCliente[];
+      return (
+        <div className="space-y-1">
+          {sucursales.map((contacto, i) => (
+            <div key={i} className="text-sm">
+              <span className="font-semibold">{contacto.nombre}</span>
+            </div>
+          ))}
+        </div>
       );
     },
   },
@@ -42,12 +82,15 @@ export const clientColumns = ({
     id: "actions",
     header: "Acciones",
     cell: ({ row }) => {
+      const router = useNavigate();
       const id = row.original.id;
 
       return (
         <SelectActions>
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => onEdit(id)}>
+            <DropdownMenuItem
+              onClick={() => router(`${ClientEditRoute}/${id}`)}
+            >
               Editar
             </DropdownMenuItem>
             <DropdownMenuItem>Permisos</DropdownMenuItem>

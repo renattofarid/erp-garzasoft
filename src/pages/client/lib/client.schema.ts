@@ -5,7 +5,11 @@ export const typeClientSchema = z.enum(["corporacion", "persona natural"]);
 export const clientContactSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
   celular: z.string().min(1, "El celular es requerido"),
-  email: z.string().email("El email es inválido"),
+  email: z.email("El email es inválido"),
+});
+
+export const clientSucursalSchema = z.object({
+  nombre: z.string().min(1, "El nombre de la sucursal es requerido"),
 });
 
 export const metricSchemaCreate = z.object({
@@ -30,6 +34,12 @@ export const metricSchemaCreate = z.object({
   representante_email: z
     .string()
     .email("El email del representante es inválido"),
+  contactos: z
+    .array(clientContactSchema)
+    .min(1, "Debe agregar al menos un contacto"),
+  sucursales: z
+    .array(clientSucursalSchema)
+    .min(1, "Debe agregar al menos una sucursal"),
 });
 
 export const metricSchemaUpdate = metricSchemaCreate.partial();

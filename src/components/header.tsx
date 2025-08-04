@@ -34,8 +34,9 @@ export default function HeaderComponent() {
           </p>
         </div>
       </div>
-
-      <NavUser user={user} />
+      <div className="hidden md:flex items-center gap-2">
+        <NavUser user={user} />
+      </div>
     </header>
   );
 }

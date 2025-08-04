@@ -23,6 +23,8 @@ import {
 import { TeamSwitcher } from "./team-switcher";
 import { NavMain } from "./nav-main";
 import { TypeUserIcon } from "@/pages/type-users/lib/typeUser.interface";
+import { useAuthStore } from "@/pages/auth/lib/auth.store";
+import { NavUser } from "./nav-user";
 
 const data = {
   navMain: [
@@ -60,7 +62,7 @@ const data = {
         },
         {
           title: "Clientes",
-          url: "#",
+          url: "/clientes",
           icon: Receipt,
         },
         {
@@ -91,6 +93,11 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useAuthStore();
+
+  if (!user) {
+    return null; // or a loading state, or redirect to login
+  }
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -99,7 +106,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={data.navMain} />
       </SidebarContent>
-      <SidebarFooter></SidebarFooter>
+      <SidebarFooter className="flex md:hidden">
+        <NavUser user={user} />
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

@@ -1,20 +1,20 @@
 import { ClientSchema } from "../lib/client.schema.ts";
-import { TypeUserTitle } from "../lib/client.interface.ts";
+import { ClientTitle } from "../lib/client.interface.ts";
 import { errorToast, successToast } from "@/lib/core.function";
 import { ClientForm } from "./ClientForm.tsx";
-import { useTypeUserStore } from "../lib/client.store.ts";
+import { useClientStore } from "../lib/client.store.ts";
 import { GeneralModal } from "@/components/GeneralModal";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useTypeUsers } from "../lib/client.hook.ts";
+import { useClients } from "../lib/client.hook.ts";
 
 export default function ClientAddPage() {
   const [open, setOpen] = useState(false);
-  const { isSubmitting, createTypeUser } = useTypeUserStore();
-  const { refetch } = useTypeUsers();
+  const { isSubmitting, createClient } = useClientStore();
+  const { refetch } = useClients();
 
   const handleSubmit = async (data: ClientSchema) => {
-    await createTypeUser(data)
+    await createClient(data)
       .then(() => {
         setOpen(false);
         successToast("Tipo de Usuario creado exitosamente");
@@ -35,11 +35,11 @@ export default function ClientAddPage() {
         onClose={() => {
           setOpen(false);
         }}
-        title={"Agregar " + TypeUserTitle}
+        title={"Agregar " + ClientTitle}
         maxWidth="max-w-(--breakpoint-lg)"
       >
         <ClientForm
-          defaultValues={{ nombre: "" }}
+          defaultValues={{ tipo: "" }}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
           mode="create"

@@ -10,7 +10,7 @@ export default function LayoutComponent({ children }: Props) {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="overflow-auto">
         <HeaderComponent />
         <div className="flex flex-1 flex-col gap-4 p-8">{children}</div>
       </SidebarInset>

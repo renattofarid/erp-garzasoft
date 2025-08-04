@@ -18,6 +18,7 @@ import {
   metricSchemaUpdate,
 } from "../lib/client.schema.ts";
 import { Loader } from "lucide-react";
+import { FormSelect } from "@/components/FormSelect.tsx";
 
 interface MetricFormProps {
   defaultValues: Partial<ClientSchema>;
@@ -47,15 +48,26 @@ export const ClientForm = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 w-full">
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormSelect
+            control={form.control}
+            name="tipo"
+            label="Tipo de Cliente"
+            placeholder="Selecciona el tipo"
+            options={[
+              { value: "corporacion", label: "Corporación" },
+              { value: "persona-natural", label: "Persona Natural" },
+            ]}
+          />
+
           <FormField
             control={form.control}
-            name="nombre"
+            name="ruc"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nombre</FormLabel>
+                <FormLabel>RUC</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: Productividad" {...field} />
+                  <Input placeholder="Ej: 20548465321" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

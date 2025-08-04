@@ -1,10 +1,10 @@
-import { TypeUserResource } from "../lib/client.interface.ts";
-import { TypeUserColumns } from "./ClientColumns.tsx";
+import { ColumnDef } from "@tanstack/react-table";
+import { ClientResource } from "../lib/client.interface.ts";
 import { DataTable } from "@/components/DataTable.tsx";
 
 interface Props {
-  columns: TypeUserColumns[];
-  data: TypeUserResource[];
+  columns: ColumnDef<ClientResource>[];
+  data: ClientResource[];
   children?: React.ReactNode;
   isLoading?: boolean;
 }
@@ -21,10 +21,7 @@ export default function ClientTable({
         columns={columns}
         data={data}
         isLoading={isLoading}
-        initialColumnVisibility={{
-          estado_uso: false,
-          status: false,
-        }}
+        initialColumnVisibility={{}}
       >
         {children}
       </DataTable>

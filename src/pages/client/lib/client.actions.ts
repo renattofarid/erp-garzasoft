@@ -7,7 +7,7 @@ import {
 } from "./client.interface.ts";
 import { api } from "@/lib/config";
 
-const ENDPOINT = "tipo-usuarios";
+const ENDPOINT = "clientes";
 
 export async function getClient({
   params,
@@ -31,9 +31,7 @@ export async function getAllClients(): Promise<ClientResource[]> {
   return data;
 }
 
-export async function findClientById(
-  id: number
-): Promise<ClientResourceById> {
+export async function findClientById(id: number): Promise<ClientResourceById> {
   const response = await api.get<ClientResourceById>(`${ENDPOINT}/${id}`);
   return response.data;
 }

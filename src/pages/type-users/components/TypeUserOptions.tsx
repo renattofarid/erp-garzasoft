@@ -14,7 +14,7 @@ export default function TypeUserOptions({
       <SearchInput
         value={search}
         onChange={setSearch}
-        placeholder="Buscar tipo de usuario..."
+        placeholder="Buscar tipo de usuario"
       />
     </div>
   );

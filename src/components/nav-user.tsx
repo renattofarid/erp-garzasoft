@@ -23,11 +23,18 @@ import {
 } from "@/components/ui/sidebar";
 import { Usuario } from "@/pages/auth/lib/auth.interface";
 import { useTheme } from "./theme-provider";
+import { useAuthStore } from "@/pages/auth/lib/auth.store";
 
 export function NavUser({ user }: { user: Usuario }) {
   const { setTheme } = useTheme();
+  const { clearAuth } = useAuthStore();
+
+  const handleLogout = () => {
+    clearAuth();
+  };
+
   return (
-    <SidebarMenu className="w-fit">
+    <SidebarMenu className="w-full md:w-fit">
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -100,7 +107,7 @@ export function NavUser({ user }: { user: Usuario }) {
               </DropdownMenuSub>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
               Cerrar sesión
             </DropdownMenuItem>

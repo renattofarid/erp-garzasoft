@@ -1,33 +1,33 @@
 // hooks/useUsers.ts
 import { useEffect } from "react";
-import { useTypeUserStore } from "./client.store.ts";
+import { useClientStore } from "./client.store.ts";
 
-export function useTypeUsers() {
-  const { typeUsers, isLoading, error, fetchTypeUsers } = useTypeUserStore();
+export function useClients() {
+  const { clients, isLoading, error, fetchClients } = useClientStore();
 
   useEffect(() => {
-    if (!typeUsers) fetchTypeUsers();
-  }, [typeUsers, fetchTypeUsers]);
+    if (!clients) fetchClients();
+  }, [clients, fetchClients]);
 
   return {
-    data: typeUsers,
+    data: clients,
     isLoading,
     error,
-    refetch: fetchTypeUsers,
+    refetch: fetchClients,
   };
 }
 
-export function useTypeUser(id: number) {
-  const { typeUser, isFinding, error, fetchTypeUser } = useTypeUserStore();
+export function useClient(id: number) {
+  const { client, isFinding, error, fetchClient } = useClientStore();
 
   useEffect(() => {
-    fetchTypeUser(id);
+    fetchClient(id);
   }, [id]);
 
   return {
-    data: typeUser,
+    data: client,
     isFinding,
     error,
-    refetch: () => fetchTypeUser(id),
+    refetch: () => fetchClient(id),
   };
 }

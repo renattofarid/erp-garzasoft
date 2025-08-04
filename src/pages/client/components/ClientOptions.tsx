@@ -14,7 +14,7 @@ export default function ClientOptions({
       <SearchInput
         value={search}
         onChange={setSearch}
-        placeholder="Buscar tipo de usuario..."
+        placeholder="Buscar cliente"
       />
     </div>
   );

@@ -1,33 +1,18 @@
-"use client";
-
-import { ColumnDef } from "@tanstack/react-table";
-import { Pencil, Trash2 } from "lucide-react";
-import { deleteTypeUser } from "../lib/typeUser.actions";
-import { errorToast, successToast } from "@/lib/core.function";
-import { TypeUserEditRoute, TypeUserResource } from "../lib/typeUser.interface";
-import { useNavigate } from "react-router-dom";
-import { SimpleDeleteDialog } from "@/components/SimpleDeleteDialog";
-import { useTypeUsers } from "../lib/typeUser.hook";
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { SelectActions } from "@/components/SelectActions";
-import { useState } from "react";
+import { ColumnDef } from "@tanstack/react-table";
+import { TypeUserResource } from "../lib/typeUser.interface";
 
-export type TypeUserColumns = ColumnDef<TypeUserResource>;
-
-const handleDelelete = async (id: number, refetch: () => Promise<void>) => {
-  try {
-    await deleteTypeUser(id);
-    refetch();
-    successToast("Tipo de Usuario eliminado correctamente.");
-  } catch (error) {
-    errorToast("Error al eliminar el Tipo de Usuario.");
-  }
-};
-
-export const typeUserColumns: TypeUserColumns[] = [
+export const typeUserColumns = ({
+  onEdit,
+  onDelete,
+}: {
+  onEdit: (id: number) => void;
+  onDelete: (id: number) => void;
+}): ColumnDef<TypeUserResource>[] => [
   {
     accessorKey: "nombre",
     header: "Nombre",
@@ -55,36 +40,20 @@ export const typeUserColumns: TypeUserColumns[] = [
     id: "actions",
     header: "Acciones",
     cell: ({ row }) => {
-      const router = useNavigate();
       const id = row.original.id;
-      const { refetch } = useTypeUsers();
-
-      const [openDialog, setOpenDialog] = useState(false);
 
       return (
-        <>
-          <SelectActions>
-            <DropdownMenuGroup>
-              <DropdownMenuItem
-                onClick={() => router(`${TypeUserEditRoute}/${id}`)}
-              >
-                <Pencil />
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem>Permisos</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setOpenDialog(true)}>
-                <Trash2 className="text-destructive" />
-                Eliminar
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </SelectActions>
-
-          <SimpleDeleteDialog
-            onConfirm={() => handleDelelete(id, refetch)}
-            open={openDialog}
-            onOpenChange={setOpenDialog}
-          />
-        </>
+        <SelectActions>
+          <DropdownMenuGroup>
+            <DropdownMenuItem onClick={() => onEdit(id)}>
+              Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem>Permisos</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onDelete(id)}>
+              Eliminar
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </SelectActions>
       );
     },
   },

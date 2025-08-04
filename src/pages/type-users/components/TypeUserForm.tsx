@@ -18,17 +18,17 @@ import {
   metricSchemaUpdate,
 } from "../lib/typeUser.schema.ts";
 import { Loader } from "lucide-react";
-import { Link } from "react-router-dom";
-import { TypeUserRoute } from "../lib/typeUser.interface.ts";
 
 interface MetricFormProps {
   defaultValues: Partial<TypeUserSchema>;
   onSubmit: (data: any) => void;
+  onCancel?: () => void;
   isSubmitting?: boolean;
   mode?: "create" | "update";
 }
 
 export const TypeUserForm = ({
+  onCancel,
   defaultValues,
   onSubmit,
   isSubmitting = false,
@@ -70,11 +70,9 @@ export const TypeUserForm = ({
         </pre> */}
 
         <div className="flex gap-4 w-full justify-end">
-          <Link to={TypeUserRoute}>
-            <Button type="button" variant="outline">
-              Cancelar
-            </Button>
-          </Link>
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancelar
+          </Button>
 
           <Button
             type="submit"

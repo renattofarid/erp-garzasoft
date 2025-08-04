@@ -17,8 +17,8 @@ export function useTypeUsers() {
   };
 }
 
-export function useTypeUser(id: string) {
-  const { typeUser, isLoading, error, fetchTypeUser } = useTypeUserStore();
+export function useTypeUser(id: number) {
+  const { typeUser, isFinding, error, fetchTypeUser } = useTypeUserStore();
 
   useEffect(() => {
     fetchTypeUser(id);
@@ -26,7 +26,7 @@ export function useTypeUser(id: string) {
 
   return {
     data: typeUser,
-    isLoading,
+    isFinding,
     error,
     refetch: () => fetchTypeUser(id),
   };

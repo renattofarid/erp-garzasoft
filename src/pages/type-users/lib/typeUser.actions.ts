@@ -31,7 +31,9 @@ export async function getAllTypeUsers(): Promise<TypeUserResource[]> {
   return data;
 }
 
-export async function findTypeUserById(id: string): Promise<TypeUserResourceById> {
+export async function findTypeUserById(
+  id: number
+): Promise<TypeUserResourceById> {
   const response = await api.get<TypeUserResourceById>(`${ENDPOINT}/${id}`);
   return response.data;
 }
@@ -42,7 +44,7 @@ export async function storeTypeUser(data: any): Promise<TypeUserResponse> {
 }
 
 export async function updateTypeUser(
-  id: string,
+  id: number,
   data: any
 ): Promise<TypeUserResponse> {
   const response = await api.put<TypeUserResponse>(`${ENDPOINT}/${id}`, data);

@@ -13,18 +13,20 @@ interface TypeUserStore {
   typeUsers: TypeUserResource[] | null;
   typeUser: TypeUserResource | null;
   isLoading: boolean;
+  isFinding: boolean;
   error: string | null;
   isSubmitting: boolean;
   fetchTypeUsers: () => Promise<void>;
-  fetchTypeUser: (id: string) => Promise<void>;
+  fetchTypeUser: (id: number) => Promise<void>;
   createTypeUser: (data: TypeUserSchema) => Promise<void>;
-  updateTypeUser: (id: string, data: TypeUserSchema) => Promise<void>;
+  updateTypeUser: (id: number, data: TypeUserSchema) => Promise<void>;
 }
 
 export const useTypeUserStore = create<TypeUserStore>((set) => ({
   typeUser: null,
   typeUsers: null,
   isLoading: false,
+  isFinding: false,
   isSubmitting: false,
   error: null,
 
@@ -38,13 +40,13 @@ export const useTypeUserStore = create<TypeUserStore>((set) => ({
     }
   },
 
-  fetchTypeUser: async (id: string) => {
-    set({ isLoading: true, error: null });
+  fetchTypeUser: async (id: number) => {
+    set({ isFinding: true, error: null });
     try {
       const { data } = await findTypeUserById(id);
-      set({ typeUser: data, isLoading: false });
+      set({ typeUser: data, isFinding: false });
     } catch (err) {
-      set({ error: "Error al cargar el tipo de usuario", isLoading: false });
+      set({ error: "Error al cargar el tipo de usuario", isFinding: false });
     }
   },
 
@@ -60,7 +62,7 @@ export const useTypeUserStore = create<TypeUserStore>((set) => ({
     }
   },
 
-  updateTypeUser: async (id: string, data: TypeUserSchema) => {
+  updateTypeUser: async (id: number, data: TypeUserSchema) => {
     set({ isSubmitting: true, error: null });
     try {
       await updateTypeUser(id, data);

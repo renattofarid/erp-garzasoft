@@ -1,20 +1,3 @@
-// import { Button } from "@/components/ui/button";
-// import { ThemeProvider } from "./components/theme-provider";
-// import { ModeToggle } from "./components/mode-toggle";
-
-// function App() {
-//   return (
-//     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-//       <div className="flex min-h-svh flex-col items-center justify-center">
-//         <Button>Iniciar sesión</Button>
-//       </div>
-//       <ModeToggle />
-//     </ThemeProvider>
-//   );
-// }
-
-// export default App;
-
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import type { JSX } from "react";
 import HomePage from "./pages/home/components/HomePage";
@@ -23,13 +6,7 @@ import { ThemeProvider } from "./components/theme-provider";
 import { useAuthStore } from "./pages/auth/lib/auth.store";
 import LoginPage from "./pages/auth/components/Login";
 import TypeUserPage from "./pages/type-users/components/TypeUserPage";
-import {
-  TypeUserAddRoute,
-  TypeUserEditRoute,
-  TypeUserRoute,
-} from "./pages/type-users/lib/typeUser.interface";
-import TypeUserAddPage from "./pages/type-users/components/TypeUserAddPage";
-import TypeUserEditPage from "./pages/type-users/components/TypeUserEditPage";
+import { TypeUserRoute } from "./pages/type-users/lib/typeUser.interface";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { token } = useAuthStore();
@@ -76,24 +53,6 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <TypeUserPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path={TypeUserAddRoute}
-            element={
-              <ProtectedRoute>
-                <TypeUserAddPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path={`${TypeUserEditRoute}/:id`}
-            element={
-              <ProtectedRoute>
-                <TypeUserEditPage />
               </ProtectedRoute>
             }
           />

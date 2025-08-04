@@ -1,42 +1,51 @@
-import { useNavigate } from "react-router-dom";
 import { TypeUserSchema } from "../lib/typeUser.schema";
-import {
-  TypeUserIconName,
-  TypeUserRoute,
-  TypeUserTitle,
-} from "../lib/typeUser.interface";
+import { TypeUserTitle } from "../lib/typeUser.interface";
 import { errorToast, successToast } from "@/lib/core.function";
-import TitleFormComponent from "@/components/TitleFormComponent";
 import { TypeUserForm } from "./TypeUserForm";
 import { useTypeUserStore } from "../lib/typeUsers.store";
+import { GeneralModal } from "@/components/GeneralModal";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { useTypeUsers } from "../lib/typeUser.hook";
 
 export default function TypeUserAddPage() {
-  const router = useNavigate();
+  const [open, setOpen] = useState(false);
   const { isSubmitting, createTypeUser } = useTypeUserStore();
+  const { refetch } = useTypeUsers();
 
   const handleSubmit = async (data: TypeUserSchema) => {
-    try {
-      await createTypeUser(data);
-      successToast("Tipo de Usuario creado exitosamente");
-      router(TypeUserRoute);
-    } catch {
-      errorToast("Hubo un error al crear el Tipo de Usuario");
-    }
+    await createTypeUser(data)
+      .then(() => {
+        setOpen(false);
+        successToast("Tipo de Usuario creado exitosamente");
+        refetch();
+      })
+      .catch(() => {
+        errorToast("Hubo un error al crear el Tipo de Usuario");
+      });
   };
 
   return (
-    <div className="max-w-(--breakpoint-md) w-full mx-auto p-4 space-y-6">
-      <TitleFormComponent
-        title={TypeUserTitle}
-        mode="create"
-        icon={TypeUserIconName}
-      />
-      <TypeUserForm
-        defaultValues={{ nombre: "" }}
-        onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-        mode="create"
-      />
-    </div>
+    <>
+      <Button size="sm" className="ml-auto px-10" onClick={() => setOpen(true)}>
+        Agregar
+      </Button>
+      <GeneralModal
+        open={open}
+        onClose={() => {
+          setOpen(false);
+        }}
+        title={"Agregar " + TypeUserTitle}
+        maxWidth="max-w-(--breakpoint-lg)"
+      >
+        <TypeUserForm
+          defaultValues={{ nombre: "" }}
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+          mode="create"
+          onCancel={() => setOpen(false)}
+        />
+      </GeneralModal>
+    </>
   );
 }

@@ -1,38 +1,40 @@
 "use client";
 
-import { useNavigate, useParams } from "react-router-dom";
 import { errorToast, successToast } from "@/lib/core.function";
 import { TypeUserSchema } from "../lib/typeUser.schema";
-import {
-  TypeUserIconName,
-  TypeUserResource,
-  TypeUserRoute,
-  TypeUserTitle,
-} from "../lib/typeUser.interface";
+import { TypeUserResource, TypeUserTitle } from "../lib/typeUser.interface";
 import FormSkeleton from "@/components/FormSkeleton";
 import NotFound from "@/components/not-found";
-import TitleFormComponent from "@/components/TitleFormComponent";
 import { TypeUserForm } from "./TypeUserForm";
 import { useTypeUserStore } from "../lib/typeUsers.store";
-import { useTypeUser } from "../lib/typeUser.hook";
+import { useTypeUser, useTypeUsers } from "../lib/typeUser.hook";
+import { GeneralModal } from "@/components/GeneralModal";
 
-export default function TypeUserEditPage() {
-  const { id } = useParams();
-  const router = useNavigate();
-
+export default function TypeUserEditPage({
+  id,
+  open,
+  setOpen,
+}: {
+  id: number;
+  open: boolean;
+  setOpen: (open: boolean) => void;
+}) {
   if (!id) return <NotFound />;
 
-  const { data: typeUser, isLoading } = useTypeUser(id);
+  const { data: typeUser, isFinding } = useTypeUser(id);
+  const { refetch } = useTypeUsers();
   const { isSubmitting, updateTypeUser } = useTypeUserStore();
 
   const handleSubmit = async (data: TypeUserSchema) => {
-    try {
-      await updateTypeUser(id, data);
-      successToast("Tipo de Usuario actualizado exitosamente");
-      router(TypeUserRoute);
-    } catch {
-      errorToast("Hubo un error al actualizar el Tipo de Usuario");
-    }
+    await updateTypeUser(id, data)
+      .then(() => {
+        setOpen(false);
+        successToast("Tipo de Usuario actualizado exitosamente");
+        refetch();
+      })
+      .catch(() => {
+        errorToast("Hubo un error al actualizar el Tipo de Usuario");
+      });
   };
 
   const mapTypeUserToForm = (
@@ -41,22 +43,28 @@ export default function TypeUserEditPage() {
     nombre: data.nombre,
   });
 
-  if (isLoading) return <FormSkeleton />;
   if (!typeUser) return <NotFound />;
 
   return (
-    <div className="max-w-(--breakpoint-md) w-full mx-auto p-4 space-y-6">
-      <TitleFormComponent
-        title={TypeUserTitle}
-        mode="edit"
-        icon={TypeUserIconName}
-      />
-      <TypeUserForm
-        defaultValues={mapTypeUserToForm(typeUser)}
-        onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-        mode="update"
-      />
-    </div>
+    <GeneralModal
+      open={open}
+      onClose={() => {
+        setOpen(false);
+      }}
+      title={"Actualizar " + TypeUserTitle}
+      maxWidth="max-w-(--breakpoint-lg)"
+    >
+      {isFinding ? (
+        <FormSkeleton />
+      ) : (
+        <TypeUserForm
+          defaultValues={mapTypeUserToForm(typeUser)}
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+          mode="update"
+          onCancel={() => setOpen(false)}
+        />
+      )}
+    </GeneralModal>
   );
 }

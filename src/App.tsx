@@ -9,6 +9,8 @@ import TypeUserPage from "./pages/type-users/components/TypeUserPage";
 import { TypeUserRoute } from "./pages/type-users/lib/typeUser.interface";
 import { UserRoute } from "./pages/users/lib/User.interface";
 import UserPage from "./pages/users/components/UserPage";
+import ProductPage from "./pages/products/components/ProdcutPage";
+import { ProductRoute } from "./pages/products/lib/product.interface";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { token } = useAuthStore();
@@ -94,6 +96,15 @@ export default function App() {
               </ProtectedRoute>
             }
           /> */}
+
+          <Route
+            path={ProductRoute}
+            element={
+              <ProtectedRoute>
+                <ProductPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* 404 */}
           <Route path="*" element={<Navigate to="/inicio" />} />

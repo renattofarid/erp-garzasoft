@@ -61,7 +61,7 @@ export const ClientForm = ({
             placeholder="Selecciona el tipo"
             options={[
               { value: "corporacion", label: "Corporación" },
-              { value: "persona natural", label: "Persona Natural" },
+              { value: "unico", label: "Único" },
             ]}
           />
 
@@ -168,35 +168,19 @@ export const ClientForm = ({
           />
         </div>
 
-        
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 bg-sidebar rounded-lg">
           <Label className="font-semibold mb-2 col-span-3">
-            Información básica del cliente
+            Datos del Dueño
           </Label>
-
-          <FormSelect
-            control={form.control}
-            name="tipo"
-            label="Tipo de Cliente"
-            placeholder="Selecciona el tipo"
-            options={[
-              { value: "corporacion", label: "Corporación" },
-              { value: "persona natural", label: "Persona Natural" },
-            ]}
-          />
 
           <FormField
             control={form.control}
-            name="ruc"
+            name="dueno_nombre"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>RUC</FormLabel>
+                <FormLabel>Nombre y Apellido</FormLabel>
                 <FormControl>
-                  <Input
-                    maxLength={11}
-                    placeholder="Ej: 20548465321"
-                    {...field}
-                  />
+                  <Input placeholder="Ej: Jorge Perez" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -205,18 +189,151 @@ export const ClientForm = ({
 
           <FormField
             control={form.control}
-            name="razon_social"
+            name="dueno_celular"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Razón Social</FormLabel>
+                <FormLabel>Teléfono</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: Corporacion ABC" {...field} />
+                  <Input maxLength={9} placeholder="Ej: 977124351" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="dueno_email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>E-mail</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej: corporacion@abc.com" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 bg-sidebar rounded-lg">
+          <Label className="font-semibold mb-2 col-span-3">
+            Datos del Representante
+          </Label>
+
+          <FormField
+            control={form.control}
+            name="representante_nombre"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nombre y Apellido</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej: Jorge Perez" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="representante_celular"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Teléfono</FormLabel>
+                <FormControl>
+                  <Input maxLength={9} placeholder="Ej: 977124351" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="representante_email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>E-mail</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej: corporacion@abc.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="gap-4 p-4 bg-sidebar rounded-lg">
+          <Label className="font-semibold mb-2 col-span-3">Sucursales</Label>
+
+          <FormField
+            control={form.control}
+            name="sucursales"
+            render={({ field }) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {field.value?.map((item, index) => (
+                  <FormItem
+                    key={index}
+                    className="flex flex-col md:flex-row items-start gap-2"
+                  >
+                    <div className="w-full flex-1">
+                      <FormControl>
+                        <Input
+                          placeholder="Ej: Sucursal Principal"
+                          value={item.nombre}
+                          onChange={(e) => {
+                            const newValue = [...(field.value || [])];
+                            newValue[index] = { nombre: e.target.value };
+                            field.onChange(newValue);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </div>
+
+                    {field.value !== undefined &&
+                      field.value.length === index + 1 && (
+                        <>
+                          {field.value.length > 1 && (
+                            <Button
+                              type="button"
+                              size="icon"
+                              onClick={() => {
+                                if (!field.value) return;
+                                const newValue = field.value.filter(
+                                  (_, i) => i !== index
+                                );
+                                field.onChange(newValue);
+                              }}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              const current =
+                                form.getValues("sucursales") || [];
+                              form.setValue("sucursales", [
+                                ...current,
+                                { nombre: "" },
+                              ]);
+                            }}
+                            className="col-span-1 md:col-span-2 xl:col-span-3"
+                            size="icon"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                  </FormItem>
+                ))}
+              </div>
+            )}
+          />
+        </div>
+
         {/* <pre>
           <code className="text-xs text-muted-foreground">
             {JSON.stringify(form.getValues(), null, 2)}

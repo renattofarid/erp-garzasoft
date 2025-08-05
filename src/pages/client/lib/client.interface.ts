@@ -1,5 +1,6 @@
 // import { Links, Meta } from "@/src/shared/lib/pagination.interface";
 
+import { Links, Meta } from "@/lib/pagination.interface";
 import { Receipt } from "lucide-react";
 
 export const ClientIcon = Receipt;
@@ -14,8 +15,9 @@ export const ClientDescriptionEdit =
   "Edita un cliente existente en el sistema.";
 
 export interface ClientResponse {
-  status: number;
   data: ClientResource[];
+  links: Links;
+  meta: Meta;
 }
 
 export interface ClientResource {

@@ -8,15 +8,17 @@ import {
   updateClient,
 } from "./client.actions.ts";
 import { ClientSchema } from "./client.schema.ts";
+import { Meta } from "@/lib/pagination.interface.ts";
 
 interface ClientStore {
   clients: ClientResource[] | null;
   client: ClientResource | null;
+  meta: Meta | null;
   isLoading: boolean;
   isFinding: boolean;
   error: string | null;
   isSubmitting: boolean;
-  fetchClients: () => Promise<void>;
+  fetchClients: (params?: Record<string, any>) => Promise<void>;
   fetchClient: (id: number) => Promise<void>;
   createClient: (data: ClientSchema) => Promise<void>;
   updateClient: (id: number, data: ClientSchema) => Promise<void>;
@@ -25,16 +27,17 @@ interface ClientStore {
 export const useClientStore = create<ClientStore>((set) => ({
   client: null,
   clients: null,
+  meta: null,
   isLoading: false,
   isFinding: false,
   isSubmitting: false,
   error: null,
 
-  fetchClients: async () => {
+  fetchClients: async (params?: Record<string, any>) => {
     set({ isLoading: true, error: null });
     try {
-      const { data } = await getClient({});
-      set({ clients: data, isLoading: false });
+      const { data, meta } = await getClient({ params });
+      set({ clients: data, meta, isLoading: false });
     } catch (err) {
       set({ error: "Error al cargar tipos de usuarios", isLoading: false });
     }

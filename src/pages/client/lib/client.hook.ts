@@ -2,15 +2,16 @@
 import { useEffect } from "react";
 import { useClientStore } from "./client.store.ts";
 
-export function useClients() {
-  const { clients, isLoading, error, fetchClients } = useClientStore();
+export function useClients(params?: Record<string, any>) {
+  const { clients, meta, isLoading, error, fetchClients } = useClientStore();
 
   useEffect(() => {
-    if (!clients) fetchClients();
+    if (!clients) fetchClients(params);
   }, [clients, fetchClients]);
 
   return {
     data: clients,
+    meta,
     isLoading,
     error,
     refetch: fetchClients,

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const typeClientSchema = z.enum(["corporacion", "persona natural"]);
+export const typeClientSchema = z.enum(["corporacion", "unico"]);
 
 export const clientContactSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
@@ -17,12 +17,11 @@ export const clientSchemaCreate = z.object({
     .string()
     .min(1, "El tipo es requerido")
     .refine((value) => typeClientSchema.safeParse(value).success, {
-      message:
-        "Tipo de cliente inválido. Debe ser 'corporacion' o 'persona natural'.",
+      message: "Tipo de cliente inválido. Debe ser 'corporacion' o 'unico'.",
     }),
   ruc: z
     .string()
-    .nonempty("Debes ingresar tu documento")
+    .nonempty("Debes ingresar el documento")
     .regex(/^[0-9]+$/, { message: "Solo se permiten números" })
     .refine((val) => val.length === 11, {
       message: "Debe tener 11 dígitos",
@@ -31,10 +30,10 @@ export const clientSchemaCreate = z.object({
   dueno_nombre: z.string().min(1, "El nombre del dueño es requerido"),
   dueno_celular: z
     .string()
-    .nonempty("Debes ingresar tu documento")
+    .nonempty("Debes ingresar el celular del dueño")
     .regex(/^[0-9]+$/, { message: "Solo se permiten números" })
-    .refine((val) => val.length === 11, {
-      message: "Documento inválido",
+    .refine((val) => val.length === 9, {
+      message: "Numero de celular inválido. Debe tener 9 dígitos.",
     }),
   dueno_email: z.email("El email del dueño es inválido"),
   representante_nombre: z

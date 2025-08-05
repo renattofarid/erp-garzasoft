@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useClients } from "../lib/client.hook.ts";
 import TitleComponent from "@/components/TitleComponent";
 import ClientActions from "./ClientActions.tsx";
@@ -13,12 +13,18 @@ import { deleteClient } from "../lib/client.actions.ts";
 import { SimpleDeleteDialog } from "@/components/SimpleDeleteDialog";
 import { successToast, errorToast } from "@/lib/core.function";
 import { ClientColumns } from "./ClientColumns.tsx";
+import DataTablePagination from "@/components/DataTablePagination.tsx";
 
 export default function ClientPage() {
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  const { data, isLoading, refetch } = useClients();
+  const { data, meta, isLoading, refetch } = useClients();
+
+  useEffect(() => {
+    refetch({ page, search });
+  }, [page, search]);
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -51,6 +57,12 @@ export default function ClientPage() {
       >
         <ClientOptions search={search} setSearch={setSearch} />
       </ClientTable>
+
+      <DataTablePagination
+        page={page}
+        totalPages={meta?.last_page || 1}
+        onPageChange={setPage}
+      />
 
       {deleteId !== null && (
         <SimpleDeleteDialog

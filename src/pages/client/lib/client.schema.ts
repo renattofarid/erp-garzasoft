@@ -4,7 +4,13 @@ export const typeClientSchema = z.enum(["corporacion", "unico"]);
 
 export const clientContactSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
-  celular: z.string().min(1, "El celular es requerido"),
+  celular: z
+    .string()
+    .nonempty("Debes ingresar el celular del responsable")
+    .regex(/^[0-9]+$/, { message: "Solo se permiten números" })
+    .refine((val) => val.length === 9, {
+      message: "Numero de celular inválido. Debe tener 9 dígitos.",
+    }),
   email: z.email("El email es inválido"),
 });
 
@@ -41,7 +47,11 @@ export const clientSchemaCreate = z.object({
     .min(1, "El nombre del representante es requerido"),
   representante_celular: z
     .string()
-    .min(1, "El celular del representante es requerido"),
+    .nonempty("Debes ingresar el celular del representante")
+    .regex(/^[0-9]+$/, { message: "Solo se permiten números" })
+    .refine((val) => val.length === 9, {
+      message: "Numero de celular inválido. Debe tener 9 dígitos.",
+    }),
   representante_email: z
     .string()
     .email("El email del representante es inválido"),

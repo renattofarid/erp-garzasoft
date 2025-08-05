@@ -1,5 +1,6 @@
 "use client";
 
+import { useFieldArray } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -46,6 +47,12 @@ export const ClientForm = ({
     mode: "onChange",
   });
 
+  const { control } = form;
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "contactos",
+  });
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 w-full">
@@ -72,11 +79,7 @@ export const ClientForm = ({
               <FormItem>
                 <FormLabel>RUC</FormLabel>
                 <FormControl>
-                  <Input
-                    maxLength={11}
-                    placeholder="Ej: 20548465321"
-                    {...field}
-                  />
+                  <Input maxLength={11} placeholder="RUC" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -90,7 +93,7 @@ export const ClientForm = ({
               <FormItem>
                 <FormLabel>Razón Social</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: Corporacion ABC" {...field} />
+                  <Input placeholder="Razón Social" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -98,7 +101,7 @@ export const ClientForm = ({
           />
         </div>
 
-        <div className="gap-4 p-4 bg-sidebar rounded-lg">
+        <div className="flex flex-col gap-4 p-4 bg-sidebar rounded-lg">
           <Label className="font-semibold mb-2 col-span-3">Sucursales</Label>
 
           <FormField
@@ -114,7 +117,7 @@ export const ClientForm = ({
                     <div className="w-full flex-1">
                       <FormControl>
                         <Input
-                          placeholder="Ej: Sucursal Principal"
+                          placeholder="Sucursal"
                           value={item.nombre}
                           onChange={(e) => {
                             const newValue = [...(field.value || [])];
@@ -180,7 +183,7 @@ export const ClientForm = ({
               <FormItem>
                 <FormLabel>Nombre y Apellido</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: Jorge Perez" {...field} />
+                  <Input placeholder="Nombre Dueño" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -194,7 +197,11 @@ export const ClientForm = ({
               <FormItem>
                 <FormLabel>Teléfono</FormLabel>
                 <FormControl>
-                  <Input maxLength={9} placeholder="Ej: 977124351" {...field} />
+                  <Input
+                    maxLength={9}
+                    placeholder="Teléfono Dueño"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -208,7 +215,7 @@ export const ClientForm = ({
               <FormItem>
                 <FormLabel>E-mail</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: corporacion@abc.com" {...field} />
+                  <Input placeholder="Dueño E-mail" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -228,7 +235,7 @@ export const ClientForm = ({
               <FormItem>
                 <FormLabel>Nombre y Apellido</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: Jorge Perez" {...field} />
+                  <Input placeholder="Representante Nombre" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -242,7 +249,11 @@ export const ClientForm = ({
               <FormItem>
                 <FormLabel>Teléfono</FormLabel>
                 <FormControl>
-                  <Input maxLength={9} placeholder="Ej: 977124351" {...field} />
+                  <Input
+                    maxLength={9}
+                    placeholder="Representante Teléfono"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -256,7 +267,7 @@ export const ClientForm = ({
               <FormItem>
                 <FormLabel>E-mail</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: corporacion@abc.com" {...field} />
+                  <Input placeholder="Representante E-mail" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -264,70 +275,89 @@ export const ClientForm = ({
           />
         </div>
 
-        <div className="gap-4 p-4 bg-sidebar rounded-lg">
-          <Label className="font-semibold mb-2 col-span-3">Sucursales</Label>
+        <div className="flex flex-col gap-4 p-4 bg-sidebar rounded-lg">
+          <div className="flex justify-between">
+            <Label className="font-semibold mb-2 col-span-3">
+              Datos del Responsable
+            </Label>
+
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => append({ nombre: "", celular: "", email: "" })}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Agregar responsable
+            </Button>
+          </div>
 
           <FormField
             control={form.control}
-            name="sucursales"
+            name="contactos"
             render={({ field }) => (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {field.value?.map((item, index) => (
-                  <FormItem
-                    key={index}
-                    className="flex flex-col md:flex-row items-start gap-2"
+              <div className="grid grid-cols-1 gap-4">
+                {fields.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start"
                   >
-                    <div className="w-full flex-1">
-                      <FormControl>
-                        <Input
-                          placeholder="Ej: Sucursal Principal"
-                          value={item.nombre}
-                          onChange={(e) => {
-                            const newValue = [...(field.value || [])];
-                            newValue[index] = { nombre: e.target.value };
-                            field.onChange(newValue);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name={`contactos.${index}.nombre`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input placeholder="Nombre" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                    {field.value !== undefined &&
-                      field.value.length === index + 1 && (
-                        <>
-                          {field.value.length > 1 && (
+                    <FormField
+                      control={form.control}
+                      name={`contactos.${index}.celular`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              maxLength={9}
+                              placeholder="Celular"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex items-center gap-2 w-full">
+                      <FormField
+                        control={form.control}
+                        name={`contactos.${index}.email`}
+                        render={({ field }) => (
+                          <FormItem className="w-full">
+                            <FormControl>
+                              <Input placeholder="Email" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      {field.value?.length
+                        ? field.value.length > 1 && (
                             <Button
+                              className=""
                               type="button"
                               size="icon"
-                              onClick={() => {
-                                if (!field.value) return;
-                                const newValue = field.value.filter(
-                                  (_, i) => i !== index
-                                );
-                                field.onChange(newValue);
-                              }}
+                              onClick={() => remove(index)}
                             >
-                              <Trash className="h-4 w-4" />
+                              <Trash className="w-4 h-4" />
                             </Button>
-                          )}
-                          <Button
-                            type="button"
-                            onClick={() => {
-                              const current =
-                                form.getValues("sucursales") || [];
-                              form.setValue("sucursales", [
-                                ...current,
-                                { nombre: "" },
-                              ]);
-                            }}
-                            className="col-span-1 md:col-span-2 xl:col-span-3"
-                            size="icon"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                  </FormItem>
+                          )
+                        : null}
+                    </div>
+                  </div>
                 ))}
               </div>
             )}

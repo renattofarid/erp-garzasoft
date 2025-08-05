@@ -11,12 +11,14 @@ import { UserRoute } from "./pages/users/lib/User.interface";
 import UserPage from "./pages/users/components/UserPage";
 import {
   ClientAddRoute,
+  ClientEditRoute,
   ClientRoute,
 } from "./pages/client/lib/client.interface";
 import ClientPage from "./pages/client/components/ClientPage";
 import ClientAddPage from "./pages/client/components/ClientAddPage";
 import ProductPage from "./pages/products/components/ProductPage";
 import { ProductRoute } from "./pages/products/lib/product.interface";
+import ClientEditPage from "./pages/client/components/ClientEditPage";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { token } = useAuthStore();
@@ -94,14 +96,14 @@ export default function App() {
             }
           />
 
-          {/* <Route
+          <Route
             path={`${ClientEditRoute}/:id`}
             element={
               <ProtectedRoute>
                 <ClientEditPage />
               </ProtectedRoute>
             }
-          /> */}
+          />
 
           <Route
             path={ProductRoute}

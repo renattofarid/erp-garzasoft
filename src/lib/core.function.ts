@@ -1,5 +1,7 @@
 import { toast } from "sonner";
 
+export const per_page = 10;
+
 export const successToast = (
   body: string,
   description: string = new Date().toLocaleString()

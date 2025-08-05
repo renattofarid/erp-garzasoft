@@ -6,6 +6,7 @@ import {
   TypeUserResponse,
 } from "./typeUser.interface";
 import { api } from "@/lib/config";
+import { per_page } from "@/lib/core.function";
 
 const ENDPOINT = "tipo-usuarios";
 
@@ -15,6 +16,7 @@ export async function getTypeUser({
   const config: AxiosRequestConfig = {
     params: {
       ...params,
+      per_page,
     },
   };
   const { data } = await api.get<TypeUserResponse>(ENDPOINT, config);

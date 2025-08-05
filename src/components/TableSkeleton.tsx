@@ -17,7 +17,7 @@ const TableSkeleton: React.FC<TableSkeletonProps> = ({
   return (
     <div className="rounded-lg overflow-hidden">
       <table className={`w-full ${className}`}>
-        <thead className="bg-muted h-5 md:h-10">
+        <thead className="h-5 md:h-10">
           <tr>
             {Array.from({ length: columns }).map((_, idx) => (
               <th

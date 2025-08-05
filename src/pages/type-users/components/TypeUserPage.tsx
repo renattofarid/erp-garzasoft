@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTypeUsers } from "../lib/typeUser.hook";
 import TitleComponent from "@/components/TitleComponent";
 import TypeUserActions from "./TypeUserActions";
@@ -14,13 +14,19 @@ import { SimpleDeleteDialog } from "@/components/SimpleDeleteDialog";
 import { successToast, errorToast } from "@/lib/core.function";
 import TypeUserEditPage from "./TypeUserEditPage";
 import { TypeUserColumns } from "./TypeUserColumns";
+import DataTablePagination from "@/components/DataTablePagination";
 
 export default function TypeUserPage() {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [editId, setEditId] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  const { data, isLoading, refetch } = useTypeUsers();
+  const { data, meta, isLoading, refetch } = useTypeUsers();
+
+  useEffect(() => {
+    refetch({ page, search });
+  }, [page, search]);
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -55,6 +61,12 @@ export default function TypeUserPage() {
       >
         <TypeUserOptions search={search} setSearch={setSearch} />
       </TypeUserTable>
+
+      <DataTablePagination
+        page={page}
+        totalPages={meta?.last_page || 1}
+        onPageChange={setPage}
+      />
 
       {/* Formularios */}
       {editId !== null && (

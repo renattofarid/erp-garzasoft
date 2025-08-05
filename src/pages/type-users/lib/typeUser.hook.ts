@@ -2,15 +2,17 @@
 import { useEffect } from "react";
 import { useTypeUserStore } from "./typeUsers.store";
 
-export function useTypeUsers() {
-  const { typeUsers, isLoading, error, fetchTypeUsers } = useTypeUserStore();
+export function useTypeUsers(params?: Record<string, undefined>) {
+  const { typeUsers, meta, isLoading, error, fetchTypeUsers } =
+    useTypeUserStore();
 
   useEffect(() => {
-    if (!typeUsers) fetchTypeUsers();
+    if (!typeUsers) fetchTypeUsers(params);
   }, [typeUsers, fetchTypeUsers]);
 
   return {
     data: typeUsers,
+    meta,
     isLoading,
     error,
     refetch: fetchTypeUsers,

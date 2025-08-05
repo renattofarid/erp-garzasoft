@@ -62,6 +62,7 @@ export default function UserPage() {
         />
         <UserActions />
       </div>
+      
       <UserTable
         isLoading={isLoading}
         columns={UserColumns({ onEdit: setEditId, onDelete: setDeleteId })}

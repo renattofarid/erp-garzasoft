@@ -67,7 +67,7 @@ export function DataTable<TData, TValue>({
       <div className="overflow-hidden w-full">
         <div className="overflow-x-auto w-full">
           {isLoading ? (
-            <TableSkeleton columns={columns.length > 5 ? 5 : columns.length} />
+            <TableSkeleton />
           ) : (
             <Table className="text-xs md:text-sm">
               <TableHeader className="sticky top-0 z-10">

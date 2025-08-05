@@ -7,6 +7,7 @@ import {
   UserResourceById,
   UserResponse,
 } from "./User.interface";
+import { per_page } from "@/lib/core.function";
 
 const ENDPOINT = "usuarios";
 
@@ -14,6 +15,7 @@ export async function getUser({ params }: getUserProps): Promise<UserResponse> {
   const config: AxiosRequestConfig = {
     params: {
       ...params,
+      per_page,
     },
   };
   const { data } = await api.get<UserResponse>(ENDPOINT, config);

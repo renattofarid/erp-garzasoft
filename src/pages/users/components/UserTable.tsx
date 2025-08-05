@@ -21,10 +21,7 @@ export default function UserTable({
         columns={columns}
         data={data}
         isLoading={isLoading}
-        initialColumnVisibility={{
-          estado_uso: false,
-          status: false,
-        }}
+        initialColumnVisibility={{}}
       >
         {children}
       </DataTable>

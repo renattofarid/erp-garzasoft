@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 
-export const per_page = 10;
+export const per_page = 10  ;
 
 export const successToast = (
   body: string,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PageSkeleton from "@/components/PageSkeleton";
 import TitleComponent from "@/components/TitleComponent";
 
@@ -18,20 +18,21 @@ import UserEditPage from "./UserEditPage";
 import { SimpleDeleteDialog } from "@/components/SimpleDeleteDialog";
 import { deleteUser } from "../lib/User.actions";
 import { errorToast, successToast } from "@/lib/core.function";
+import DataTablePagination from "@/components/DataTablePagination";
 // import DataTablePagination from "@/components/DataTablePagination";
 // import NotFound from "@/components/not-found";
 
 export default function UserPage() {
-  // const [page, setPage] = useState(1);
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [editId, setEditId] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  // useEffect(() => {
-  //   setPage(1);
-  // }, [search]);
+  const { data, meta, isLoading, refetch } = useUsers();
 
-  const { data, isLoading, refetch } = useUsers();
+  useEffect(() => {
+    refetch({ page, search });
+  }, [page, search]);
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -62,7 +63,7 @@ export default function UserPage() {
         />
         <UserActions />
       </div>
-      
+
       <UserTable
         isLoading={isLoading}
         columns={UserColumns({ onEdit: setEditId, onDelete: setDeleteId })}
@@ -70,6 +71,12 @@ export default function UserPage() {
       >
         <UserOptions search={search} setSearch={setSearch} />
       </UserTable>
+
+      <DataTablePagination
+        page={page}
+        totalPages={meta?.last_page || 1}
+        onPageChange={setPage}
+      />
 
       {/* Formularios */}
       {editId !== null && (
@@ -83,12 +90,6 @@ export default function UserPage() {
           onConfirm={handleDelete}
         />
       )}
-
-      {/* <DataTablePagination
-        page={page}
-        totalPages={data?.meta?.last_page || 1}
-        onPageChange={setPage}
-      /> */}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 // import { Links, Meta } from "@/src/shared/lib/pagination.interface";
 
+import { Links, Meta } from "@/lib/pagination.interface";
 import { ShoppingBag } from "lucide-react";
 
 export const ProductIcon = ShoppingBag;
@@ -15,19 +16,19 @@ export const ProductDescriptionEdit =
   "Edita un producto existente para actualizar su información.";
 
 export interface ProductResponse {
-  status: number;
   data: ProductResource[];
+  links: Links;
+  meta: Meta;
 }
 
 export interface ProductResource {
   id: number;
   nombre: string;
   descripcion: string;
-  created_at: Date;
-  updated_at: Date;
-  deleted_at: null;
   modulos: Modulo[];
   avisos_saas: any[];
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Modulo {

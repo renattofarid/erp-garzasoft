@@ -1,7 +1,13 @@
 import { AxiosRequestConfig } from "axios";
 
 import { api } from "@/lib/config";
-import { getProductProps, ProductResource, ProductResourceById, ProductResponse } from "./product.interface";
+import {
+  getProductProps,
+  ProductResource,
+  ProductResourceById,
+  ProductResponse,
+} from "./product.interface";
+import { per_page } from "@/lib/core.function";
 
 const ENDPOINT = "productos";
 
@@ -11,6 +17,7 @@ export async function getProduct({
   const config: AxiosRequestConfig = {
     params: {
       ...params,
+      per_page,
     },
   };
   const { data } = await api.get<ProductResponse>(ENDPOINT, config);

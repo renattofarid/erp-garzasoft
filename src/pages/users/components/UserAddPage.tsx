@@ -8,6 +8,7 @@ import { useUserStore } from "../lib/Users.store";
 import { useUsers } from "../lib/User.hook";
 import { UserForm } from "./UserForm";
 import { UserTitle } from "../lib/User.interface";
+import { Plus } from "lucide-react";
 
 export default function UserAddPage() {
   const [open, setOpen] = useState(false);
@@ -28,8 +29,8 @@ export default function UserAddPage() {
 
   return (
     <>
-      <Button size="sm" className="ml-auto px-10" onClick={() => setOpen(true)}>
-        Agregar
+      <Button size="sm" className="ml-auto !px-10" onClick={() => setOpen(true)}>
+        <Plus className="size-4 mr-2" /> Agregar
       </Button>
       <GeneralModal
         open={open}

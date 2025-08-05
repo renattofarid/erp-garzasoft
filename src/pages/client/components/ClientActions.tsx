@@ -8,12 +8,12 @@ import { ClientAddRoute } from "../lib/client.interface.ts";
 export default function ClientActions() {
   const router = useNavigate();
 
-  const handleAddMetric = () => {
+  const handleAddClient = () => {
     router(ClientAddRoute);
   };
   return (
     <div className="flex items-center gap-2">
-      <Button size="sm" className="!px-10" onClick={handleAddMetric}>
+      <Button size="sm" className="!px-10" onClick={handleAddClient}>
         <Plus className="size-4 mr-2" /> Agregar
       </Button>
     </div>

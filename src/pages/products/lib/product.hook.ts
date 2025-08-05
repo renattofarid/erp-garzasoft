@@ -2,15 +2,16 @@
 import { useEffect } from "react";
 import { useProductStore } from "./product.store";
 
-export function useProducts() {
-  const { Products, isLoading, error, fetchProducts } = useProductStore();
+export function useProducts(params?: Record<string, any>) {
+  const { Products, meta, isLoading, error, fetchProducts } = useProductStore();
 
   useEffect(() => {
-    if (!Products) fetchProducts();
+    if (!Products) fetchProducts(params);
   }, [Products, fetchProducts]);
 
   return {
     data: Products,
+    meta,
     isLoading,
     error,
     refetch: fetchProducts,

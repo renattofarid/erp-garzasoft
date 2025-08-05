@@ -2,17 +2,23 @@
 import { create } from "zustand";
 import { ProductResource } from "./product.interface";
 import { ProductSchema } from "./product.schema";
-import { findProductById, getProduct, storeProduct, updateProduct } from "./product.actions";
-
+import {
+  findProductById,
+  getProduct,
+  storeProduct,
+  updateProduct,
+} from "./product.actions";
+import { Meta } from "@/lib/pagination.interface";
 
 interface ProductStore {
   Products: ProductResource[] | null;
   Product: ProductResource | null;
+  meta: Meta | null;
   isLoading: boolean;
   isFinding: boolean;
   error: string | null;
   isSubmitting: boolean;
-  fetchProducts: () => Promise<void>;
+  fetchProducts: (params?: Record<string, any>) => Promise<void>;
   fetchProduct: (id: number) => Promise<void>;
   createProduct: (data: ProductSchema) => Promise<void>;
   updateProduct: (id: number, data: ProductSchema) => Promise<void>;
@@ -21,16 +27,17 @@ interface ProductStore {
 export const useProductStore = create<ProductStore>((set) => ({
   Product: null,
   Products: null,
+  meta: null,
   isLoading: false,
   isFinding: false,
   isSubmitting: false,
   error: null,
 
-  fetchProducts: async () => {
+  fetchProducts: async (params?: Record<string, any>) => {
     set({ isLoading: true, error: null });
     try {
-      const { data } = await getProduct({});
-      set({ Products: data, isLoading: false });
+      const { data, meta } = await getProduct({ params });
+      set({ Products: data, meta, isLoading: false });
     } catch (err) {
       set({ error: "Error al cargar tipos de usuarios", isLoading: false });
     }

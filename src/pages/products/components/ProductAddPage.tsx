@@ -7,6 +7,7 @@ import { useProducts } from "../lib/product.hook";
 import { ProductSchema } from "../lib/product.schema";
 import { ProductDescriptionAdd, ProductTitle } from "../lib/product.interface";
 import { ProductForm } from "./ProductForm";
+import { Plus } from "lucide-react";
 
 export default function ProductAddPage() {
   const [open, setOpen] = useState(false);
@@ -27,7 +28,8 @@ export default function ProductAddPage() {
 
   return (
     <>
-      <Button size="sm" className="ml-auto px-10" onClick={() => setOpen(true)}>
+      <Button size="sm" className="ml-auto !px-10" onClick={() => setOpen(true)}>
+        <Plus className="size-4 mr-2" />
         Agregar
       </Button>
       <GeneralModal

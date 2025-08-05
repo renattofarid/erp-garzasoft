@@ -3,18 +3,20 @@ import { create } from "zustand";
 import { findUserById, getUser, storeUser, updateUser } from "./User.actions";
 import { UserSchema } from "./User.schema";
 import { UserResource } from "./User.interface";
+import { Meta } from "@/lib/pagination.interface";
 // import { TypeUserSchema } from "./typeUser.schema";
 
 interface UserStore {
   Users: UserResource[] | null;
   User: UserResource | null;
+  meta: Meta | null;
 
   isLoading: boolean;
   isFinding: boolean;
 
   error: string | null;
   isSubmitting: boolean;
-  fetchUsers: () => Promise<void>;
+  fetchUsers: (params?: Record<string, any>) => Promise<void>;
   fetchUser: (id: number) => Promise<void>;
 
   createUser: (data: UserSchema) => Promise<void>;
@@ -24,16 +26,17 @@ interface UserStore {
 export const useUserStore = create<UserStore>((set) => ({
   Users: null,
   User: null,
+  meta: null,
   isLoading: false,
   isFinding: false,
   isSubmitting: false,
   error: null,
 
-  fetchUsers: async () => {
+  fetchUsers: async (params?: Record<string, any>) => {
     set({ isLoading: true, error: null });
     try {
-      const { data } = await getUser({});
-      set({ Users: data, isLoading: false });
+      const { data, meta } = await getUser({ params });
+      set({ Users: data, meta: meta, isLoading: false });
     } catch (err) {
       set({ error: "Error al cargar tipos de usuarios", isLoading: false });
     }

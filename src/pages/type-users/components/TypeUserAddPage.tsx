@@ -10,6 +10,7 @@ import { GeneralModal } from "@/components/GeneralModal";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useTypeUsers } from "../lib/typeUser.hook";
+import { Plus } from "lucide-react";
 
 export default function TypeUserAddPage() {
   const [open, setOpen] = useState(false);
@@ -30,8 +31,12 @@ export default function TypeUserAddPage() {
 
   return (
     <>
-      <Button size="sm" className="ml-auto px-10" onClick={() => setOpen(true)}>
-        Agregar
+      <Button
+        size="sm"
+        className="ml-auto !px-10"
+        onClick={() => setOpen(true)}
+      >
+        <Plus className="size-4 mr-2" /> Agregar Agregar
       </Button>
       <GeneralModal
         open={open}

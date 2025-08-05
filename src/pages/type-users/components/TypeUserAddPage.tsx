@@ -36,7 +36,7 @@ export default function TypeUserAddPage() {
         className="ml-auto !px-10"
         onClick={() => setOpen(true)}
       >
-        <Plus className="size-4 mr-2" /> Agregar Agregar
+        <Plus className="size-4 mr-2" /> Agregar
       </Button>
       <GeneralModal
         open={open}

@@ -16,3 +16,18 @@ export function useUsers() {
     refetch: fetchUsers,
   };
 }
+
+export function useUser(id: number) {
+  const { User, isFinding, error, fetchUser } = useUserStore();
+
+  useEffect(() => {
+    fetchUser(id);
+  }, [id]);
+
+  return {
+    data: User,
+    isFinding,
+    error,
+    refetch: () => fetchUser(id),
+  };
+}

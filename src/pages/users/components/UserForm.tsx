@@ -54,53 +54,20 @@ export const UserForm = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 w-full">
-        <div className="flex gap-6">
-          {/* Left Section */}
-          <div className="w-72 space-y-4 rounded-lg bg-tertiary p-4 text-sm">
-            <FormField
-              control={form.control}
-              name="usuario"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-normal">Usuario</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Usuario" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="contraseña"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-normal">
-                    Contraseña
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Contraseña"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
+        <div className="bg-tertiary rounded-lg p-6 space-y-4">
+          <div className="grid grid-cols-1">
             <FormField
               control={form.control}
               name="tipo_usuario_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tipo de Usuario</FormLabel>
+                  <FormLabel className="text-sm font-normal">
+                    Tipo de Usuario
+                  </FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value?.toString()}
+                    onValueChange={(value) => field.onChange(Number(value))}
+                    value={field.value?.toString()}
                     disabled={isLoading}
                   >
                     <FormControl>
@@ -122,146 +89,78 @@ export const UserForm = ({
             />
           </div>
 
-          {/* Right Section */}
-          <div className="flex-1 space-y-4 rounded-lg bg-tertiary p-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="tipo_documento"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-normal">
-                      Tipo de documento
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Seleccione tipo" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="DNI">DNI</SelectItem>
-                        <SelectItem value="RUC">RUC</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="father_surname"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-normal">
-                      Apellido Paterno
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="Apellido Paterno" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="nombres"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-normal">Nombres</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Nombres" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="apellidos"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-normal">
+                    Apellidos
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="Apellidos" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-              <FormField
-                control={form.control}
-                name="numero_docuemnto"
-                render={({ field }) => (
-                  <FormItem className="relative">
-                    <FormLabel className="text-sm font-normal">
-                      Número de documento
-                    </FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          placeholder="Número de documento"
-                          maxLength={
-                            form.getValues("tipo_documento") === "DNI"
-                              ? 8
-                              : form.getValues("tipo_documento") === "RUC"
-                              ? 11
-                              : 15
-                          }
-                          {...field}
-                        />
-                        <button
-                          type="button"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-primary"
-                          //   onClick={handleSearchPerson}
-                        >
-                          <svg width="20" height="20" viewBox="0 0 24 24">
-                            <path
-                              fill="currentColor"
-                              d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="mother_surname"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-normal">
-                      Apellido Materno
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="Apellido Materno" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="names"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-normal">
-                      Nombres
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nombres" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="telefono"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-normal">
-                      Teléfono
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="Teléfono" maxLength={9} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="usuario"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-normal">Usuario</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Usuario" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-normal">
+                    Contraseña
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder="Contraseña"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
         </div>
 
-        <div className="flex gap-4 w-full justify-end">
+        {/* Botones */}
+        <div className="flex justify-end gap-4">
           <Button type="button" variant="neutral" onClick={onCancel}>
             Cancelar
           </Button>
-
           <Button
             type="submit"
             disabled={isSubmitting || !form.formState.isValid}

@@ -1,5 +1,6 @@
 // import { Links, Meta } from "@/src/shared/lib/pagination.interface";
 
+import { Links, Meta } from "@/lib/pagination.interface";
 import { TypeUserResource } from "@/pages/type-users/lib/typeUser.interface";
 import { User } from "lucide-react";
 
@@ -15,21 +16,24 @@ export const UserDescriptionAdd =
 export const UserDescriptionEdit =
   "Edita un tipo de usuario existente para actualizar sus datos.";
 
-export type UserResponse = UserResource[];
+
+export interface UserResponse {
+  data: UserResource[];
+  links: Links;
+  meta: Meta;
+}
 
 export interface UserResource {
   id: number;
   nombres: string;
   apellidos: string;
   usuario: string;
-  tipo_documento: string;
-  numero_documento: string;
-  telefono: string;
   tipo_usuario_id: number;
-  created_at: Date;
-  updated_at: Date;
-  deleted_at: null;
   tipos_usuario: TypeUserResource;
+  password: string;
+}
+export interface UserResourceById {
+  data: UserResource;
 }
 
 export interface getUserProps {

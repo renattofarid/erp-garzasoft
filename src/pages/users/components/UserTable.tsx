@@ -1,7 +1,7 @@
 
 import { DataTable } from "@/components/DataTable.tsx";
 import { UserColumns } from "./UserColumns";
-import { UserResource } from "../lib/user.interface";
+import { UserResource } from "../lib/User.interface";
 
 interface Props {
   columns: UserColumns[];

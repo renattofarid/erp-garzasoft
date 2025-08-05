@@ -37,7 +37,7 @@ export default function UserAddPage() {
           setOpen(false);
         }}
         title={"Agregar " + UserTitle}
-        maxWidth="!max-w-(--breakpoint-lg)"
+        maxWidth="!max-w-(--breakpoint-md)"
       >
         <UserForm
           defaultValues={{ usuario: "" }}

@@ -69,10 +69,10 @@ export default function LoginPage() {
         <div className="bg-white rounded-2xl shadow-sm p-8 border border-[#B6C3FF]">
           {/* Profile Icon and Branding */}
           <div className="text-start mb-8">
-            <div className="text-base font-semibold font-nunito text-primary mb-1">
+            <div className="text-base font-extrabold font-nunito text-primary">
               Mr. Soft
             </div>
-            <div className="text-xs text-secondary font-nunito">ERP System</div>
+            <div className="text-xs font-bold text-secondary font-nunito">ERP System</div>
           </div>
 
           {/* Login Form */}

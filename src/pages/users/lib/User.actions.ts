@@ -1,7 +1,12 @@
 import { AxiosRequestConfig } from "axios";
 
 import { api } from "@/lib/config";
-import { getUserProps, UserResource, UserResourceById, UserResponse } from "./User.interface";
+import {
+  getUserProps,
+  UserResource,
+  UserResourceById,
+  UserResponse,
+} from "./User.interface";
 
 const ENDPOINT = "usuarios";
 
@@ -25,13 +30,10 @@ export async function getAllUsers(): Promise<UserResource[]> {
   return data;
 }
 
-export async function findUserById(
-  id: number
-): Promise<UserResourceById> {
+export async function findUserById(id: number): Promise<UserResourceById> {
   const response = await api.get<UserResourceById>(`${ENDPOINT}/${id}`);
   return response.data;
 }
-
 
 export async function storeUser(data: any): Promise<UserResponse> {
   const response = await api.post<UserResponse>(ENDPOINT, data);

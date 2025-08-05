@@ -7,19 +7,18 @@ import { UserResource } from "./User.interface";
 
 interface UserStore {
   Users: UserResource[] | null;
-    User: UserResource | null;
-  
+  User: UserResource | null;
+
   isLoading: boolean;
-    isFinding: boolean;
+  isFinding: boolean;
 
   error: string | null;
   isSubmitting: boolean;
   fetchUsers: () => Promise<void>;
-    fetchUser: (id: number) => Promise<void>;
+  fetchUser: (id: number) => Promise<void>;
 
   createUser: (data: UserSchema) => Promise<void>;
-    updateUser: (id: number, data: UserSchema) => Promise<void>;
-  
+  updateUser: (id: number, data: UserSchema) => Promise<void>;
 }
 
 export const useUserStore = create<UserStore>((set) => ({
@@ -32,23 +31,22 @@ export const useUserStore = create<UserStore>((set) => ({
 
   fetchUsers: async () => {
     set({ isLoading: true, error: null });
-        try {
-          const { data } = await getUser({});
-          set({ Users: data, isLoading: false });
-        } catch (err) {
-          set({ error: "Error al cargar tipos de usuarios", isLoading: false });
-        }
+    try {
+      const { data } = await getUser({});
+      set({ Users: data, isLoading: false });
+    } catch (err) {
+      set({ error: "Error al cargar tipos de usuarios", isLoading: false });
+    }
   },
   fetchUser: async (id: number) => {
-      set({ isFinding: true, error: null });
-      try {
-        const { data } = await findUserById(id);
-        set({ User: data, isFinding: false });
-      } catch (err) {
-        set({ error: "Error al cargar el usuario", isFinding: false });
-      }
-    },
-  
+    set({ isFinding: true, error: null });
+    try {
+      const data = await findUserById(id);
+      set({ User: data, isFinding: false });
+    } catch (err) {
+      set({ error: "Error al cargar el usuario", isFinding: false });
+    }
+  },
 
   createUser: async (data) => {
     set({ isSubmitting: true, error: null });
@@ -61,15 +59,15 @@ export const useUserStore = create<UserStore>((set) => ({
       set({ isSubmitting: false });
     }
   },
-   updateUser: async (id: number, data: UserSchema) => {
-      set({ isSubmitting: true, error: null });
-      try {
-        await updateUser(id, data);
-      } catch (err) {
-        set({ error: "Error al actualizar el Tipo de Usuario" });
-        throw err;
-      } finally {
-        set({ isSubmitting: false });
-      }
-    },
+  updateUser: async (id: number, data: UserSchema) => {
+    set({ isSubmitting: true, error: null });
+    try {
+      await updateUser(id, data);
+    } catch (err) {
+      set({ error: "Error al actualizar el Tipo de Usuario" });
+      throw err;
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
 }));

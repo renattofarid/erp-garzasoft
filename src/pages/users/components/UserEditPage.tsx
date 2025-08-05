@@ -9,7 +9,11 @@ import { GeneralModal } from "@/components/GeneralModal";
 import { useUser, useUsers } from "../lib/User.hook";
 import { useUserStore } from "../lib/Users.store";
 import { UserSchema } from "../lib/User.schema";
-import { UserDescriptionEdit, UserResource, UserTitle } from "../lib/User.interface";
+import {
+  UserDescriptionEdit,
+  UserResource,
+  UserTitle,
+} from "../lib/User.interface";
 import { UserForm } from "./UserForm";
 
 export default function UserEditPage({
@@ -39,9 +43,7 @@ export default function UserEditPage({
       });
   };
 
-  const mapUserToForm = (
-    data: UserResource
-  ): Partial<UserSchema> => ({
+  const mapUserToForm = (data: UserResource): Partial<UserSchema> => ({
     nombres: data.nombres,
     apellidos: data.apellidos,
     usuario: data.usuario,
@@ -49,7 +51,7 @@ export default function UserEditPage({
     password: data.password,
   });
 
-  if (!User) return <NotFound />;
+  if (!isFinding && !User) return <NotFound />;
 
   return (
     <GeneralModal
@@ -61,7 +63,7 @@ export default function UserEditPage({
       subtitle={UserDescriptionEdit}
       maxWidth="max-w-(--breakpoint-sm)"
     >
-      {isFinding ? (
+      {isFinding || !User ? (
         <FormSkeleton />
       ) : (
         <UserForm

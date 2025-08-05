@@ -16,7 +16,6 @@ export const UserDescriptionAdd =
 export const UserDescriptionEdit =
   "Edita un tipo de usuario existente para actualizar sus datos.";
 
-
 export interface UserResponse {
   data: UserResource[];
   links: Links;
@@ -32,9 +31,8 @@ export interface UserResource {
   tipos_usuario: TypeUserResource;
   password: string;
 }
-export interface UserResourceById {
-  data: UserResource;
-}
+
+export type UserResourceById = UserResource | null;
 
 export interface getUserProps {
   params?: Record<string, any>;

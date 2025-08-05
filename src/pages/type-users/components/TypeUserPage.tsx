@@ -4,7 +4,11 @@ import TitleComponent from "@/components/TitleComponent";
 import TypeUserActions from "./TypeUserActions";
 import TypeUserTable from "./TypeUserTable";
 import TypeUserOptions from "./TypeUserOptions";
-import { TypeUserDescription, TypeUserIconName, TypeUserTitle } from "../lib/typeUser.interface";
+import {
+  TypeUserDescription,
+  TypeUserIconName,
+  TypeUserTitle,
+} from "../lib/typeUser.interface";
 import { deleteTypeUser } from "../lib/typeUser.actions";
 import { SimpleDeleteDialog } from "@/components/SimpleDeleteDialog";
 import { successToast, errorToast } from "@/lib/core.function";

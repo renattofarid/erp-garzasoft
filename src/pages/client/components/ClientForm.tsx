@@ -98,7 +98,7 @@ export const ClientForm = ({
           />
         </div>
 
-        <div className=" gap-4 p-4 bg-sidebar rounded-lg">
+        <div className="gap-4 p-4 bg-sidebar rounded-lg">
           <Label className="font-semibold mb-2 col-span-3">Sucursales</Label>
 
           <FormField
@@ -168,6 +168,55 @@ export const ClientForm = ({
           />
         </div>
 
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 bg-sidebar rounded-lg">
+          <Label className="font-semibold mb-2 col-span-3">
+            Información básica del cliente
+          </Label>
+
+          <FormSelect
+            control={form.control}
+            name="tipo"
+            label="Tipo de Cliente"
+            placeholder="Selecciona el tipo"
+            options={[
+              { value: "corporacion", label: "Corporación" },
+              { value: "persona natural", label: "Persona Natural" },
+            ]}
+          />
+
+          <FormField
+            control={form.control}
+            name="ruc"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>RUC</FormLabel>
+                <FormControl>
+                  <Input
+                    maxLength={11}
+                    placeholder="Ej: 20548465321"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="razon_social"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Razón Social</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej: Corporacion ABC" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         {/* <pre>
           <code className="text-xs text-muted-foreground">
             {JSON.stringify(form.getValues(), null, 2)}

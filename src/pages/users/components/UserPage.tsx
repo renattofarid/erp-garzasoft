@@ -4,7 +4,11 @@ import { useState } from "react";
 import PageSkeleton from "@/components/PageSkeleton";
 import TitleComponent from "@/components/TitleComponent";
 
-import { UserDescription, UserIconName, UserTitle } from "../lib/User.interface";
+import {
+  UserDescription,
+  UserIconName,
+  UserTitle,
+} from "../lib/User.interface";
 import UserOptions from "./UserOptions";
 import UserTable from "./UserTable";
 import { UserColumns } from "./UserColumns";
@@ -20,27 +24,27 @@ import { errorToast, successToast } from "@/lib/core.function";
 export default function UserPage() {
   // const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-    const [editId, setEditId] = useState<number | null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   // useEffect(() => {
   //   setPage(1);
   // }, [search]);
 
-  const { data, isLoading, refetch} = useUsers();
+  const { data, isLoading, refetch } = useUsers();
 
   const handleDelete = async () => {
-      if (!deleteId) return;
-      try {
-        await deleteUser(deleteId);
-        await refetch();
-        successToast("Tipo de Usuario eliminado correctamente.");
-      } catch {
-        errorToast("Error al eliminar el Tipo de Usuario.");
-      } finally {
-        setDeleteId(null);
-      }
-    };
+    if (!deleteId) return;
+    try {
+      await deleteUser(deleteId);
+      await refetch();
+      successToast("Tipo de Usuario eliminado correctamente.");
+    } catch {
+      errorToast("Error al eliminar el Tipo de Usuario.");
+    } finally {
+      setDeleteId(null);
+    }
+  };
 
   // make pagination of 10 in data
 
@@ -52,7 +56,7 @@ export default function UserPage() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <TitleComponent
-          title={UserTitle} 
+          title={UserTitle}
           subtitle={UserDescription}
           icon={UserIconName}
         />
@@ -66,22 +70,18 @@ export default function UserPage() {
         <UserOptions search={search} setSearch={setSearch} />
       </UserTable>
 
-        {/* Formularios */}
-            {editId !== null && (
-              <UserEditPage
-                id={editId}
-                open={true}
-                setOpen={() => setEditId(null)}
-              />
-            )}
-      
-            {deleteId !== null && (
-              <SimpleDeleteDialog
-                open={true}
-                onOpenChange={(open) => !open && setDeleteId(null)}
-                onConfirm={handleDelete}
-              />
-            )}
+      {/* Formularios */}
+      {editId !== null && (
+        <UserEditPage id={editId} open={true} setOpen={() => setEditId(null)} />
+      )}
+
+      {deleteId !== null && (
+        <SimpleDeleteDialog
+          open={true}
+          onOpenChange={(open) => !open && setDeleteId(null)}
+          onConfirm={handleDelete}
+        />
+      )}
 
       {/* <DataTablePagination
         page={page}

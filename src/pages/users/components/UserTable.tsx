@@ -1,4 +1,3 @@
-
 import { DataTable } from "@/components/DataTable.tsx";
 import { UserColumns } from "./UserColumns";
 import { UserResource } from "../lib/User.interface";

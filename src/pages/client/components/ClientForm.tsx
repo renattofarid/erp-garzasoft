@@ -346,15 +346,15 @@ export const ClientForm = ({
                       />
                       {field.value?.length
                         ? field.value.length > 1 && (
-                            <Button
-                              className=""
-                              type="button"
-                              size="icon"
-                              onClick={() => remove(index)}
-                            >
-                              <Trash className="w-4 h-4" />
-                            </Button>
-                          )
+                          <Button
+                            className=""
+                            type="button"
+                            size="icon"
+                            onClick={() => remove(index)}
+                          >
+                            <Trash className="w-4 h-4" />
+                          </Button>
+                        )
                         : null}
                     </div>
                   </div>

@@ -29,7 +29,7 @@ export const productSchemaCreate = z.object({
       });
 
       // Para cada nombre duplicado, solo marcamos error en el último índice
-      Object.entries(nombreIndices).forEach(([nombre, indices]) => {
+      Object.entries(nombreIndices).forEach(([_, indices]) => {
         if (indices.length > 1) {
           // Solo el último debe mostrar el error
           const lastIdx = indices[indices.length - 1];

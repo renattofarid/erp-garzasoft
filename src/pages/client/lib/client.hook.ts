@@ -18,6 +18,21 @@ export function useClients(params?: Record<string, any>) {
   };
 }
 
+export function useAllClients() {
+  const { allClients, isLoading, error, fetchAllClients } = useClientStore();
+
+  useEffect(() => {
+    if (!allClients) fetchAllClients();
+  }, [allClients, fetchAllClients]);
+
+  return {
+    data: allClients,
+    isLoading,
+    error,
+    refetch: fetchAllClients,
+  };
+}
+
 export function useClient(id: number) {
   const { client, isFinding, error, fetchClient } = useClientStore();
 

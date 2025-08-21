@@ -19,6 +19,14 @@ import ClientAddPage from "./pages/client/components/ClientAddPage";
 import ProductPage from "./pages/products/components/ProductPage";
 import { ProductRoute } from "./pages/products/lib/product.interface";
 import ClientEditPage from "./pages/client/components/ClientEditPage";
+import {
+  ContractAddRoute,
+  ContractEditRoute,
+  ContractRoute,
+} from "@/pages/contract/lib/contract.interface.ts";
+import ContractPage from "@/pages/contract/components/ContractPage.tsx";
+import ContractAddPage from "@/pages/contract/components/ContractAddPage.tsx";
+import ContractEditPage from "@/pages/contract/components/ContractEditPage.tsx";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { token } = useAuthStore();
@@ -110,6 +118,33 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ProductPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path={ContractRoute}
+            element={
+              <ProtectedRoute>
+                <ContractPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path={ContractAddRoute}
+            element={
+              <ProtectedRoute>
+                <ContractAddPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path={`${ContractEditRoute}/:id`}
+            element={
+              <ProtectedRoute>
+                <ContractEditPage />
               </ProtectedRoute>
             }
           />

@@ -11,7 +11,7 @@ export const clientContactSchema = z.object({
     .refine((val) => val.length === 9, {
       message: "Numero de celular inválido. Debe tener 9 dígitos.",
     }),
-  email: z.email("El email es inválido"),
+  email: z.string().email({ message: "Correo inválido" }),
 });
 
 export const clientSucursalSchema = z.object({
@@ -41,7 +41,7 @@ export const clientSchemaCreate = z.object({
     .refine((val) => val.length === 9, {
       message: "Numero de celular inválido. Debe tener 9 dígitos.",
     }),
-  dueno_email: z.email("El email del dueño es inválido"),
+  dueno_email: z.string().email("El email del dueño es inválido"),
   representante_nombre: z
     .string()
     .min(1, "El nombre del representante es requerido"),

@@ -27,6 +27,8 @@
   --color-tertiary-foreground: var(--tertiary-foreground);
   --color-quaternary: var(--quaternary);
   --color-quaternary-foreground: var(--quaternary-foreground);
+  --color-modal: var(--modal);
+  --color-modal-foreground: var(--modal-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
@@ -66,6 +68,8 @@
   --tertiary-foreground: oklch(0.145 0 0);
   --quaternary: oklch(0.9823 0.008252 271.3302);
   --quaternary-foreground: oklch(0.145 0 0);
+  --modal: oklch(0.9616 0.0183 258.35);
+  --modal-foreground: oklch(0.145 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
   --accent: oklch(0.97 0 0);
@@ -104,6 +108,8 @@
   --tertiary-foreground: oklch(0.145 0 0);
   --quaternary: oklch(0.205 0 0);
   --quaternary-foreground: oklch(0.145 0 0);
+  --modal: oklch(0.269 0 0);
+  --modal-foreground: oklch(0.708 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);

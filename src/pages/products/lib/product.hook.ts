@@ -18,6 +18,25 @@ export function useProducts(params?: Record<string, any>) {
   };
 }
 
+export function useAllProducts() {
+  const { Products, meta, isLoading, error, fetchProducts } = useProductStore();
+
+  useEffect(() => {
+    if (!Products)
+      fetchProducts({
+        all: true,
+      });
+  }, [Products, fetchProducts]);
+
+  return {
+    data: Products,
+    meta,
+    isLoading,
+    error,
+    refetch: fetchProducts,
+  };
+}
+
 export function useProduct(id: number) {
   const { Product, isFinding, error, fetchProduct } = useProductStore();
 

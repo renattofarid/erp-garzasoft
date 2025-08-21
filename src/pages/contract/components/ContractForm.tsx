@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
@@ -14,17 +14,19 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader, Plus, Trash } from "lucide-react";
+import { Loader, Trash } from "lucide-react";
 import {
   contractCreateSchema,
   contractUpdateSchema,
 } from "@/pages/contract/lib/contract.schema"; // <- sin ".ts"
 import { Label } from "@/components/ui/label";
-import { SearchForm } from "@/components/search-form";
 import { DatePickerFormField } from "@/components/DatePickerFormField";
-import { useAllClients, useClients } from "@/pages/client/lib/client.hook";
+import { useAllClients } from "@/pages/client/lib/client.hook";
 import FormSkeleton from "@/components/FormSkeleton";
 import { FormSelect } from "@/components/FormSelect";
+import ContractModuleForm from "./ContractModuleForm";
+import { useAllProducts } from "@/pages/products/lib/product.hook";
+import { Textarea } from "@/components/ui/textarea";
 
 // 1) Tipo fuerte del formulario = OUTPUT del schema de create
 type ContractFormValues = z.output<typeof contractCreateSchema>;
@@ -76,6 +78,10 @@ export const ContractForm = ({
     control,
     name: "productos_modulos",
   });
+
+  const [open, setOpen] = useState(false);
+
+  const productData = useAllProducts();
 
   const { data: clients, isLoading } = useAllClients();
 
@@ -154,7 +160,7 @@ export const ContractForm = ({
                 },
                 {
                   label: "SaaS",
-                  value: "SaaS",
+                  value: "saas",
                 },
               ]}
             />
@@ -162,170 +168,147 @@ export const ContractForm = ({
 
           <div className="flex flex-col bg-modal p-4 rounded-lg">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold">Lista de Productos</h3>
-              <Button
-                type="button"
-                onClick={() =>
-                  append({ producto_id: 0, modulo_id: 0, precio: 0 })
-                }
-              >
+              <Label className="font-semibold mb-2 col-span-3">
+                Lista de Productos
+              </Label>
+              <Button type="button" onClick={() => setOpen(!open)}>
                 Agregar
               </Button>
+              <ContractModuleForm
+                open={open}
+                onAssign={append}
+                control={control}
+                products={productData.data || []}
+                onOpenChange={() => setOpen(!open)}
+              />
             </div>
 
-            {fields.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                No hay items. Agrega al menos uno.
-              </p>
-            )}
+            <div className="w-fit mx-auto">
+              {fields.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No hay items. Agrega al menos uno.
+                </p>
+              )}
 
-            {fields.length > 0 && (
-              <div className="grid grid-cols-12 items-center gap-2 mb-2 font-semibold text-sm text-muted-foreground">
-                <span className="col-span-1"></span>
-                <span className="col-span-3">Producto ID</span>
-                <span className="col-span-4">Módulo ID</span>
-                <span className="col-span-3">Precio</span>
-                <span className="col-span-1"></span>
-              </div>
-            )}
-
-            {fields.map((row, index) => (
-              <div
-                key={row.id ?? index}
-                className="grid grid-cols-12 items-center gap-2 mb-2"
-              >
-                <span className="col-span-1 text-sm text-muted-foreground">
-                  {index + 1 < 10 ? `0${index + 1}` : index + 1}
-                </span>
-
-                <div className="col-span-3">
-                  <FormField
-                    control={control}
-                    name={`productos_modulos.${index}.producto_id`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="producto_id"
-                            value={field.value ?? ""}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value === ""
-                                  ? undefined
-                                  : Number(e.target.value)
-                              )
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              {fields.length > 0 && (
+                <div className="grid grid-cols-12 items-center gap-2 mb-2 font-semibold text-sm text-muted-foreground">
+                  <span className="col-span-1"></span>
+                  <span className="col-span-3">Producto</span>
+                  <span className="col-span-4">Módulo ID</span>
+                  <span className="col-span-3">Precio</span>
+                  <span className="col-span-1"></span>
                 </div>
+              )}
 
-                <div className="col-span-4">
-                  <FormField
-                    control={control}
-                    name={`productos_modulos.${index}.modulo_id`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="modulo_id"
-                            value={field.value ?? ""}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value === ""
-                                  ? undefined
-                                  : Number(e.target.value)
-                              )
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              {fields.map((row, index) => (
+                <div
+                  key={row.id ?? index}
+                  className="grid grid-cols-12 items-center gap-2 mb-2"
+                >
+                  <span className="col-span-1 text-sm text-muted-foreground">
+                    {index + 1 < 10 ? `0${index + 1}` : index + 1}
+                  </span>
+
+                  <div className="col-span-3">
+                    <Label>
+                      {
+                        productData.data?.find((p) => p.id === row.producto_id)
+                          ?.nombre
+                      }
+                    </Label>
+                  </div>
+
+                  <div className="col-span-4">
+                    <Label>
+                      {
+                        productData.data
+                          ?.find((p) => p.id === row.producto_id)
+                          ?.modulos.find((m) => m.id === row.modulo_id)?.nombre
+                      }
+                    </Label>
+                  </div>
+
+                  <div className="col-span-3">
+                    <FormField
+                      control={control}
+                      name={`productos_modulos.${index}.precio`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="precio"
+                              value={field.value ?? ""}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value === ""
+                                    ? undefined
+                                    : Number(e.target.value)
+                                )
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="col-span-1 text-right">
+                    <Button
+                      type="button"
+                      size="icon"
+                      onClick={() => remove(index)}
+                    >
+                      <Trash className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
+              ))}
 
-                <div className="col-span-3">
-                  <FormField
-                    control={control}
-                    name={`productos_modulos.${index}.precio`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="precio"
-                            value={field.value ?? ""}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value === ""
-                                  ? undefined
-                                  : Number(e.target.value)
-                              )
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              {fields.length > 0 && (
+                <div className="mt-3 text-right text-sm text-muted-foreground">
+                  Subtotal módulos: {sum.toFixed(2)}
                 </div>
-
-                <div className="col-span-1 text-right">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => remove(index)}
-                  >
-                    <Trash className="w-4 h-4 text-red-500" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-
-            {fields.length > 0 && (
-              <div className="mt-3 text-right text-sm text-muted-foreground">
-                Subtotal módulos: {sum.toFixed(2)}
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 bg-modal p-4 rounded-lg">
+            <FormSelect
+              control={control}
+              label="Forma de pago"
+              name="forma_pago"
+              placeholder="Selecciona una forma de pago"
+              options={[
+                { label: "Parcial", value: "parcial" },
+                { label: "Total", value: "total" },
+              ]}
+            />
+
             <FormField
               control={control}
-              name="forma_pago"
+              name="total"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Forma de pago</FormLabel>
+                  <FormLabel>Precio Total</FormLabel>
                   <FormControl>
-                    <Input placeholder="parcial" {...field} />
+                    <Input type="number" value={field.value ?? 0} disabled />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          </div>
 
-          <FormField
-            control={control}
-            name="total"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Total</FormLabel>
-                <FormControl>
-                  <Input type="number" value={field.value ?? 0} readOnly />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <FormItem className="col-span-2">
+              <FormLabel>Observaciones</FormLabel>
+              <FormControl>
+                <Textarea />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </div>
         </div>
 
         <div className="flex gap-4 w-full justify-end">

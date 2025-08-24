@@ -39,6 +39,7 @@ export interface Modulo {
   created_at: Date;
   updated_at: Date;
   deleted_at: null;
+  contratos: any[];
 }
 
 export interface ProductResourceById {

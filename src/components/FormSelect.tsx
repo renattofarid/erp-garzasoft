@@ -66,10 +66,10 @@ export function FormSelect({
               <PopoverTrigger asChild>
                 <FormControl>
                   <Button
-                    variant="outline"
+                    variant="input"
                     role="combobox"
                     className={cn(
-                      "w-full justify-between min-h-8 border-primary bg-transparent hover:bg-transparent",
+                      "w-full justify-between min-h-8 border border-primary bg-transparent hover:bg-transparent",
                       !field.value && "text-muted-foreground"
                     )}
                   >

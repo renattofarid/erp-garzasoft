@@ -71,7 +71,7 @@ export const UserForm = ({
                     disabled={isLoading}
                   >
                     <FormControl>
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full border-primary">
                         <SelectValue placeholder="Seleccione tipo de usuario" />
                       </SelectTrigger>
                     </FormControl>

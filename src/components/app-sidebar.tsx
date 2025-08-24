@@ -88,7 +88,7 @@ const data = {
       items: [
         {
           title: "Contratos",
-          url: "#",
+          url: "/contratos",
           icon: Signature,
         },
         {

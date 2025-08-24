@@ -28,9 +28,18 @@ export function GeneralModal({
   maxWidth = "max-w-lg",
 }: GeneralModalProps) {
   return (
-    <Dialog open={open} onOpenChange={(v: any) => !v && onClose()}>
+    <Dialog
+      open={open}
+      onOpenChange={(v: any) => {
+        // Solo permitir cerrar si NO es por clic fuera
+        if (!v) {
+          onClose();
+        }
+      }}
+    >
       <DialogContent
         className={`w-[95vw] rounded-xl overflow-auto ${maxWidth}`}
+        onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
           {title && <DialogTitle>{title}</DialogTitle>}

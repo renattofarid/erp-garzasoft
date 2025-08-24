@@ -1,26 +1,26 @@
 import { useEffect, useState } from "react";
-import { useClients } from "../lib/client.hook.ts";
 import TitleComponent from "@/components/TitleComponent";
-import ClientActions from "./ClientActions.tsx";
-import ClientTable from "./ClientTable.tsx";
-import ClientOptions from "./ClientOptions.tsx";
-import {
-  ClientDescription,
-  ClientIconName,
-  ClientTitle,
-} from "../lib/client.interface.ts";
-import { deleteClient } from "../lib/client.actions.ts";
+import ContractActions from "./ContractActions.tsx";
+import ContractTable from "./ContractTable.tsx";
+import ContractOptions from "./ContractOptions.tsx";
 import { SimpleDeleteDialog } from "@/components/SimpleDeleteDialog";
 import { successToast, errorToast } from "@/lib/core.function";
-import { ClientColumns } from "./ClientColumns.tsx";
-import DataTablePagination from "@/components/DataTablePagination.tsx";
+import { ContractColumns } from "./ContractColumns.tsx";
+import DataTablePagination from "@/components/DataTablePagination";
+import {
+  ContractDescription,
+  ContractIconName,
+  ContractTitle,
+} from "@/pages/contract/lib/contract.interface.ts";
+import { deleteContract } from "@/pages/contract/lib/contract.actions.ts";
+import { useContracts } from "@/pages/contract/lib/contract.hook.ts";
 
-export default function ClientPage() {
+export default function ContractPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  const { data, meta, isLoading, refetch } = useClients();
+  const { data, meta, isLoading, refetch } = useContracts();
 
   useEffect(() => {
     refetch({ page, search });
@@ -29,11 +29,11 @@ export default function ClientPage() {
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
-      await deleteClient(deleteId);
+      await deleteContract(deleteId);
       await refetch();
-      successToast("Cliente eliminado correctamente.");
+      successToast("Contrato eliminado correctamente.");
     } catch {
-      errorToast("Error al eliminar el Cliente.");
+      errorToast("Error al eliminar el Contrato.");
     } finally {
       setDeleteId(null);
     }
@@ -41,30 +41,29 @@ export default function ClientPage() {
 
   return (
     <div className="space-y-4">
+      {/* Encabezado */}
       <div className="flex justify-between items-center">
         <TitleComponent
-          title={ClientTitle}
-          subtitle={ClientDescription}
-          icon={ClientIconName}
+          title={ContractTitle}
+          subtitle={ContractDescription}
+          icon={ContractIconName}
         />
-        <ClientActions />
+        <ContractActions />
       </div>
-
-      <ClientTable
+      {/* Tabla */}
+      <ContractTable
         isLoading={isLoading}
-        columns={ClientColumns({ onDelete: setDeleteId })}
+        columns={ContractColumns({ onDelete: setDeleteId })}
         data={data || []}
       >
-        <ClientOptions search={search} setSearch={setSearch} />
-      </ClientTable>
-
+        <ContractOptions search={search} setSearch={setSearch} />
+      </ContractTable>
       <DataTablePagination
         page={page}
-        
         totalPages={meta?.last_page || 1}
         onPageChange={setPage}
       />
-
+      {/* Formularios */}
       {deleteId !== null && (
         <SimpleDeleteDialog
           open={true}

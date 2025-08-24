@@ -49,7 +49,7 @@ export default function ProductEditPage({
     modulos: data.modulos,
   });
 
-  if (!Product) return <NotFound />;
+  if (!isFinding && !Product) return <NotFound />;
 
   return (
     <GeneralModal
@@ -61,7 +61,7 @@ export default function ProductEditPage({
       subtitle={ProductDescriptionEdit}
       maxWidth="!max-w-(--breakpoint-lg)"
     >
-      {isFinding ? (
+      {isFinding || !Product ? (
         <FormSkeleton />
       ) : (
         <ProductForm

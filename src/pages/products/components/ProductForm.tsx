@@ -108,6 +108,15 @@ export const ProductForm = ({
               </p>
             )}
 
+            {modulos.length > 0 && (
+              <div className="grid grid-cols-12 items-center gap-2 mb-2 font-semibold text-sm text-muted-foreground">
+                <span className="col-span-1"></span>
+                <span className="col-span-6">Nombre del módulo</span>
+                <span className="col-span-4">Precio</span>
+                <span className="col-span-1"></span>
+              </div>
+            )}
+
             {modulos.map((modulo, index) => (
               <div
                 key={modulo.id || index}

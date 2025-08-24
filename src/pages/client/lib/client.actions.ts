@@ -24,11 +24,11 @@ export async function getClient({
 export async function getAllClients(): Promise<ClientResource[]> {
   const config: AxiosRequestConfig = {
     params: {
-      all: true, // Assuming you want to fetch all clients
+      all: true,
     },
   };
-  const { data } = await api.get<ClientResource[]>(ENDPOINT, config);
-  return data;
+  const { data } = await api.get<ClientResponse>(ENDPOINT, config);
+  return data.data;
 }
 
 export async function findClientById(id: number): Promise<ClientResourceById> {

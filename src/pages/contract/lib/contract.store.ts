@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { ContractResource } from "./contract.interface.ts";
 import {
   findContractById,
+  getAllContracts,
   getContract,
   storeContract,
   updateContract,
@@ -12,13 +13,16 @@ import { ContractSchema } from "@/pages/contract/lib/contract.schema.ts";
 
 interface ContractStore {
   Contracts: ContractResource[] | null;
+  AllContracts: ContractResource[] | null;
   Contract: ContractResource | null;
   meta: Meta | null;
   isLoading: boolean;
+  isLoadingAll: boolean;
   isFinding: boolean;
   error: string | null;
   isSubmitting: boolean;
   fetchContracts: (params?: Record<string, any>) => Promise<void>;
+  fetchAllContracts: (params?: Record<string, any>) => Promise<void>;
   fetchContract: (id: number) => Promise<void>;
   createContract: (data: ContractSchema) => Promise<void>;
   updateContract: (id: number, data: ContractSchema) => Promise<void>;
@@ -27,8 +31,10 @@ interface ContractStore {
 export const useContractStore = create<ContractStore>((set) => ({
   Contract: null,
   Contracts: null,
+  AllContracts: null,
   meta: null,
   isLoading: false,
+  isLoadingAll: false,
   isFinding: false,
   isSubmitting: false,
   error: null,
@@ -40,6 +46,21 @@ export const useContractStore = create<ContractStore>((set) => ({
       set({ Contracts: data, meta, isLoading: false });
     } catch (err) {
       set({ error: "Error al cargar Contratos", isLoading: false });
+    }
+  },
+
+  fetchAllContracts: async (params?: Record<string, any>) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { data, meta } = await getAllContracts({
+        params,
+      });
+      set({ AllContracts: data, meta, isLoadingAll: false });
+    } catch (err) {
+      set({
+        error: "Error al cargar Todos los Contratos",
+        isLoadingAll: false,
+      });
     }
   },
 

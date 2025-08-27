@@ -85,6 +85,7 @@ export const ContractColumns = ({
             <DropdownMenuItem onSelect={() => onDelete(id)}>
               Eliminar
             </DropdownMenuItem>
+            <DropdownMenuItem>Notificar</DropdownMenuItem>
           </DropdownMenuGroup>
         </SelectActions>
       );

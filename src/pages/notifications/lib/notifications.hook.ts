@@ -1,34 +1,35 @@
 // hooks/useUsers.ts
 import { useEffect } from "react";
-import { useProductStore } from "./product.store";
+import {useContractStore} from "@/pages/contract/lib/contract.store.ts";
+import { useNotificationStore } from "./notifications.store";
 
-export function useProducts(params?: Record<string, any>) {
-  const { Products, meta, isLoading, error, fetchProducts } = useProductStore();
+export function useNotifications(params?: Record<string, any>) {
+  const { Notifications, meta, isLoading, error, fetchNotifications } = useNotificationStore();
 
   useEffect(() => {
-    if (!Products) fetchProducts(params);
-  }, [Products, fetchProducts]);
+    if (!Notifications) fetchNotifications(params);
+  }, [Notifications, fetchNotifications]);
 
   return {
-    data: Products,
+    data: Notifications,
     meta,
     isLoading,
     error,
-    refetch: fetchProducts,
+    refetch: fetchNotifications,
   };
 }
 
-export function useProduct(id: number) {
-  const { Product, isFinding, error, fetchProduct } = useProductStore();
+export function useContract(id: number) {
+  const { Contract, isFinding, error, fetchContract } = useContractStore();
 
   useEffect(() => {
-    fetchProduct(id);
+    fetchContract(id);
   }, [id]);
 
   return {
-    data: Product,
+    data: Contract,
     isFinding,
     error,
-    refetch: () => fetchProduct(id),
+    refetch: () => fetchContract(id),
   };
 }

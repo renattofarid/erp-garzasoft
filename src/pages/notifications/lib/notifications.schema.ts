@@ -1,22 +1,17 @@
 import { z } from "zod";
 
-export const productSchema = z.object({
+export const notificationSchema = z.object({
   id: z.number().optional(),
-  nombre: z.string().min(1, { message: "El nombre del módulo es obligatorio" }),
-  precio_unitario: z.number().positive("El precio debe ser mayor a 0"),
+  contrato_id: z.string().min(1, { message: "Contrato es requerido" }),
+  detalle: z.string().max(500, { message: "Máximo 500 caracteres" }).optional(),
 });
 
-export const productSchemaCreate = z.object({
-  nombre: z
-    .string()
-    .min(1, { message: "El nombre del producto es obligatorio" })
-    .max(255, { message: "Máximo 255 caracteres" }),
-  descripcion: z.string().optional(),
-  modulos: z
-    .array(productSchema)
-    .min(1, { message: "Debe agregar al menos un módulo" }),
+export const notificationSchemaCreate = z.object({
+  contrato_id: z.string().min(1, { message: "Contrato es requerido" }),
+
+  detalle: z.string().max(500, { message: "Máximo 500 caracteres" }).optional(),
 });
 
-export const productSchemaUpdate = productSchemaCreate.partial();
+export const notificationsSchemaUpdate = notificationSchemaCreate.partial();
 
-export type ProductSchema = z.infer<typeof productSchemaCreate>;
+export type NotificationsSchema = z.infer<typeof notificationSchemaCreate>;

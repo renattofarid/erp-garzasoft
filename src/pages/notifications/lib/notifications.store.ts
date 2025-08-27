@@ -1,76 +1,72 @@
-// stores/ProductStore.ts
+// stores/NotificationStore.ts
 import { create } from "zustand";
-import { ProductResource } from "./product.interface";
-import { ProductSchema } from "./product.schema";
-import {
-  findProductById,
-  getProduct,
-  storeProduct,
-  updateProduct,
-} from "./product.actions";
-import { Meta } from "@/lib/pagination.interface";
 
-interface ProductStore {
-  Products: ProductResource[] | null;
-  Product: ProductResource | null;
+import { Meta } from "@/lib/pagination.interface";
+import { NotificationsSchema } from "./notifications.schema.ts";
+import { NotificationsResource } from "./notifications.interface.ts";
+import { findNotificationsById, getNotification, storeNotifications, updateNotifications } from "./notifications.actions.ts";
+
+interface NotificationStore {
+  Notifications: NotificationsResource[] | null;
+  Notification: NotificationsResource | null;
   meta: Meta | null;
   isLoading: boolean;
   isFinding: boolean;
   error: string | null;
   isSubmitting: boolean;
-  fetchProducts: (params?: Record<string, any>) => Promise<void>;
-  fetchProduct: (id: number) => Promise<void>;
-  createProduct: (data: ProductSchema) => Promise<void>;
-  updateProduct: (id: number, data: ProductSchema) => Promise<void>;
+  fetchNotifications: (params?: Record<string, any>) => Promise<void>;
+  fetchNotification: (id: number) => Promise<void>;
+  createNotification: (data: NotificationsSchema) => Promise<void>;
+  updateNotification: (id: number, data: NotificationsSchema) => Promise<void>;
 }
 
-export const useProductStore = create<ProductStore>((set) => ({
-  Product: null,
-  Products: null,
+export const useNotificationStore = create<NotificationStore>((set) => ({
+  Notification: null,
+  Notifications: null,
   meta: null,
   isLoading: false,
   isFinding: false,
   isSubmitting: false,
   error: null,
 
-  fetchProducts: async (params?: Record<string, any>) => {
+  fetchNotifications: async (params?: Record<string, any>) => {
     set({ isLoading: true, error: null });
     try {
-      const { data, meta } = await getProduct({ params });
-      set({ Products: data, meta, isLoading: false });
+      const { data, meta } = await getNotification({ params });
+      set({ Notifications: data, meta, isLoading: false });
     } catch (err) {
-      set({ error: "Error al cargar tipos de usuarios", isLoading: false });
+      set({ error: "Error al cargar Contratos", isLoading: false });
     }
   },
 
-  fetchProduct: async (id: number) => {
+  fetchNotification: async (id: number) => {
     set({ isFinding: true, error: null });
     try {
-      const { data } = await findProductById(id);
-      set({ Product: data, isFinding: false });
+      const { data } = await findNotificationsById(id);
+      set({ Notification: data, isFinding: false });
     } catch (err) {
-      set({ error: "Error al cargar el Producto", isFinding: false });
+      set({ error: "Error al cargar el Contrato", isFinding: false });
     }
   },
 
-  createProduct: async (data) => {
+  createNotification: async (data) => {
     set({ isSubmitting: true, error: null });
     try {
-      await storeProduct(data);
+      await storeNotifications(data);
     } catch (err) {
-      set({ error: "Error al crear el Producto" });
+      set({ error: "Error al crear el Contrato" });
       throw err;
     } finally {
       set({ isSubmitting: false });
     }
   },
 
-  updateProduct: async (id: number, data: ProductSchema) => {
+  updateNotification: async (id: number, data: NotificationsSchema) => {
     set({ isSubmitting: true, error: null });
     try {
-      await updateProduct(id, data);
+      await updateNotifications(id, data);
     } catch (err) {
-      set({ error: "Error al actualizar el Producto" });
+      set({ error: "Error al actualizar el Contrato" });
       throw err;
     } finally {
       set({ isSubmitting: false });

@@ -27,6 +27,8 @@ import {
 import ContractPage from "@/pages/contract/components/ContractPage.tsx";
 import ContractAddPage from "@/pages/contract/components/ContractAddPage.tsx";
 import ContractEditPage from "@/pages/contract/components/ContractEditPage.tsx";
+import { NotificationsRoute } from "./pages/notifications/lib/notifications.interface";
+import NotificationPage from "./pages/notifications/components/NotificationPage";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { token } = useAuthStore();
@@ -145,6 +147,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ContractEditPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path={NotificationsRoute}
+            element={
+              <ProtectedRoute>
+                <NotificationPage />
               </ProtectedRoute>
             }
           />

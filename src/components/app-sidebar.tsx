@@ -76,7 +76,7 @@ const data = {
         },
         {
           title: "Mensajes",
-          url: "#",
+          url: "/notificaciones",
           icon: MessageSquareText,
         },
       ],

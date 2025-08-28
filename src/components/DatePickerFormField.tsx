@@ -5,7 +5,6 @@ import { format, parseISO, isValid } from "date-fns";
 import { CalendarIcon, CalendarPlusIcon } from "lucide-react";
 import { es } from "date-fns/locale";
 import { Control, FieldValues, Path, useController } from "react-hook-form";
-
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -108,7 +107,7 @@ export function DatePickerFormField<T extends FieldValues>({
             <FormControl>
               <Button
                 variant="input"
-                className="w-full justify-between font-normal"
+                className="w-full justify-between font-normal truncate"
                 disabled={disabled}
               >
                 {displayValue}
@@ -140,7 +139,7 @@ export function DatePickerFormField<T extends FieldValues>({
               <Button
                 variant="input"
                 className={cn(
-                  "w-full justify-start text-left font-normal",
+                  "w-full justify-start text-left font-normal truncate",
                   !parsedDate && "text-muted-foreground"
                 )}
                 disabled={disabled}
@@ -161,6 +160,7 @@ export function DatePickerFormField<T extends FieldValues>({
               onSelect={handleChange}
               disabled={disabled}
               initialFocus
+              toYear={new Date().getFullYear() + 5}
             />
           </PopoverContent>
         </Popover>

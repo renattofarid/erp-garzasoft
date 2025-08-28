@@ -30,11 +30,15 @@ const contractBaseObject = z.object({
     .min(1, { message: "Número de contrato obligatorio" })
     .max(100),
   cliente_id: z.coerce.number().int().positive({ message: "Cliente Inválido" }),
-  tipo_contrato: z.string().min(1, { message: "Tipo de contrato obligatorio" }),
+  tipo_contrato: z.enum(["desarrollo", "saas", "soporte"], {
+    message: "Solo se permite desarrollo, saas o soporte",
+  }),
   total: z.coerce
     .number()
     .nonnegative({ message: "El total no puede ser negativo" }),
-  forma_pago: z.string().min(1, { message: "Forma de pago obligatoria" }),
+  forma_pago: z.enum(["unico", "parcial"], {
+    message: "Solo se permite unico o parcial",
+  }),
   productos_modulos: z
     .array(productoModuloSchema)
     .min(1, { message: "Debe agregar al menos un módulo" }),

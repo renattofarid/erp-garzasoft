@@ -41,8 +41,8 @@ export default function ContractAddPage() {
           fecha_inicio: "",
           fecha_fin: "",
           cliente_id: 0,
-          forma_pago: "",
-          tipo_contrato: "",
+          forma_pago: "unico",
+          tipo_contrato: "saas",
           total: 0,
           productos_modulos: [],
         }}

@@ -69,7 +69,7 @@ export function FormSelect({
                     variant="input"
                     role="combobox"
                     className={cn(
-                      "w-full justify-between min-h-8 border border-primary bg-transparent hover:bg-transparent",
+                      "w-full justify-between min-h-8 border border-primary bg-transparent hover:bg-transparent truncate",
                       !field.value && "text-muted-foreground"
                     )}
                   >

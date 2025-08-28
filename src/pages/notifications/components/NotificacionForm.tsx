@@ -24,7 +24,6 @@ import { DatePickerFormField } from "@/components/DatePickerFormField";
 import { useAllClients } from "@/pages/client/lib/client.hook";
 import FormSkeleton from "@/components/FormSkeleton";
 import { FormSelect } from "@/components/FormSelect";
-import ContractModuleForm from "./ContractModuleForm";
 import { useAllProducts } from "@/pages/products/lib/product.hook";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -57,9 +56,9 @@ export const ContractForm = ({
       fecha_fin: "",
       numero: "",
       cliente_id: undefined as unknown as number,
-      tipo_contrato: "saas",
+      tipo_contrato: "",
       total: 0,
-      forma_pago: "unico",
+      forma_pago: "",
       productos_modulos: [],
       ...defaultValues,
     },
@@ -87,8 +86,6 @@ export const ContractForm = ({
 
   // 3) total = suma(precio)
   const productos = watch("productos_modulos");
-  const paymentMethod = watch("forma_pago");
-
   const sum = useMemo(
     () =>
       (productos ?? []).reduce((acc, x) => acc + (Number(x?.precio) || 0), 0),
@@ -105,8 +102,8 @@ export const ContractForm = ({
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 w-full">
         <div className="flex flex-col gap-4">
-          <Label className="font-semibold mb-2 md:col-span-3">Cliente</Label>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 bg-modal p-4 rounded-lg">
+          <div className="grid grid-cols-3 gap-4 bg-modal p-4 rounded-lg">
+            <Label className="font-semibold mb-2 col-span-3">Cliente</Label>
             <FormField
               control={control}
               name="numero"
@@ -124,7 +121,7 @@ export const ContractForm = ({
             <DatePickerFormField
               control={control}
               name="fecha_inicio"
-              captionLayout="dropdown"
+              captionLayout="label"
               dateFormat="dd/MM/yyyy"
               label="Fecha Inicio"
               placeholder="Selecciona una fecha"
@@ -133,7 +130,7 @@ export const ContractForm = ({
             <DatePickerFormField
               control={control}
               name="fecha_fin"
-              captionLayout="dropdown"
+              captionLayout="label"
               dateFormat="dd/MM/yyyy"
               label="Fecha Fin"
               placeholder="Selecciona una fecha"
@@ -185,7 +182,7 @@ export const ContractForm = ({
               />
             </div>
 
-            <div className="w-fit mx-auto overflow-x-auto">
+            <div className="w-fit mx-auto">
               {fields.length === 0 && (
                 <p className="text-sm text-muted-foreground">
                   No hay items. Agrega al menos uno.
@@ -194,7 +191,7 @@ export const ContractForm = ({
 
               {fields.length > 0 && (
                 <div className="grid grid-cols-12 items-center gap-2 mb-2 font-semibold text-sm text-muted-foreground">
-                  <span className="col-span-1 hidden md:block"></span>
+                  <span className="col-span-1"></span>
                   <span className="col-span-3">Producto</span>
                   <span className="col-span-4">Módulo ID</span>
                   <span className="col-span-3">Precio</span>
@@ -207,7 +204,7 @@ export const ContractForm = ({
                   key={row.id ?? index}
                   className="grid grid-cols-12 items-center gap-2 mb-2"
                 >
-                  <span className="col-span-1 text-sm text-muted-foreground hidden md:block">
+                  <span className="col-span-1 text-sm text-muted-foreground">
                     {index + 1 < 10 ? `0${index + 1}` : index + 1}
                   </span>
 
@@ -277,7 +274,7 @@ export const ContractForm = ({
             </div>
           </div>
 
-          <div className="flex flex-col md:grid md:grid-cols-3 gap-3 bg-modal p-4 rounded-lg">
+          <div className="grid grid-cols-2 gap-3 bg-modal p-4 rounded-lg">
             <FormSelect
               control={control}
               label="Forma de pago"
@@ -285,25 +282,9 @@ export const ContractForm = ({
               placeholder="Selecciona una forma de pago"
               options={[
                 { label: "Parcial", value: "parcial" },
-                { label: "Único", value: "unico" },
+                { label: "Total", value: "total" },
               ]}
             />
-
-            {paymentMethod === "parcial" && (
-              <FormSelect
-                control={control}
-                label="Cuotas"
-                name="cuotas"
-                placeholder="Selecciona cantidad de cuotas"
-                options={[
-                  { label: "1", value: "1" },
-                  { label: "2", value: "2" },
-                  { label: "3", value: "3" },
-                  { label: "4", value: "4" },
-                  { label: "5", value: "5" },
-                ]}
-              />
-            )}
 
             <FormField
               control={control}

@@ -45,6 +45,7 @@ export default function ContractAddPage() {
           tipo_contrato: "saas",
           total: 0,
           productos_modulos: [],
+          cuotas: [],
         }}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}

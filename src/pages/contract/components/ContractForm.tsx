@@ -61,9 +61,11 @@ export const ContractForm = ({
       total: 0,
       forma_pago: "unico",
       productos_modulos: [],
+      cuotas: [],
       ...defaultValues,
     },
     mode: "onChange",
+    reValidateMode: "onChange",
   });
 
   const {
@@ -78,6 +80,10 @@ export const ContractForm = ({
     control,
     name: "productos_modulos",
   });
+
+  useEffect(() => {
+    form.trigger(); // fuerza validación inicial con los defaultValues ya seteados
+  }, []);
 
   const [open, setOpen] = useState(false);
 
@@ -95,12 +101,25 @@ export const ContractForm = ({
     [productos]
   );
 
+  const {
+    fields: cuotaFields,
+    append: appendCuota,
+    remove: removeCuota,
+  } = useFieldArray({
+    control,
+    name: "cuotas",
+  });
+
+  useEffect(() => {
+    form.trigger("cuotas");
+    console.log(form.formState.errors);
+  }, []);
+
   useEffect(() => {
     setValue("total", Math.round(sum * 100) / 100, { shouldValidate: true });
   }, [sum, setValue]);
 
   if (isLoading || !clients) return <FormSkeleton />;
-
   return (
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 w-full">
@@ -242,13 +261,13 @@ export const ContractForm = ({
                               step="0.01"
                               placeholder="precio"
                               value={field.value ?? ""}
-                              onChange={(e) =>
+                              onChange={(e) => {
                                 field.onChange(
                                   e.target.value === ""
                                     ? undefined
                                     : Number(e.target.value)
-                                )
-                              }
+                                );
+                              }}
                             />
                           </FormControl>
                           <FormMessage />
@@ -277,7 +296,7 @@ export const ContractForm = ({
             </div>
           </div>
 
-          <div className="flex flex-col md:grid md:grid-cols-3 gap-3 bg-modal p-4 rounded-lg">
+          <div className="flex flex-col md:grid md:grid-cols-2 gap-3 bg-modal p-4 rounded-lg">
             <FormSelect
               control={control}
               label="Forma de pago"
@@ -287,23 +306,10 @@ export const ContractForm = ({
                 { label: "Parcial", value: "parcial" },
                 { label: "Único", value: "unico" },
               ]}
+              onChange={() => {
+                form.trigger("cuotas");
+              }}
             />
-
-            {paymentMethod === "parcial" && (
-              <FormSelect
-                control={control}
-                label="Cuotas"
-                name="cuotas"
-                placeholder="Selecciona cantidad de cuotas"
-                options={[
-                  { label: "1", value: "1" },
-                  { label: "2", value: "2" },
-                  { label: "3", value: "3" },
-                  { label: "4", value: "4" },
-                  { label: "5", value: "5" },
-                ]}
-              />
-            )}
 
             <FormField
               control={control}
@@ -319,6 +325,104 @@ export const ContractForm = ({
               )}
             />
 
+            <div className="col-span-2">
+              {paymentMethod === "parcial" && (
+                <div className="flex flex-col bg-modal p-4 rounded-lg">
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="font-semibold">Cuotas</Label>
+                    <Button
+                      type="button"
+                      onClick={() =>
+                        appendCuota({ monto: 0, fecha_vencimiento: "" })
+                      }
+                    >
+                      Agregar cuota
+                    </Button>
+                  </div>
+
+                  {cuotaFields.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      No hay cuotas. Agrega al menos una.
+                    </p>
+                  )}
+
+                  {cuotaFields.length > 0 && (
+                    <div className="space-y-3 mx-auto gap-4">
+                      {cuotaFields.map((row, index) => (
+                        <div key={row.id} className="space-y-1">
+                          <div
+                            key={row.id}
+                            className="grid grid-cols-12 items-end gap-2"
+                          >
+                            <div className="col-span-5">
+                              <FormField
+                                control={control}
+                                name={`cuotas.${index}.monto`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Monto</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="Monto"
+                                        {...field}
+                                        value={field.value ?? ""}
+                                        onChange={(e) => {
+                                          field.onChange(
+                                            e.target.value === ""
+                                              ? undefined
+                                              : Number(e.target.value)
+                                          );
+                                          form.trigger("cuotas");
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            <div className="col-span-5">
+                              <DatePickerFormField
+                                control={control}
+                                name={`cuotas.${index}.fecha_vencimiento`}
+                                label="Fecha vencimiento"
+                                captionLayout="dropdown"
+                                dateFormat="dd/MM/yyyy"
+                                placeholder="Selecciona una fecha"
+                                onChange={() => {
+                                  form.trigger("cuotas");
+                                }}
+                              />
+                            </div>
+
+                            <div className="col-span-2 text-right">
+                              <Button
+                                type="button"
+                                size="icon"
+                                onClick={() => removeCuota(index)}
+                              >
+                                <Trash className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="flex w-full justify-center">
+                <FormField
+                  control={control}
+                  name="cuotas"
+                  render={() => <FormMessage />}
+                />
+              </div>
+            </div>
+
             <FormItem className="col-span-2">
               <FormLabel>Observaciones</FormLabel>
               <FormControl>
@@ -328,6 +432,14 @@ export const ContractForm = ({
             </FormItem>
           </div>
         </div>
+
+        <pre>
+          <code className="text-xs text-muted-foreground">
+            {JSON.stringify(form.getValues(), null, 2)}
+            {/* {JSON.stringify(form.formState.isValid, null, 2)} */}
+            {JSON.stringify(form.formState.errors, null, 2)}
+          </code>
+        </pre>
 
         <div className="flex gap-4 w-full justify-end">
           <Button type="button" variant="outline" onClick={onCancel}>

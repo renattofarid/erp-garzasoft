@@ -48,6 +48,7 @@ interface DatePickerFormFieldProps<T extends FieldValues> {
   dateFormat?: string;
   disabled?: boolean;
   captionLayout?: "label" | "dropdown" | "dropdown-months" | "dropdown-years";
+  onChange?: (date: Date | undefined) => void;
 }
 
 export function DatePickerFormField<T extends FieldValues>({
@@ -59,6 +60,7 @@ export function DatePickerFormField<T extends FieldValues>({
   dateFormat = "yyyy-MM-dd",
   disabled = false,
   captionLayout = "label",
+  onChange,
 }: DatePickerFormFieldProps<T>) {
   const isMobile = useIsMobile();
   const { field, fieldState } = useController({ control, name });
@@ -93,6 +95,7 @@ export function DatePickerFormField<T extends FieldValues>({
     } else {
       field.onChange("");
     }
+    onChange?.(date);
   };
 
   const [drawerOpen, setDrawerOpen] = useState(false);

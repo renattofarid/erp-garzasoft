@@ -36,6 +36,7 @@ interface FormSelectProps {
   placeholder?: string;
   options: Option[];
   control: Control<any>;
+  onChange?: (value: string) => void;
 }
 
 export function FormSelect({
@@ -45,6 +46,7 @@ export function FormSelect({
   placeholder,
   options,
   control,
+  onChange,
 }: FormSelectProps) {
   const [open, setOpen] = useState(false);
   return (
@@ -91,6 +93,7 @@ export function FormSelect({
                             option.value === field.value ? "" : option.value;
                           field.onChange(newValue);
                           setOpen(false);
+                          onChange?.(newValue);
                         }}
                       >
                         <Check

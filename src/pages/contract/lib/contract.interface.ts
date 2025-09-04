@@ -21,14 +21,18 @@ export interface ContractResponse {
   meta: Meta;
 }
 
+export type ContractType = "desarrollo" | "saas" | "soporte";
+export type SituacionCuota = "pendiente" | "pagado" | "vencido";
+export type FormaPago = "unico" | "parcial";
+
 export interface ContractResource {
   id: number;
   fecha_inicio: string;
   fecha_fin: string;
   numero: string;
-  tipo_contrato: string;
+  tipo_contrato: ContractType;
   total: string;
-  forma_pago: string;
+  forma_pago: FormaPago;
   cliente: Cliente;
   cuotas: Cuota[];
   contrato_producto_modulos: ContratoProductoModulo[];
@@ -63,8 +67,6 @@ interface ContratoProductoModulo {
   updated_at: string;
   deleted_at?: string;
 }
-
-export type SituacionCuota = "pendiente" | "pagado" | "vencido";
 
 interface Cuota {
   id: number;

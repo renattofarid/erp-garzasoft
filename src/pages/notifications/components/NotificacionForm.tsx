@@ -24,7 +24,6 @@ import { DatePickerFormField } from "@/components/DatePickerFormField";
 import { useAllClients } from "@/pages/client/lib/client.hook";
 import FormSkeleton from "@/components/FormSkeleton";
 import { FormSelect } from "@/components/FormSelect";
-import { useAllProducts } from "@/pages/products/lib/product.hook";
 import { Textarea } from "@/components/ui/textarea";
 
 // 1) Tipo fuerte del formulario = OUTPUT del schema de create
@@ -56,10 +55,7 @@ export const ContractForm = ({
       fecha_fin: "",
       numero: "",
       cliente_id: undefined as unknown as number,
-      tipo_contrato: "",
       total: 0,
-      forma_pago: "",
-      productos_modulos: [],
       ...defaultValues,
     },
     mode: "onChange",
@@ -75,21 +71,24 @@ export const ContractForm = ({
 
   const { fields, append, remove } = useFieldArray({
     control,
-    name: "productos_modulos",
+    
   });
 
   const [open, setOpen] = useState(false);
 
-  const productData = useAllProducts();
+  const notificationData = useAllNotifications();
 
   const { data: clients, isLoading } = useAllClients();
 
   // 3) total = suma(precio)
-  const productos = watch("productos_modulos");
+  const notificationos = watch("notificationos_modulos");
   const sum = useMemo(
     () =>
-      (productos ?? []).reduce((acc, x) => acc + (Number(x?.precio) || 0), 0),
-    [productos]
+      (notificationos ?? []).reduce(
+        (acc, x) => acc + (Number(x?.precio) || 0),
+        0
+      ),
+    [notificationos]
   );
 
   useEffect(() => {
@@ -168,7 +167,7 @@ export const ContractForm = ({
           <div className="flex flex-col bg-modal p-4 rounded-lg">
             <div className="flex items-center justify-between mb-3">
               <Label className="font-semibold mb-2 col-span-3">
-                Lista de Productos
+                Lista de Notificationos
               </Label>
               <Button type="button" onClick={() => setOpen(!open)}>
                 Agregar
@@ -177,7 +176,7 @@ export const ContractForm = ({
                 open={open}
                 onAssign={append}
                 control={control}
-                products={productData.data || []}
+                notifications={notificationData.data || []}
                 onOpenChange={() => setOpen(!open)}
               />
             </div>
@@ -192,7 +191,7 @@ export const ContractForm = ({
               {fields.length > 0 && (
                 <div className="grid grid-cols-12 items-center gap-2 mb-2 font-semibold text-sm text-muted-foreground">
                   <span className="col-span-1"></span>
-                  <span className="col-span-3">Producto</span>
+                  <span className="col-span-3">Notificationo</span>
                   <span className="col-span-4">Módulo ID</span>
                   <span className="col-span-3">Precio</span>
                   <span className="col-span-1"></span>
@@ -211,8 +210,9 @@ export const ContractForm = ({
                   <div className="col-span-3">
                     <Label>
                       {
-                        productData.data?.find((p) => p.id === row.producto_id)
-                          ?.nombre
+                        notificationData.data?.find(
+                          (p) => p.id === row.notificationo_id
+                        )?.nombre
                       }
                     </Label>
                   </div>
@@ -220,8 +220,8 @@ export const ContractForm = ({
                   <div className="col-span-4">
                     <Label>
                       {
-                        productData.data
-                          ?.find((p) => p.id === row.producto_id)
+                        notificationData.data
+                          ?.find((p) => p.id === row.notificationo_id)
                           ?.modulos.find((m) => m.id === row.modulo_id)?.nombre
                       }
                     </Label>
@@ -230,7 +230,7 @@ export const ContractForm = ({
                   <div className="col-span-3">
                     <FormField
                       control={control}
-                      name={`productos_modulos.${index}.precio`}
+                      name={`notificationos_modulos.${index}.precio`}
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>

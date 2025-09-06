@@ -1,6 +1,7 @@
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
 import HeaderComponent from "./header";
+import { AuthInitializer } from "./AuthInitializer";
 
 interface Props {
   children: React.ReactNode;
@@ -9,6 +10,7 @@ interface Props {
 export default function LayoutComponent({ children }: Props) {
   return (
     <SidebarProvider>
+      <AuthInitializer />
       <AppSidebar />
       <SidebarInset className="overflow-auto">
         <HeaderComponent />

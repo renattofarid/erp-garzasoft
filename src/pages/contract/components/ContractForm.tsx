@@ -82,7 +82,7 @@ export const ContractForm = ({
   });
 
   useEffect(() => {
-    form.trigger(); // fuerza validación inicial con los defaultValues ya seteados
+    mode === "update" && form.trigger(); // fuerza validación inicial con los defaultValues ya seteados
   }, []);
 
   const [open, setOpen] = useState(false);
@@ -111,8 +111,7 @@ export const ContractForm = ({
   });
 
   useEffect(() => {
-    form.trigger("cuotas");
-    console.log(form.formState.errors);
+    mode === "update" && form.trigger("cuotas");
   }, []);
 
   useEffect(() => {
@@ -177,11 +176,15 @@ export const ContractForm = ({
               options={[
                 {
                   label: "Desarrollo a Medida",
-                  value: "Desarrollo a Medida",
+                  value: "desarrollo",
                 },
                 {
                   label: "SaaS",
                   value: "saas",
+                },
+                {
+                  label: "Soporte",
+                  value: "soporte",
                 },
               ]}
             />
@@ -435,9 +438,9 @@ export const ContractForm = ({
 
         <pre>
           <code className="text-xs text-muted-foreground">
-            {JSON.stringify(form.getValues(), null, 2)}
+            {/* {JSON.stringify(form.getValues(), null, 2)} */}
             {/* {JSON.stringify(form.formState.isValid, null, 2)} */}
-            {JSON.stringify(form.formState.errors, null, 2)}
+            {/* {JSON.stringify(form.formState.errors, null, 2)} */}
           </code>
         </pre>
 

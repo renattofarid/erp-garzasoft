@@ -9,7 +9,7 @@ import {
 } from "./notification.interface";
 import { per_page } from "@/lib/core.function";
 
-const ENDPOINT = "notificationos";
+const ENDPOINT = "notificaciones";
 
 export async function getNotification({
   params,

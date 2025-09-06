@@ -38,14 +38,14 @@ export function GeneralModal({
       }}
     >
       <DialogContent
-        className={`w-[95vw] rounded-xl overflow-auto ${maxWidth}`}
+        className={`w-[95vw] px-2 md:p-6 rounded-xl overflow-auto ${maxWidth}`}
         onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
           {title && <DialogTitle>{title}</DialogTitle>}
           {subtitle && (
             <DialogDescription className="text-muted-foreground text-sm">
-              {subtitle}{" "}
+              {subtitle}
             </DialogDescription>
           )}
         </DialogHeader>

@@ -14,11 +14,13 @@ import {
 } from "@/pages/contract/lib/contract.interface.ts";
 import { deleteContract } from "@/pages/contract/lib/contract.actions.ts";
 import { useContracts } from "@/pages/contract/lib/contract.hook.ts";
+import NotificationModal from "@/pages/notifications/components/NotificationModal.tsx";
 
 export default function ContractPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [notificationId, setNotificationId] = useState<number | null>(null);
 
   const { data, meta, isLoading, refetch } = useContracts();
 
@@ -53,7 +55,10 @@ export default function ContractPage() {
       {/* Tabla */}
       <ContractTable
         isLoading={isLoading}
-        columns={ContractColumns({ onDelete: setDeleteId })}
+        columns={ContractColumns({
+          onDelete: setDeleteId,
+          onNotification: setNotificationId,
+        })}
         data={data || []}
       >
         <ContractOptions search={search} setSearch={setSearch} />
@@ -63,6 +68,14 @@ export default function ContractPage() {
         totalPages={meta?.last_page || 1}
         onPageChange={setPage}
       />
+      {/* Notificaciones */}
+      {notificationId !== null && (
+        <NotificationModal
+          id={notificationId}
+          open={true}
+          setOpen={(open) => !open && setNotificationId(null)}
+        />
+      )}
       {/* Formularios */}
       {deleteId !== null && (
         <SimpleDeleteDialog

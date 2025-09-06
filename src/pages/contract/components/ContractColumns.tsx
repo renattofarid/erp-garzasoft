@@ -12,8 +12,10 @@ import { format, parse } from "date-fns";
 
 export const ContractColumns = ({
   onDelete,
+  onNotification,
 }: {
   onDelete: (id: number) => void;
+  onNotification: (id: number) => void;
 }): ColumnDef<ContractResource>[] => [
   {
     accessorKey: "numero",
@@ -81,6 +83,9 @@ export const ContractColumns = ({
           <DropdownMenuGroup>
             <DropdownMenuItem onClick={() => router(`/contratos/editar/${id}`)}>
               Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onNotification(id)}>
+              Notificar
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => onDelete(id)}>
               Eliminar

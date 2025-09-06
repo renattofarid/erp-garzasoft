@@ -1,10 +1,10 @@
 // hooks/useUsers.ts
 import { useEffect } from "react";
-import { usenotificationStore } from "./notification.store";
+import { useNotificationStore } from "./notification.store";
 
 export function useNotifications(params?: Record<string, any>) {
   const { notifications, meta, isLoading, error, fetchnotifications } =
-    usenotificationStore();
+    useNotificationStore();
 
   useEffect(() => {
     if (!notifications) fetchnotifications(params);
@@ -21,7 +21,7 @@ export function useNotifications(params?: Record<string, any>) {
 
 export function useNotification(id: number) {
   const { notification, isFinding, error, fetchnotification } =
-    usenotificationStore();
+    useNotificationStore();
 
   useEffect(() => {
     fetchnotification(id);

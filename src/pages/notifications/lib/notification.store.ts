@@ -21,10 +21,10 @@ interface notificationStore {
   fetchnotifications: (params?: Record<string, any>) => Promise<void>;
   fetchnotification: (id: number) => Promise<void>;
   createnotification: (data: NotificationSchema) => Promise<void>;
-  updatenotification: (id: number, data: NotificationSchema) => Promise<void>;
+  updateNotification: (id: number, data: NotificationSchema) => Promise<void>;
 }
 
-export const usenotificationStore = create<notificationStore>((set) => ({
+export const useNotificationStore = create<notificationStore>((set) => ({
   notification: null,
   notifications: null,
   meta: null,
@@ -65,7 +65,7 @@ export const usenotificationStore = create<notificationStore>((set) => ({
     }
   },
 
-  updatenotification: async (id: number, data: NotificationSchema) => {
+  updateNotification: async (id: number, data: NotificationSchema) => {
     set({ isSubmitting: true, error: null });
     try {
       await updateNotification(id, data);

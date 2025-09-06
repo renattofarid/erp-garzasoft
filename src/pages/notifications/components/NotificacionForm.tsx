@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
 import {
@@ -12,310 +11,148 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader, Trash } from "lucide-react";
-import {
-  contractCreateSchema,
-  contractUpdateSchema,
-} from "@/pages/contract/lib/contract.schema"; // <- sin ".ts"
-import { Label } from "@/components/ui/label";
-import { DatePickerFormField } from "@/components/DatePickerFormField";
-import { useAllClients } from "@/pages/client/lib/client.hook";
-import FormSkeleton from "@/components/FormSkeleton";
-import { FormSelect } from "@/components/FormSelect";
+import { Loader } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { notificationSchemaCreate } from "../lib/notification.schema";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ContractResource } from "@/pages/contract/lib/contract.interface";
+import { Input } from "@/components/ui/input";
+import { format, parse } from "date-fns";
+import { useEffect } from "react";
 
 // 1) Tipo fuerte del formulario = OUTPUT del schema de create
-type ContractFormValues = z.output<typeof contractCreateSchema>;
+type ContractFormValues = z.output<typeof notificationSchemaCreate>;
 
 interface ContractFormProps {
   defaultValues: Partial<ContractFormValues>;
   onSubmit: (data: ContractFormValues) => void;
   onCancel?: () => void;
   isSubmitting?: boolean;
-  mode?: "create" | "update";
+  contract: ContractResource | null;
 }
 
-export const ContractForm = ({
+export const NotificationForm = ({
   onCancel,
   defaultValues,
   onSubmit,
   isSubmitting = false,
-  mode = "create",
+  contract,
 }: ContractFormProps) => {
-  // 2) Schema de runtime tipado para el resolver como ZodType<ContractFormValues>
-  const runtimeSchema =
-    mode === "create" ? contractCreateSchema : contractUpdateSchema;
-
   const form = useForm<ContractFormValues>({
-    resolver: zodResolver(runtimeSchema),
+    resolver: zodResolver(notificationSchemaCreate),
     defaultValues: {
-      fecha_inicio: "",
-      fecha_fin: "",
-      numero: "",
-      cliente_id: undefined as unknown as number,
-      total: 0,
       ...defaultValues,
     },
     mode: "onChange",
   });
 
-  const {
-    control,
-    watch,
-    setValue,
-    handleSubmit,
-    formState: { isValid },
-  } = form;
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    
-  });
-
-  const [open, setOpen] = useState(false);
-
-  const notificationData = useAllNotifications();
-
-  const { data: clients, isLoading } = useAllClients();
-
-  // 3) total = suma(precio)
-  const notificationos = watch("notificationos_modulos");
-  const sum = useMemo(
-    () =>
-      (notificationos ?? []).reduce(
-        (acc, x) => acc + (Number(x?.precio) || 0),
-        0
-      ),
-    [notificationos]
-  );
+  const { control, handleSubmit } = form;
 
   useEffect(() => {
-    setValue("total", Math.round(sum * 100) / 100, { shouldValidate: true });
-  }, [sum, setValue]);
-
-  if (isLoading || !clients) return <FormSkeleton />;
+    form.trigger();
+  }, [contract]);
 
   return (
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 w-full">
-        <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-3 gap-4 bg-modal p-4 rounded-lg">
-            <Label className="font-semibold mb-2 col-span-3">Cliente</Label>
+        <div className="flex flex-col gap-4 bg-modal p-4 rounded-lg">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
             <FormField
               control={control}
-              name="numero"
+              name="contrato_id"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Número</FormLabel>
+                <FormItem className="col-span-1 md:col-span-2 hidden">
+                  <FormLabel>Contrato</FormLabel>
                   <FormControl>
-                    <Input placeholder="CT-2025-001" {...field} />
+                    <Input placeholder="Contrato" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <DatePickerFormField
-              control={control}
-              name="fecha_inicio"
-              captionLayout="label"
-              dateFormat="dd/MM/yyyy"
-              label="Fecha Inicio"
-              placeholder="Selecciona una fecha"
-            />
-
-            <DatePickerFormField
-              control={control}
-              name="fecha_fin"
-              captionLayout="label"
-              dateFormat="dd/MM/yyyy"
-              label="Fecha Fin"
-              placeholder="Selecciona una fecha"
-            />
-
-            <FormSelect
-              control={control}
-              label="Cliente"
-              name="cliente_id"
-              placeholder="Selecciona un cliente"
-              options={clients.map((client) => ({
-                label: client.razon_social,
-                value: client.id.toString(),
-              }))}
-            />
-
-            <FormSelect
-              control={control}
-              label="Tipo de contrato"
-              name="tipo_contrato"
-              placeholder="Selecciona un tipo"
-              options={[
-                {
-                  label: "Desarrollo a Medida",
-                  value: "Desarrollo a Medida",
-                },
-                {
-                  label: "SaaS",
-                  value: "saas",
-                },
-              ]}
-            />
-          </div>
-
-          <div className="flex flex-col bg-modal p-4 rounded-lg">
-            <div className="flex items-center justify-between mb-3">
-              <Label className="font-semibold mb-2 col-span-3">
-                Lista de Notificationos
-              </Label>
-              <Button type="button" onClick={() => setOpen(!open)}>
-                Agregar
-              </Button>
-              <ContractModuleForm
-                open={open}
-                onAssign={append}
-                control={control}
-                notifications={notificationData.data || []}
-                onOpenChange={() => setOpen(!open)}
-              />
-            </div>
-
-            <div className="w-fit mx-auto">
-              {fields.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  No hay items. Agrega al menos uno.
-                </p>
-              )}
-
-              {fields.length > 0 && (
-                <div className="grid grid-cols-12 items-center gap-2 mb-2 font-semibold text-sm text-muted-foreground">
-                  <span className="col-span-1"></span>
-                  <span className="col-span-3">Notificationo</span>
-                  <span className="col-span-4">Módulo ID</span>
-                  <span className="col-span-3">Precio</span>
-                  <span className="col-span-1"></span>
-                </div>
-              )}
-
-              {fields.map((row, index) => (
-                <div
-                  key={row.id ?? index}
-                  className="grid grid-cols-12 items-center gap-2 mb-2"
-                >
-                  <span className="col-span-1 text-sm text-muted-foreground">
-                    {index + 1 < 10 ? `0${index + 1}` : index + 1}
-                  </span>
-
-                  <div className="col-span-3">
-                    <Label>
-                      {
-                        notificationData.data?.find(
-                          (p) => p.id === row.notificationo_id
-                        )?.nombre
-                      }
-                    </Label>
-                  </div>
-
-                  <div className="col-span-4">
-                    <Label>
-                      {
-                        notificationData.data
-                          ?.find((p) => p.id === row.notificationo_id)
-                          ?.modulos.find((m) => m.id === row.modulo_id)?.nombre
-                      }
-                    </Label>
-                  </div>
-
-                  <div className="col-span-3">
-                    <FormField
-                      control={control}
-                      name={`notificationos_modulos.${index}.precio`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="precio"
-                              value={field.value ?? ""}
-                              onChange={(e) =>
-                                field.onChange(
-                                  e.target.value === ""
-                                    ? undefined
-                                    : Number(e.target.value)
-                                )
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="col-span-1 text-right">
-                    <Button
-                      type="button"
-                      size="icon"
-                      onClick={() => remove(index)}
-                    >
-                      <Trash className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-
-              {fields.length > 0 && (
-                <div className="mt-3 text-right text-sm text-muted-foreground">
-                  Subtotal módulos: {sum.toFixed(2)}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 bg-modal p-4 rounded-lg">
-            <FormSelect
-              control={control}
-              label="Forma de pago"
-              name="forma_pago"
-              placeholder="Selecciona una forma de pago"
-              options={[
-                { label: "Parcial", value: "parcial" },
-                { label: "Total", value: "total" },
-              ]}
-            />
-
-            <FormField
-              control={control}
-              name="total"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Precio Total</FormLabel>
-                  <FormControl>
-                    <Input type="number" value={field.value ?? 0} disabled />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormItem className="col-span-2">
-              <FormLabel>Observaciones</FormLabel>
+            <FormItem className="col-span-1 md:col-span-2">
+              <FormLabel>Cliente</FormLabel>
               <FormControl>
-                <Textarea />
+                <Input
+                  disabled
+                  placeholder="Cliente"
+                  value={
+                    contract?.cliente.razon_social ??
+                    contract?.cliente.dueno_nombre
+                  }
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
+
+            <FormField
+              control={control}
+              name="detalle"
+              render={({ field }) => (
+                <FormItem className="col-span-1 md:col-span-2">
+                  <FormLabel>Mensaje</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Mensaje" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="overflow-x-auto w-full flex">
+            <Table className="w-full">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cuota</TableHead>
+                  <TableHead>Vencimiento</TableHead>
+                  <TableHead>Monto</TableHead>
+                  <TableHead>Situación</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {contract?.cuotas.map((cuota, index) => (
+                  <TableRow key={cuota.id}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>
+                      {format(
+                        parse(
+                          cuota.fecha_vencimiento.split("T")[0],
+                          "yyyy-MM-dd",
+                          new Date()
+                        ),
+                        "dd/MM/yyyy"
+                      )}
+                    </TableCell>
+                    <TableCell>{cuota.monto}</TableCell>
+                    <TableCell>{cuota.situacion}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </div>
+
+        {/* <code>{JSON.stringify(form.formState.errors)}</code> */}
 
         <div className="flex gap-4 w-full justify-end">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancelar
           </Button>
 
-          <Button type="submit" disabled={isSubmitting || !isValid}>
+          <Button
+            type="submit"
+            disabled={isSubmitting || !form.formState.isValid}
+          >
             <Loader
               className={`mr-2 h-4 w-4 ${!isSubmitting ? "hidden" : ""}`}
             />

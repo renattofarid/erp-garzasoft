@@ -141,7 +141,7 @@ export const contractCreateSchema = contractBaseObject.superRefine(
             code: z.ZodIssueCode.custom,
             message:
               "La fecha de la última cuota debe coincidir con la fecha fin del contrato",
-            path: ["cuotas", data.cuotas.length - 1],
+            path: ["cuotas"],
           });
         }
       }

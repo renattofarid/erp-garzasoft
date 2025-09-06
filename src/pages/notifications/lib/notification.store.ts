@@ -39,7 +39,7 @@ export const useNotificationStore = create<notificationStore>((set) => ({
       const { data, meta } = await getNotification({ params });
       set({ notifications: data, meta, isLoading: false });
     } catch (err) {
-      set({ error: "Error al cargar tipos de usuarios", isLoading: false });
+      set({ error: "Error al cargar notificaciones", isLoading: false });
     }
   },
 

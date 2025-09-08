@@ -8,6 +8,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+
 interface Props {
   page: number;
   totalPages: number;
@@ -48,10 +49,9 @@ export default function DataTablePagination({
     pages.push(i);
   }
 
-  // ...el resto del componente igual
   return (
     <Pagination>
-      <PaginationContent>
+      <PaginationContent className="mt-[">
         <PaginationItem>
           <PaginationPrevious
             href="#"

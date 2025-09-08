@@ -57,7 +57,7 @@ export const ClientForm = ({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 w-full">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 bg-sidebar rounded-lg">
-          <Label className="font-semibold mb-2 col-span-3">
+          <Label className="font-semibold mb-2 md:col-span-2 xl:col-span-3">
             Información básica del cliente
           </Label>
 
@@ -172,7 +172,7 @@ export const ClientForm = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 bg-sidebar rounded-lg">
-          <Label className="font-semibold mb-2 col-span-3">
+          <Label className="font-semibold mb-2 md:col-span-2 xl:col-span-3">
             Datos del Dueño
           </Label>
 
@@ -224,7 +224,7 @@ export const ClientForm = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 bg-sidebar rounded-lg">
-          <Label className="font-semibold mb-2 col-span-3">
+          <Label className="font-semibold mb-2 md:col-span-2 xl:col-span-3">
             Datos del Representante
           </Label>
 

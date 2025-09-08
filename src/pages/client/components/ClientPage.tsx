@@ -60,6 +60,7 @@ export default function ClientPage() {
 
       <DataTablePagination
         page={page}
+        
         totalPages={meta?.last_page || 1}
         onPageChange={setPage}
       />

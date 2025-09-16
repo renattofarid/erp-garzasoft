@@ -23,8 +23,12 @@ export default function ContractAddPage() {
         router(ContractRoute);
         refetch();
       })
-      .catch(() => {
-        errorToast("Hubo un error al crear el Contrato");
+      .catch((error: any) => {
+        errorToast(
+          error?.response?.data?.error ||
+            error?.response?.data?.message ||
+            "Error al crear el contrato"
+        );
       });
   };
 

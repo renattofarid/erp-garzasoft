@@ -86,6 +86,19 @@ export const ContractForm = ({
   }, []);
 
   const [open, setOpen] = useState(false);
+  const [numberOfInstallments, setNumberOfInstallments] = useState<number>(1);
+  const [manualSum, setManualSum] = useState<number>(0);
+
+  // Función para recalcular el sum manualmente
+  const recalculateSum = () => {
+    const currentValues = form.getValues("productos_modulos") || [];
+    const newSum = currentValues.reduce((acc, x) => {
+      const precio = Number(x?.precio) || 0;
+      return acc + precio;
+    }, 0);
+    setManualSum(newSum);
+    return newSum;
+  };
 
   const productData = useAllProducts();
 
@@ -94,17 +107,26 @@ export const ContractForm = ({
   // 3) total = suma(precio)
   const productos = watch("productos_modulos");
   const paymentMethod = watch("forma_pago");
+  const total = watch("total");
+  const fechaInicio = watch("fecha_inicio");
+  const fechaFin = watch("fecha_fin");
 
-  const sum = useMemo(
-    () =>
-      (productos ?? []).reduce((acc, x) => acc + (Number(x?.precio) || 0), 0),
-    [productos]
-  );
+  const sum = useMemo(() => {
+    const currentValues = form.getValues("productos_modulos") || [];
+    const total = currentValues.reduce((acc, x) => {
+      const precio = Number(x?.precio) || 0;
+      return acc + precio;
+    }, 0);
+    console.log("Productos desde getValues:", currentValues);
+    console.log("Sum calculado:", total);
+    return total;
+  }, [productos, form]);
 
   const {
     fields: cuotaFields,
     append: appendCuota,
     remove: removeCuota,
+    replace: replaceCuotas,
   } = useFieldArray({
     control,
     name: "cuotas",
@@ -115,15 +137,98 @@ export const ContractForm = ({
   }, []);
 
   useEffect(() => {
-    setValue("total", Math.round(sum * 100) / 100, { shouldValidate: true });
-  }, [sum, setValue]);
+    const finalSum = manualSum || sum;
+    setValue("total", Math.round(finalSum * 100) / 100, {
+      shouldValidate: true,
+    });
+  }, [sum, manualSum, setValue]);
+
+  // Función para ajustar cuotas existentes al nuevo total
+  const adjustExistingInstallments = () => {
+    if (cuotaFields.length === 0 || !total) return;
+
+    const installmentAmount =
+      Math.round((total / cuotaFields.length) * 100) / 100;
+    const lastInstallmentAmount =
+      Math.round((total - installmentAmount * (cuotaFields.length - 1)) * 100) /
+      100;
+
+    const updatedCuotas = cuotaFields.map((cuota, index) => ({
+      monto:
+        index === cuotaFields.length - 1
+          ? lastInstallmentAmount
+          : installmentAmount,
+      fecha_vencimiento: cuota.fecha_vencimiento,
+    }));
+
+    replaceCuotas(updatedCuotas);
+    setTimeout(() => form.trigger("cuotas"), 0);
+  };
+
+  // Verificar si las cuotas están desbalanceadas
+  const currentInstallmentsSum = cuotaFields.reduce(
+    (acc, cuota) => acc + (Number(cuota.monto) || 0),
+    0
+  );
+  const isInstallmentsUnbalanced =
+    paymentMethod === "parcial" &&
+    cuotaFields.length > 0 &&
+    total > 0 &&
+    Math.abs(currentInstallmentsSum - total) > 0.01;
+  const generateInstallments = () => {
+    if (
+      !numberOfInstallments ||
+      numberOfInstallments < 1 ||
+      !total ||
+      !fechaInicio
+    ) {
+      return;
+    }
+
+    const installmentAmount =
+      Math.round((total / numberOfInstallments) * 100) / 100;
+    const lastInstallmentAmount =
+      Math.round(
+        (total - installmentAmount * (numberOfInstallments - 1)) * 100
+      ) / 100;
+
+    const startDate = new Date(fechaInicio);
+    const fechaFin = watch("fecha_fin");
+    const newCuotas = [];
+
+    for (let i = 0; i < numberOfInstallments; i++) {
+      let dueDate: Date;
+
+      if (i === numberOfInstallments - 1 && fechaFin) {
+        // La última cuota debe coincidir con la fecha fin del contrato
+        dueDate = new Date(fechaFin);
+      } else {
+        // Las demás cuotas se distribuyen mensualmente desde la fecha de inicio
+        dueDate = new Date(startDate);
+        dueDate.setMonth(startDate.getMonth() + i);
+      }
+
+      newCuotas.push({
+        monto:
+          i === numberOfInstallments - 1
+            ? lastInstallmentAmount
+            : installmentAmount,
+        fecha_vencimiento: dueDate.toISOString().split("T")[0], // formato YYYY-MM-DD
+      });
+    }
+
+    replaceCuotas(newCuotas);
+    setTimeout(() => form.trigger("cuotas"), 0);
+  };
 
   if (isLoading || !clients) return <FormSkeleton />;
   return (
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 w-full">
         <div className="flex flex-col gap-4">
-          <Label className="font-semibold mb-2 md:col-span-3">Cliente</Label>
+          <Label className="font-semibold md:col-span-3 text-xl">
+            Cliente
+          </Label>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 bg-modal p-4 rounded-lg">
             <FormField
               control={control}
@@ -265,11 +370,21 @@ export const ContractForm = ({
                               placeholder="precio"
                               value={field.value ?? ""}
                               onChange={(e) => {
-                                field.onChange(
+                                const newValue =
                                   e.target.value === ""
-                                    ? undefined
-                                    : Number(e.target.value)
+                                    ? 0
+                                    : Number(e.target.value);
+                                console.log(
+                                  "Precio cambiado:",
+                                  newValue,
+                                  "en index:",
+                                  index
                                 );
+                                field.onChange(newValue);
+                                // Recalcular sum manualmente
+                                setTimeout(() => {
+                                  recalculateSum();
+                                }, 0);
                               }}
                             />
                           </FormControl>
@@ -293,7 +408,7 @@ export const ContractForm = ({
 
               {fields.length > 0 && (
                 <div className="mt-3 text-right text-sm text-muted-foreground">
-                  Subtotal módulos: {sum.toFixed(2)}
+                  Subtotal módulos: {(manualSum || sum).toFixed(2)}
                 </div>
               )}
             </div>
@@ -331,39 +446,119 @@ export const ContractForm = ({
             <div className="col-span-2">
               {paymentMethod === "parcial" && (
                 <div className="flex flex-col bg-modal p-4 rounded-lg">
+                  {/* Alerta de desbalance */}
+                  {isInstallmentsUnbalanced && (
+                    <div className="mb-4 p-3 bg-background shadow rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                            <span className="text-xs text-primary-foreground">
+                              !
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-primary">
+                              Las cuotas no coinciden con el total
+                            </p>
+                            <p className="text-xs text-secondary">
+                              <strong>Total: S/.{total.toFixed(2)}</strong> |
+                              Suma cuotas: S/.
+                              {currentInstallmentsSum.toFixed(2)}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="destructive"
+                          onClick={adjustExistingInstallments}
+                        >
+                          Ajustar cuotas
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between mb-3">
                     <Label className="font-semibold">Cuotas</Label>
-                    <Button
-                      type="button"
-                      onClick={() =>
-                        appendCuota({ monto: 0, fecha_vencimiento: "" })
-                      }
-                    >
-                      Agregar cuota
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        <Label className="text-sm">Número de cuotas:</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          max="48"
+                          value={numberOfInstallments}
+                          onChange={(e) =>
+                            setNumberOfInstallments(Number(e.target.value))
+                          }
+                          className="w-20"
+                          placeholder="1"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={generateInstallments}
+                          disabled={
+                            !total ||
+                            !fechaInicio ||
+                            !fechaFin ||
+                            numberOfInstallments < 1
+                          }
+                          title={
+                            !total || !fechaInicio || !fechaFin
+                              ? "Necesitas completar: total, fecha inicio y fecha fin"
+                              : numberOfInstallments < 1
+                              ? "El número de cuotas debe ser mayor a 0"
+                              : "Generar cuotas automáticamente"
+                          }
+                        >
+                          Generar
+                        </Button>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() =>
+                          appendCuota({ monto: 0, fecha_vencimiento: "" })
+                        }
+                      >
+                        Agregar cuota manual
+                      </Button>
+                    </div>
                   </div>
 
                   {cuotaFields.length === 0 && (
                     <p className="text-sm text-muted-foreground">
-                      No hay cuotas. Agrega al menos una.
+                      No hay cuotas. Agrega al menos una o genera
+                      automáticamente.
                     </p>
                   )}
 
                   {cuotaFields.length > 0 && (
                     <div className="space-y-3 mx-auto gap-4">
+                      <div className="grid grid-cols-12 items-center gap-2 mb-2 font-semibold text-sm text-muted-foreground">
+                        <span className="col-span-1">#</span>
+                        <span className="col-span-5">Monto</span>
+                        <span className="col-span-5">Fecha Vencimiento</span>
+                        <span className="col-span-1"></span>
+                      </div>
                       {cuotaFields.map((row, index) => (
                         <div key={row.id} className="space-y-1">
                           <div
                             key={row.id}
                             className="grid grid-cols-12 items-end gap-2"
                           >
+                            <div className="col-span-1 text-sm text-muted-foreground">
+                              {index + 1}
+                            </div>
+
                             <div className="col-span-5">
                               <FormField
                                 control={control}
                                 name={`cuotas.${index}.monto`}
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Monto</FormLabel>
                                     <FormControl>
                                       <Input
                                         type="number"
@@ -391,7 +586,6 @@ export const ContractForm = ({
                               <DatePickerFormField
                                 control={control}
                                 name={`cuotas.${index}.fecha_vencimiento`}
-                                label="Fecha vencimiento"
                                 captionLayout="dropdown"
                                 dateFormat="dd/MM/yyyy"
                                 placeholder="Selecciona una fecha"
@@ -401,10 +595,11 @@ export const ContractForm = ({
                               />
                             </div>
 
-                            <div className="col-span-2 text-right">
+                            <div className="col-span-1 text-right">
                               <Button
                                 type="button"
                                 size="icon"
+                                variant="outline"
                                 onClick={() => removeCuota(index)}
                               >
                                 <Trash className="w-4 h-4" />
@@ -413,6 +608,42 @@ export const ContractForm = ({
                           </div>
                         </div>
                       ))}
+
+                      {cuotaFields.length > 0 && (
+                        <div className="mt-3 text-right text-sm">
+                          <span className="text-muted-foreground">
+                            Total cuotas:{" "}
+                            {cuotaFields
+                              .reduce(
+                                (acc, cuota) =>
+                                  acc + (Number(cuota.monto) || 0),
+                                0
+                              )
+                              .toFixed(2)}
+                          </span>
+                          {Math.abs(
+                            total -
+                              cuotaFields.reduce(
+                                (acc, cuota) =>
+                                  acc + (Number(cuota.monto) || 0),
+                                0
+                              )
+                          ) > 0.01 && (
+                            <span className="ml-2 text-red-500">
+                              (Diferencia:{" "}
+                              {(
+                                total -
+                                cuotaFields.reduce(
+                                  (acc, cuota) =>
+                                    acc + (Number(cuota.monto) || 0),
+                                  0
+                                )
+                              ).toFixed(2)}
+                              )
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

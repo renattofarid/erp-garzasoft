@@ -156,7 +156,7 @@ export const NotificationForm = ({
             <Loader
               className={`mr-2 h-4 w-4 ${!isSubmitting ? "hidden" : ""}`}
             />
-            {isSubmitting ? "Guardando" : "Guardar"}
+            {isSubmitting ? "Enviando" : "Enviar"}
           </Button>
         </div>
       </form>

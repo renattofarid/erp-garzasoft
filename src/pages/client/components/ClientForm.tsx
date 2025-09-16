@@ -21,6 +21,7 @@ import {
 import { Loader, Plus, Trash } from "lucide-react";
 import { FormSelect } from "@/components/FormSelect.tsx";
 import { Label } from "@/components/ui/label.tsx";
+import { useEffect } from "react";
 
 interface MetricFormProps {
   defaultValues: Partial<ClientSchema>;
@@ -42,16 +43,25 @@ export const ClientForm = ({
       mode === "create" ? clientSchemaCreate : clientSchemaUpdate
     ),
     defaultValues: {
+      contactos: [{ nombre: "", celular: "", email: "" }],
+      sucursales: [{ nombre: "" }],
       ...defaultValues,
     },
     mode: "onChange",
   });
 
   const { control } = form;
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: "contactos",
   });
+
+  useEffect(() => {
+    if (mode === "update") {
+      form.trigger();
+    }
+  }, [mode, form]);
 
   return (
     <Form {...form}>
@@ -108,65 +118,79 @@ export const ClientForm = ({
             control={form.control}
             name="sucursales"
             render={({ field }) => (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {field.value?.map((item, index) => (
-                  <FormItem
-                    key={index}
-                    className="flex flex-col md:flex-row items-start gap-2"
-                  >
-                    <div className="w-full flex-1">
-                      <FormControl>
-                        <Input
-                          placeholder="Sucursal"
-                          value={item.nombre}
-                          onChange={(e) => {
-                            const newValue = [...(field.value || [])];
-                            newValue[index] = { nombre: e.target.value };
-                            field.onChange(newValue);
-                          }}
+              <FormItem>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {field.value?.map((item, index) => (
+                    <div
+                      key={index}
+                      className="flex flex-col md:flex-row items-start gap-2"
+                    >
+                      <div className="w-full flex-1">
+                        <FormField
+                          control={form.control}
+                          name={`sucursales.${index}.nombre`}
+                          render={({ field: sucursalField }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input
+                                  placeholder="Sucursal"
+                                  {...sucursalField}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </div>
+                      </div>
 
-                    {field.value !== undefined &&
-                      field.value.length === index + 1 && (
-                        <>
-                          {field.value.length > 1 && (
+                      {field.value !== undefined &&
+                        field.value.length === index + 1 && (
+                          <>
+                            {field.value.length > 1 && (
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="outline"
+                                onClick={() => {
+                                  if (!field.value) return;
+                                  const newValue = field.value.filter(
+                                    (_, i) => i !== index
+                                  );
+                                  field.onChange(newValue);
+                                  // Trigger validation after removing
+                                  setTimeout(
+                                    () => form.trigger("sucursales"),
+                                    0
+                                  );
+                                }}
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button
                               type="button"
-                              size="icon"
                               onClick={() => {
-                                if (!field.value) return;
-                                const newValue = field.value.filter(
-                                  (_, i) => i !== index
-                                );
-                                field.onChange(newValue);
+                                const current =
+                                  form.getValues("sucursales") || [];
+                                form.setValue("sucursales", [
+                                  ...current,
+                                  { nombre: "" },
+                                ]);
+                                // Trigger validation after adding
+                                setTimeout(() => form.trigger("sucursales"), 0);
                               }}
+                              className="col-span-1 md:col-span-2 xl:col-span-3"
+                              size="icon"
                             >
-                              <Trash className="h-4 w-4" />
+                              <Plus className="h-4 w-4" />
                             </Button>
-                          )}
-                          <Button
-                            type="button"
-                            onClick={() => {
-                              const current =
-                                form.getValues("sucursales") || [];
-                              form.setValue("sucursales", [
-                                ...current,
-                                { nombre: "" },
-                              ]);
-                            }}
-                            className="col-span-1 md:col-span-2 xl:col-span-3"
-                            size="icon"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                  </FormItem>
-                ))}
-              </div>
+                          </>
+                        )}
+                    </div>
+                  ))}
+                </div>
+                <FormMessage />
+              </FormItem>
             )}
           />
         </div>
@@ -284,7 +308,11 @@ export const ClientForm = ({
             <Button
               type="button"
               size="sm"
-              onClick={() => append({ nombre: "", celular: "", email: "" })}
+              onClick={() => {
+                append({ nombre: "", celular: "", email: "" });
+                // Trigger validation after adding
+                setTimeout(() => form.trigger("contactos"), 0);
+              }}
             >
               <Plus className="w-4 h-4 mr-2" />
               Agregar responsable
@@ -294,79 +322,85 @@ export const ClientForm = ({
           <FormField
             control={form.control}
             name="contactos"
-            render={({ field }) => (
-              <div className="grid grid-cols-1 gap-4">
-                {fields.map((item, index) => (
-                  <div
-                    key={item.id}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start"
-                  >
-                    <FormField
-                      control={form.control}
-                      name={`contactos.${index}.nombre`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input placeholder="Nombre" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`contactos.${index}.celular`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              maxLength={9}
-                              placeholder="Celular"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="flex items-center gap-2 w-full">
+            render={() => (
+              <FormItem>
+                <div className="grid grid-cols-1 gap-4">
+                  {fields.map((item, index) => (
+                    <div
+                      key={item.id}
+                      className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start"
+                    >
                       <FormField
                         control={form.control}
-                        name={`contactos.${index}.email`}
+                        name={`contactos.${index}.nombre`}
                         render={({ field }) => (
-                          <FormItem className="w-full">
+                          <FormItem>
                             <FormControl>
-                              <Input placeholder="Email" {...field} />
+                              <Input placeholder="Nombre" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      {field.value?.length
-                        ? field.value.length > 1 && (
-                            <Button
-                              className=""
-                              type="button"
-                              size="icon"
-                              onClick={() => remove(index)}
-                            >
-                              <Trash className="w-4 h-4" />
-                            </Button>
-                          )
-                        : null}
+
+                      <FormField
+                        control={form.control}
+                        name={`contactos.${index}.celular`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                maxLength={9}
+                                placeholder="Celular"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="flex items-center gap-2 w-full">
+                        <FormField
+                          control={form.control}
+                          name={`contactos.${index}.email`}
+                          render={({ field }) => (
+                            <FormItem className="w-full">
+                              <FormControl>
+                                <Input placeholder="Email" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        {fields.length > 1 && (
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="outline"
+                            onClick={() => {
+                              remove(index);
+                              // Trigger validation after removing
+                              setTimeout(() => form.trigger("contactos"), 0);
+                            }}
+                          >
+                            <Trash className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+                <FormMessage />
+              </FormItem>
             )}
           />
         </div>
-
-        {/* <pre>
+        {/* 
+        <pre>
           <code className="text-xs text-muted-foreground">
             {JSON.stringify(form.getValues(), null, 2)}
+            {JSON.stringify(form.formState.errors, null, 2)}
           </code>
         </pre> */}
 

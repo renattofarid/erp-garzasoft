@@ -1,4 +1,4 @@
-import { Control, FieldArrayWithId } from "react-hook-form";
+import { Control } from "react-hook-form";
 import {
   FormField,
   FormItem,
@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { CreditCard } from "lucide-react";
 import { FormSelect } from "@/components/FormSelect";
 
@@ -42,10 +41,6 @@ export const PaymentSidebar = ({
   control,
   paymentMethod,
   total,
-  fieldsLength,
-  sum,
-  manualSum,
-  cuotaFields,
   numberOfInstallments,
   setNumberOfInstallments,
   generateInstallments,

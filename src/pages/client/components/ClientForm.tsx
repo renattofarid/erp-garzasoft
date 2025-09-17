@@ -120,7 +120,7 @@ export const ClientForm = ({
             render={({ field }) => (
               <FormItem>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {field.value?.map((item, index) => (
+                  {field.value?.map((_, index) => (
                     <div
                       key={index}
                       className="flex flex-col md:flex-row items-start gap-2"

@@ -11,7 +11,7 @@ import { FileText } from "lucide-react";
 import { DatePickerFormField } from "@/components/DatePickerFormField";
 import { FormSelect } from "@/components/FormSelect";
 import { Matcher } from "react-day-picker";
-import { format, parse } from "date-fns";
+import { parse } from "date-fns";
 
 interface Client {
   id: number;

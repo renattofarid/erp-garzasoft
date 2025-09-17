@@ -124,7 +124,7 @@ export const ContractColumns = ({
             </DropdownMenuItem>
             {overduePaymentCount > 0 && (
               <DropdownMenuItem onSelect={() => onNotification(id)}>
-                Notificar ({overduePaymentCount})
+                Notificar <Badge className="rounded-full">{overduePaymentCount}</Badge>
               </DropdownMenuItem>
             )}
             <DropdownMenuItem onSelect={() => onDelete(id)}>

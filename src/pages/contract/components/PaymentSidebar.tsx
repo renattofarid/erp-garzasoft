@@ -133,10 +133,10 @@ export const PaymentSidebar = ({
       {/* Configuración de Cuotas */}
       {paymentMethod === "parcial" && (
         <div className="p-6 bg-modal border rounded-lg shadow-sm">
-          <div className="space-y-4">
+          <div className="flex flex-col gap-2">
             <div>
-              <h3 className="font-semibold mb-2">Configuración de Cuotas</h3>
-              <p className="text-sm text-muted-foreground mb-4">
+              <h3 className="font-semibold mb-0">Configuración de Cuotas</h3>
+              <p className="text-sm text-muted-foreground mb-0">
                 Genera o agrega cuotas manualmente
               </p>
             </div>
@@ -169,9 +169,6 @@ export const PaymentSidebar = ({
             )}
 
             <div>
-              <Label className="text-sm mb-2 block">
-                Generación automática
-              </Label>
               <div className="space-y-2">
                 <Input
                   type="number"
@@ -218,28 +215,6 @@ export const PaymentSidebar = ({
                 Agregar cuota manual
               </Button>
             </div>
-
-            {/* Lista compacta de cuotas cuando hay pocas */}
-            {cuotaFields.length > 0 && cuotaFields.length <= 3 && (
-              <div className="pt-4 border-t">
-                <h4 className="text-sm font-medium mb-2">
-                  Cuotas configuradas:
-                </h4>
-                <div className="space-y-2">
-                  {cuotaFields.map((cuota, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between items-center text-sm p-2 bg-muted rounded text-primary"
-                    >
-                      <span>Cuota {index + 1}</span>
-                      <span className="font-medium">
-                        S/. {Number(cuota.monto || 0).toFixed(2)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}

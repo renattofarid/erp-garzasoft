@@ -124,19 +124,21 @@ export const ContractForm = ({
         </div>
 
         {/* Tabla de Cuotas - Full Width solo cuando hay muchas cuotas */}
-        <InstallmentsTable
-          control={control}
-          cuotaFields={cuotaFields}
-          removeCuota={removeCuota}
-          total={total}
-          currentInstallmentsSum={currentInstallmentsSum}
-          onTrigger={() => form.trigger("cuotas")}
-        />
+        {paymentMethod === "parcial" && (
+          <InstallmentsTable
+            control={control}
+            cuotaFields={cuotaFields}
+            removeCuota={removeCuota}
+            total={total}
+            currentInstallmentsSum={currentInstallmentsSum}
+            onTrigger={() => form.trigger("cuotas")}
+          />
+        )}
 
-        <pre>
+        {/* <pre>
           <code>{JSON.stringify(form.getValues(), null, 2)}</code>
           <code>{JSON.stringify(form.formState.errors, null, 2)}</code>
-        </pre>
+        </pre> */}
 
         {/* Botones de acción */}
         <div className="flex flex-col sm:flex-row gap-4 w-full justify-end pt-6 border-t">

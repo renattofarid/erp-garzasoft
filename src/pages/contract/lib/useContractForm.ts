@@ -179,25 +179,27 @@ export const useContractForm = ({
         monto: total,
         fecha_vencimiento: fechaFin,
       });
-    } else {
-      // Calcular el intervalo de días entre cuotas
-      const intervalDays = Math.floor(totalDays / (numberOfInstallments - 1));
-
+    } else if (totalDays <= 0) {
+      // Si las fechas son iguales o inválidas, todas las cuotas van a fecha fin
+      for (let i = 0; i < numberOfInstallments; i++) {
+        newCuotas.push({
+          monto:
+            i === numberOfInstallments - 1
+              ? lastInstallmentAmount
+              : installmentAmount,
+          fecha_vencimiento: fechaFin,
+        });
+      }
+    } else if (numberOfInstallments <= totalDays + 1) {
+      // Caso normal: hay suficientes días para distribuir
       for (let i = 0; i < numberOfInstallments; i++) {
         let dueDate: Date;
 
         if (i === numberOfInstallments - 1) {
           // La última cuota siempre debe ser la fecha fin
           dueDate = new Date(endDate);
-        } else if (i === 0) {
-          // La primera cuota puede ser la fecha inicio o un poco después
-          dueDate = new Date(startDate);
-          // Opcional: agregar algunos días a la primera cuota para dar tiempo
-          dueDate.setDate(
-            dueDate.getDate() + Math.max(1, Math.floor(intervalDays / 4))
-          );
         } else {
-          // Distribuir proporcionalmente las cuotas intermedias
+          // Distribuir proporcionalmente
           const daysFromStart = Math.floor(
             (totalDays / (numberOfInstallments - 1)) * i
           );
@@ -212,6 +214,39 @@ export const useContractForm = ({
               : installmentAmount,
           fecha_vencimiento: dueDate.toISOString().split("T")[0],
         });
+      }
+    } else {
+      // Caso extremo: más cuotas que días disponibles
+      // Distribuir las cuotas entre los días disponibles, agrupando cuando sea necesario
+
+      const fechasDisponibles = [];
+      for (let day = 0; day <= totalDays; day++) {
+        const fecha = new Date(startDate);
+        fecha.setDate(fecha.getDate() + day);
+        fechasDisponibles.push(fecha.toISOString().split("T")[0]);
+      }
+
+      // Distribuir cuotas entre las fechas disponibles
+      const cuotasPorFecha = Math.floor(
+        numberOfInstallments / fechasDisponibles.length
+      );
+      const cuotasExtra = numberOfInstallments % fechasDisponibles.length;
+
+      let cuotaIndex = 0;
+      for (let fechaIdx = 0; fechaIdx < fechasDisponibles.length; fechaIdx++) {
+        const cuotasEnEstaFecha =
+          cuotasPorFecha + (fechaIdx < cuotasExtra ? 1 : 0);
+
+        for (let c = 0; c < cuotasEnEstaFecha; c++) {
+          const esUltimaCuota = cuotaIndex === numberOfInstallments - 1;
+          newCuotas.push({
+            monto: esUltimaCuota ? lastInstallmentAmount : installmentAmount,
+            fecha_vencimiento: esUltimaCuota
+              ? fechaFin
+              : fechasDisponibles[fechaIdx],
+          });
+          cuotaIndex++;
+        }
       }
     }
 

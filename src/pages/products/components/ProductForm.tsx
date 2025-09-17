@@ -58,7 +58,7 @@ export const ProductForm = ({
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 w-full">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
           {/* Formulario del producto */}
-          <div className="md:col-span-4 col-span-12 bg-tertiary p-4 rounded-lg space-y-4">
+          <div className="md:col-span-4 col-span-12 bg-modal p-4 rounded-lg space-y-4">
             <FormField
               control={form.control}
               name="nombre"
@@ -89,7 +89,7 @@ export const ProductForm = ({
           </div>
 
           {/* Lista de Módulos */}
-          <div className="md:col-span-8 col-span-12 bg-tertiary p-4 rounded-lg">
+          <div className="md:col-span-8 col-span-12 bg-modal p-4 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold">Lista de Módulos</h3>
               <Button

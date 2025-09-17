@@ -57,7 +57,7 @@ export const PaymentSidebar = ({
   fechaFin,
 }: PaymentSidebarProps) => {
   return (
-    <div className="sticky top-4 space-y-6 border-l px-6 h-full">
+    <div className="sticky top-4 space-y-3">
       {/* Sección de Pagos */}
       <div className="space-y-4">
         <div className="flex items-center gap-3">
@@ -72,44 +72,46 @@ export const PaymentSidebar = ({
           </div>
         </div>
 
-        <FormSelect
-          control={control}
-          label="Forma de Pago"
-          name="forma_pago"
-          placeholder="Selecciona una forma de pago"
-          options={[
-            { label: "Pago Parcial (Cuotas)", value: "parcial" },
-            { label: "Pago Único", value: "unico" },
-          ]}
-        />
+        <div className="p-4 bg-modal border rounded-lg shadow-sm space-y-4">
+          <FormSelect
+            control={control}
+            label="Forma de Pago"
+            name="forma_pago"
+            placeholder="Selecciona una forma de pago"
+            options={[
+              { label: "Pago Parcial (Cuotas)", value: "parcial" },
+              { label: "Pago Único", value: "unico" },
+            ]}
+          />
 
-        <FormField
-          control={control}
-          name="total"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Precio Total</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                    S/.
-                  </span>
-                  <Input
-                    type="number"
-                    value={field.value ?? 0}
-                    disabled
-                    className="pl-10 font-semibold text-lg text-right"
-                  />
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={control}
+            name="total"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Precio Total</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      S/.
+                    </span>
+                    <Input
+                      type="number"
+                      value={field.value ?? 0}
+                      disabled
+                      className="pl-10 font-semibold text-lg text-right"
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
       </div>
 
       {/* Stats Rápidas */}
-      <div className="p-4 bg-modal border rounded-lg shadow-sm">
+      {/* <div className="p-4 bg-modal border rounded-lg shadow-sm">
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Productos:</span>
@@ -128,11 +130,11 @@ export const PaymentSidebar = ({
             </div>
           )}
         </div>
-      </div>
+      </div> */}
 
       {/* Configuración de Cuotas */}
       {paymentMethod === "parcial" && (
-        <div className="p-6 bg-modal border rounded-lg shadow-sm">
+        <div className="p-4 bg-modal border rounded-lg shadow-sm">
           <div className="flex flex-col gap-2">
             <div>
               <h3 className="font-semibold mb-0">Configuración de Cuotas</h3>
@@ -143,25 +145,27 @@ export const PaymentSidebar = ({
 
             {/* Alerta de desbalance */}
             {isInstallmentsUnbalanced && (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
+              <div className="p-3 bg-muted border border-primary rounded-lg mb-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
-                    <span className="text-xs text-yellow-800 font-bold">!</span>
+                  <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-xs text-primary-foreground font-bold">
+                      !
+                    </span>
                   </div>
-                  <p className="text-sm font-medium text-yellow-800">
+                  <p className="text-sm font-bold text-primary">
                     Cuotas desbalanceadas
                   </p>
                 </div>
-                <p className="text-xs text-yellow-600 mb-3">
+                <p className="text-xs text-primary mb-3">
                   Total: S/. {total.toFixed(2)} | Suma: S/.{" "}
                   {currentInstallmentsSum.toFixed(2)}
                 </p>
                 <Button
                   type="button"
                   size="sm"
-                  variant="outline"
+                  variant="destructive"
                   onClick={adjustExistingInstallments}
-                  className="w-full bg-yellow-100 border-yellow-300 hover:bg-yellow-200"
+                  className="w-full"
                 >
                   Ajustar cuotas
                 </Button>

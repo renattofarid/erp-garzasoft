@@ -77,9 +77,9 @@ export const ContractForm = ({
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 w-full">
         {/* Layout Grid Principal */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           {/* Columna Izquierda - Información del Contrato y Productos */}
-          <div className="xl:col-span-2 space-y-6">
+          <div className="xl:col-span-3 space-y-6">
             <ContractBasicInfo
               fechaInicio={fechaInicio}
               control={control}
@@ -101,7 +101,7 @@ export const ContractForm = ({
           </div>
 
           {/* Columna Derecha - Todo lo relacionado con Pagos */}
-          <div className="xl:col-span-1">
+          <div className="xl:col-span-2 xl:col-start-4 xl:px-6 xl:border-l h-full space-y-4">
             <PaymentSidebar
               control={control}
               paymentMethod={paymentMethod}
@@ -120,21 +120,18 @@ export const ContractForm = ({
               fechaInicio={fechaInicio}
               fechaFin={fechaFin}
             />
+            {paymentMethod === "parcial" && (
+              <InstallmentsTable
+                control={control}
+                cuotaFields={cuotaFields}
+                removeCuota={removeCuota}
+                total={total}
+                currentInstallmentsSum={currentInstallmentsSum}
+                onTrigger={() => form.trigger("cuotas")}
+              />
+            )}
           </div>
         </div>
-
-        {/* Tabla de Cuotas - Full Width solo cuando hay muchas cuotas */}
-        {paymentMethod === "parcial" && (
-          <InstallmentsTable
-            control={control}
-            cuotaFields={cuotaFields}
-            removeCuota={removeCuota}
-            total={total}
-            currentInstallmentsSum={currentInstallmentsSum}
-            onTrigger={() => form.trigger("cuotas")}
-          />
-        )}
-
         {/* <pre>
           <code>{JSON.stringify(form.getValues(), null, 2)}</code>
           <code>{JSON.stringify(form.formState.errors, null, 2)}</code>

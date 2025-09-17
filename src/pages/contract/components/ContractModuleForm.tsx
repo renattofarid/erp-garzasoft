@@ -154,10 +154,10 @@ export default function ContractModuleForm({
                 {alreadyAddedModules.map((modulo) => (
                   <div
                     key={`added-${modulo.id}`}
-                    className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-md"
+                    className="flex items-center gap-2 p-2 bg-muted border border-muted rounded-md"
                   >
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-green-800">
+                    <CheckCircle className="w-4 h-4 text-secondary" />
+                    <span className="text-sm text-primary">
                       {modulo.nombre}
                     </span>
                     <Badge variant="secondary" className="ml-auto text-xs">
@@ -171,7 +171,7 @@ export default function ContractModuleForm({
 
           {/* Módulos disponibles */}
           {availableModules.length > 0 && (
-            <div className="space-y-3">
+            <div>
               <h4 className="font-medium text-sm">
                 Módulos disponibles para agregar:
               </h4>

@@ -57,12 +57,12 @@ export const InstallmentsTable = ({
         </div>
       </div>
 
-      <div className="rounded-lg border bg-modal">
+      <div className="rounded-lg border">
         {/* Desktop Table */}
         <div className="hidden md:block">
           <Table>
-            <TableHeader>
-              <TableRow className="bg-muted">
+            <TableHeader className="bg-modal">
+              <TableRow className="hover:!bg-modal">
                 <TableHead className="w-16 text-center">#</TableHead>
                 <TableHead className="w-32 text-right">Monto (S/.)</TableHead>
                 <TableHead>Fecha de Vencimiento</TableHead>
@@ -86,6 +86,7 @@ export const InstallmentsTable = ({
                         <FormItem>
                           <FormControl>
                             <Input
+                              variant="neutral"
                               type="number"
                               step="0.01"
                               placeholder="0.00"
@@ -110,6 +111,7 @@ export const InstallmentsTable = ({
                   <TableCell>
                     <DatePickerFormField
                       control={control}
+                      variantButton="outline"
                       name={`cuotas.${index}.fecha_vencimiento`}
                       captionLayout="dropdown"
                       dateFormat="dd/MM/yyyy"
@@ -193,6 +195,7 @@ export const InstallmentsTable = ({
                   </p>
                   <DatePickerFormField
                     control={control}
+                    variantButton="outline"
                     name={`cuotas.${index}.fecha_vencimiento`}
                     captionLayout="dropdown"
                     dateFormat="dd/MM/yyyy"
@@ -206,14 +209,14 @@ export const InstallmentsTable = ({
         </div>
 
         {/* Footer */}
-        <div className="bg-muted/30 border-t p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="bg-modal border-t p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm">
             <span className="text-sm text-muted-foreground">
               {cuotaFields.length} cuota{cuotaFields.length !== 1 ? "s" : ""}{" "}
               configurada{cuotaFields.length !== 1 ? "s" : ""}
             </span>
             <div className="text-right">
-              <div className="font-semibold text-lg">
+              <div className="font-semibold">
                 Total cuotas: S/. {currentInstallmentsSum.toFixed(2)}
               </div>
               {Math.abs(total - currentInstallmentsSum) > 0.01 && (

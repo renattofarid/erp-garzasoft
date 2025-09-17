@@ -36,8 +36,12 @@ export default function ContractEditPage() {
         successToast("Contrato actualizado exitosamente");
         router(ContractRoute);
       })
-      .catch(() => {
-        errorToast("Hubo un error al actualizar el contrato");
+      .catch((error: any) => {
+        errorToast(
+          error?.response?.data?.error ||
+            error?.response?.data?.message ||
+            "Error al crear el contrato"
+        );
       });
   };
 

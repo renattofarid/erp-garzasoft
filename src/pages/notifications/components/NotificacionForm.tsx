@@ -120,23 +120,25 @@ export const NotificationForm = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {contract?.cuotas.map((cuota, index) => (
-                  <TableRow key={cuota.id}>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell>
-                      {format(
-                        parse(
-                          cuota.fecha_vencimiento.split("T")[0],
-                          "yyyy-MM-dd",
-                          new Date()
-                        ),
-                        "dd/MM/yyyy"
-                      )}
-                    </TableCell>
-                    <TableCell>{cuota.monto}</TableCell>
-                    <TableCell>{cuota.situacion}</TableCell>
-                  </TableRow>
-                ))}
+                {contract?.cuotas
+                  .filter((cuota) => cuota.situacion === "vencido")
+                  .map((cuota, index) => (
+                    <TableRow key={cuota.id}>
+                      <TableCell>{index + 1}</TableCell>
+                      <TableCell>
+                        {format(
+                          parse(
+                            cuota.fecha_vencimiento.split("T")[0],
+                            "yyyy-MM-dd",
+                            new Date()
+                          ),
+                          "dd/MM/yyyy"
+                        )}
+                      </TableCell>
+                      <TableCell>{cuota.monto}</TableCell>
+                      <TableCell>{cuota.situacion}</TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
           </div>

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import ContractModuleForm from "./ContractModuleForm";
 import { ProductResource } from "@/pages/products/lib/product.interface";
+import { Badge } from "@/components/ui/badge";
 
 interface ProductoModuloField {
   id: string;
@@ -111,13 +112,17 @@ export const ProductsSection = ({
                 <Table>
                   <TableHeader className="bg-accent">
                     <TableRow>
-                      <TableHead className="w-16 text-center">#</TableHead>
-                      <TableHead>Producto</TableHead>
-                      <TableHead>Módulo</TableHead>
-                      <TableHead className="w-32 text-center">
+                      <TableHead className="text-primary w-16 text-center">
+                        #
+                      </TableHead>
+                      <TableHead className="text-primary">Producto</TableHead>
+                      <TableHead className="text-primary">Módulo</TableHead>
+                      <TableHead className="text-primary w-32 text-center">
                         Precio (S/.)
                       </TableHead>
-                      <TableHead className="w-16 text-center">Acción</TableHead>
+                      <TableHead className="text-primary w-16 text-center">
+                        Acción
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -127,9 +132,7 @@ export const ProductsSection = ({
                         className="bg-background hover:bg-muted/50"
                       >
                         <TableCell className="text-center">
-                          <span className="inline-flex items-center justify-center w-7 h-7 text-xs font-medium rounded-full bg-primary/10 text-primary">
-                            {index + 1}
-                          </span>
+                          <Badge>{index + 1}</Badge>
                         </TableCell>
                         <TableCell className="font-medium">
                           {
@@ -272,13 +275,13 @@ export const ProductsSection = ({
               </div>
 
               {/* Footer */}
-              <div className="bg-muted/30 border-t p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <span className="text-sm text-muted-foreground">
+              <div className="bg-muted border-t p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm">
+                  <span className="text-muted-foreground">
                     {fields.length} producto{fields.length !== 1 ? "s" : ""}{" "}
                     agregado{fields.length !== 1 ? "s" : ""}
                   </span>
-                  <div className="font-semibold text-lg">
+                  <div className="font-semibold">
                     Subtotal: S/. {(manualSum || sum).toFixed(2)}
                   </div>
                 </div>

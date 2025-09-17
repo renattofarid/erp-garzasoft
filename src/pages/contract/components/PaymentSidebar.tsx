@@ -57,7 +57,7 @@ export const PaymentSidebar = ({
   fechaFin,
 }: PaymentSidebarProps) => {
   return (
-    <div className="sticky top-4 space-y-6">
+    <div className="sticky top-4 space-y-6 border-l px-6 h-full">
       {/* Sección de Pagos */}
       <div className="space-y-4">
         <div className="flex items-center gap-3">
@@ -229,7 +229,7 @@ export const PaymentSidebar = ({
                   {cuotaFields.map((cuota, index) => (
                     <div
                       key={index}
-                      className="flex justify-between items-center text-sm p-2 bg-muted/30 rounded"
+                      className="flex justify-between items-center text-sm p-2 bg-muted rounded text-primary"
                     >
                       <span>Cuota {index + 1}</span>
                       <span className="font-medium">

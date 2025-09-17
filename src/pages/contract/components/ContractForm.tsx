@@ -80,7 +80,11 @@ export const ContractForm = ({
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Columna Izquierda - Información del Contrato y Productos */}
           <div className="xl:col-span-2 space-y-6">
-            <ContractBasicInfo control={control} clients={clients} />
+            <ContractBasicInfo
+              fechaInicio={fechaInicio}
+              control={control}
+              clients={clients}
+            />
 
             <ProductsSection
               control={control}
@@ -128,6 +132,11 @@ export const ContractForm = ({
           currentInstallmentsSum={currentInstallmentsSum}
           onTrigger={() => form.trigger("cuotas")}
         />
+
+        <pre>
+          <code>{JSON.stringify(form.getValues(), null, 2)}</code>
+          <code>{JSON.stringify(form.formState.errors, null, 2)}</code>
+        </pre>
 
         {/* Botones de acción */}
         <div className="flex flex-col sm:flex-row gap-4 w-full justify-end pt-6 border-t">

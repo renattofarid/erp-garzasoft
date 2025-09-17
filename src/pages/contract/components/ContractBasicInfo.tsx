@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { FileText } from "lucide-react";
 import { DatePickerFormField } from "@/components/DatePickerFormField";
 import { FormSelect } from "@/components/FormSelect";
+import { Matcher } from "react-day-picker";
+import { format, parse } from "date-fns";
 
 interface Client {
   id: number;
@@ -19,11 +21,13 @@ interface Client {
 interface ContractBasicInfoProps {
   control: Control<any>;
   clients: Client[];
+  fechaInicio: string;
 }
 
 export const ContractBasicInfo = ({
   control,
   clients,
+  fechaInicio,
 }: ContractBasicInfoProps) => {
   return (
     <div className="space-y-4">
@@ -81,6 +85,16 @@ export const ContractBasicInfo = ({
           dateFormat="dd/MM/yyyy"
           label="Fecha de Finalización"
           placeholder="Selecciona una fecha"
+          disabledRange={
+            {
+              before: fechaInicio
+                ? new Date(
+                    parse(fechaInicio, "yyyy-MM-dd", new Date()).getTime() +
+                      24 * 60 * 60 * 1000
+                  )
+                : undefined,
+            } as Matcher
+          }
         />
 
         <FormSelect

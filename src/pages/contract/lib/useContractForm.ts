@@ -151,7 +151,8 @@ export const useContractForm = ({
       !numberOfInstallments ||
       numberOfInstallments < 1 ||
       !total ||
-      !fechaInicio
+      !fechaInicio ||
+      !fechaFin
     ) {
       return;
     }
@@ -164,25 +165,54 @@ export const useContractForm = ({
       ) / 100;
 
     const startDate = new Date(fechaInicio);
+    const endDate = new Date(fechaFin);
     const newCuotas = [];
 
-    for (let i = 0; i < numberOfInstallments; i++) {
-      let dueDate: Date;
+    // Calcular la diferencia en días entre fecha inicio y fin
+    const totalDays = Math.ceil(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
 
-      if (i === numberOfInstallments - 1 && fechaFin) {
-        dueDate = new Date(fechaFin);
-      } else {
-        dueDate = new Date(startDate);
-        dueDate.setMonth(startDate.getMonth() + i);
-      }
-
+    // Si solo hay una cuota, usar la fecha fin
+    if (numberOfInstallments === 1) {
       newCuotas.push({
-        monto:
-          i === numberOfInstallments - 1
-            ? lastInstallmentAmount
-            : installmentAmount,
-        fecha_vencimiento: dueDate.toISOString().split("T")[0],
+        monto: total,
+        fecha_vencimiento: fechaFin,
       });
+    } else {
+      // Calcular el intervalo de días entre cuotas
+      const intervalDays = Math.floor(totalDays / (numberOfInstallments - 1));
+
+      for (let i = 0; i < numberOfInstallments; i++) {
+        let dueDate: Date;
+
+        if (i === numberOfInstallments - 1) {
+          // La última cuota siempre debe ser la fecha fin
+          dueDate = new Date(endDate);
+        } else if (i === 0) {
+          // La primera cuota puede ser la fecha inicio o un poco después
+          dueDate = new Date(startDate);
+          // Opcional: agregar algunos días a la primera cuota para dar tiempo
+          dueDate.setDate(
+            dueDate.getDate() + Math.max(1, Math.floor(intervalDays / 4))
+          );
+        } else {
+          // Distribuir proporcionalmente las cuotas intermedias
+          const daysFromStart = Math.floor(
+            (totalDays / (numberOfInstallments - 1)) * i
+          );
+          dueDate = new Date(startDate);
+          dueDate.setDate(dueDate.getDate() + daysFromStart);
+        }
+
+        newCuotas.push({
+          monto:
+            i === numberOfInstallments - 1
+              ? lastInstallmentAmount
+              : installmentAmount,
+          fecha_vencimiento: dueDate.toISOString().split("T")[0],
+        });
+      }
     }
 
     replaceCuotas(newCuotas);

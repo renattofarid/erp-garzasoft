@@ -1,4 +1,4 @@
-import { Control, FieldArrayWithId } from "react-hook-form";
+import { Control } from "react-hook-form";
 import {
   FormField,
   FormItem,
@@ -113,7 +113,7 @@ export const InstallmentsTable = ({
                       captionLayout="dropdown"
                       dateFormat="dd/MM/yyyy"
                       placeholder="Selecciona fecha"
-                      onChange={() => onTrigger()}
+                      onChange={() =>{ onTrigger()}}
                     />
                   </div>
 

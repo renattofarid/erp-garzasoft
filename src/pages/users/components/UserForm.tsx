@@ -24,6 +24,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader } from "lucide-react";
 import { useTypeUsers } from "@/pages/type-users/lib/typeUser.hook.ts";
+import { FormSelect } from "@/components/FormSelect.tsx";
+import FormSkeleton from "@/components/FormSkeleton.tsx";
 
 interface MetricFormProps {
   defaultValues: Partial<UserSchema>;
@@ -52,40 +54,24 @@ export const UserForm = ({
 
   const { data: typeUsers, isLoading } = useTypeUsers();
 
+  if (isLoading) return <FormSkeleton />;
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
-        <div className="bg-tertiary rounded-lg p-6 space-y-4">
+        <div className="bg-modal rounded-lg p-6 space-y-4">
           <div className="grid grid-cols-1">
-            <FormField
+            <FormSelect
               control={form.control}
               name="tipo_usuario_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-normal">
-                    Tipo de Usuario
-                  </FormLabel>
-                  <Select
-                    onValueChange={(value) => field.onChange(Number(value))}
-                    value={field.value?.toString()}
-                    disabled={isLoading}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full border-primary">
-                        <SelectValue placeholder="Seleccione tipo de usuario" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {typeUsers?.map((type) => (
-                        <SelectItem key={type.id} value={type.id.toString()}>
-                          {type.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Tipo de Usuario"
+              placeholder="Selecciona el tipo"
+              options={
+                typeUsers?.map((type) => ({
+                  label: type.nombre,
+                  value: type.id.toString(),
+                })) || []
+              }
             />
           </div>
 

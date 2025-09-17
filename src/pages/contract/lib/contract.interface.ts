@@ -21,17 +21,21 @@ export interface ContractResponse {
   meta: Meta;
 }
 
+export type ContractType = "desarrollo" | "saas" | "soporte";
+export type SituacionCuota = "pendiente" | "pagado" | "vencido";
+export type FormaPago = "unico" | "parcial";
+
 export interface ContractResource {
   id: number;
   fecha_inicio: string;
   fecha_fin: string;
   numero: string;
-  tipo_contrato: string;
+  tipo_contrato: ContractType;
   total: string;
-  forma_pago: string;
+  forma_pago: FormaPago;
   cliente: Cliente;
-  cuotas: any[];
-  contrato_producto_modulos: ContratoProductoModulos[];
+  cuotas: Cuota[];
+  contrato_producto_modulos: ContratoProductoModulo[];
 }
 
 export interface Modulo {
@@ -41,7 +45,7 @@ export interface Modulo {
   contracto_id: number;
   created_at: Date;
   updated_at: Date;
-  deleted_at: null;
+  deleted_at?: string;
 }
 
 export interface ContractResourceById {
@@ -53,7 +57,30 @@ export interface getContractProps {
   params?: Record<string, any>;
 }
 
-export interface Cliente {
+interface ContratoProductoModulo {
+  id: number;
+  contrato_id: number;
+  producto_id: number;
+  modulo_id: number;
+  precio: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+}
+
+interface Cuota {
+  id: number;
+  contrato_id: number;
+  monto: number;
+  fecha_vencimiento: string;
+  fecha_pago?: string;
+  situacion: SituacionCuota;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+}
+
+interface Cliente {
   id: number;
   tipo: string;
   ruc: string;
@@ -66,16 +93,5 @@ export interface Cliente {
   representante_email: string;
   created_at: string;
   updated_at: string;
-  deleted_at?: any;
-}
-
-export interface ContratoProductoModulos {
-  id: number;
-  contrato_id: number;
-  producto_id: number;
-  modulo_id: number;
-  precio: number;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: any;
+  deleted_at?: string;
 }

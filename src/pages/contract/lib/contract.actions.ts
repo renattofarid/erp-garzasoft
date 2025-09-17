@@ -3,7 +3,6 @@ import { AxiosRequestConfig } from "axios";
 import { api } from "@/lib/config";
 import {
   getContractProps,
-  ContractResource,
   ContractResourceById,
   ContractResponse,
 } from "./contract.interface.ts";
@@ -24,13 +23,15 @@ export async function getContract({
   return data;
 }
 
-export async function getAllContracts(): Promise<ContractResource[]> {
+export async function getAllContracts({
+  params,
+}: getContractProps): Promise<ContractResponse> {
   const config: AxiosRequestConfig = {
     params: {
-      all: true, // Assuming you want to fetch all Contracts
+      ...params,
     },
   };
-  const { data } = await api.get<ContractResource[]>(ENDPOINT, config);
+  const { data } = await api.get<ContractResponse>(ENDPOINT, config);
   return data;
 }
 

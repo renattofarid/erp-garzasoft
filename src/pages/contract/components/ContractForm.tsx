@@ -1,34 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import type { z } from "zod";
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Loader, Trash } from "lucide-react";
-import {
-  contractCreateSchema,
-  contractUpdateSchema,
-} from "@/pages/contract/lib/contract.schema"; // <- sin ".ts"
-import { Label } from "@/components/ui/label";
-import { DatePickerFormField } from "@/components/DatePickerFormField";
+import { Loader } from "lucide-react";
 import { useAllClients } from "@/pages/client/lib/client.hook";
-import FormSkeleton from "@/components/FormSkeleton";
-import { FormSelect } from "@/components/FormSelect";
-import ContractModuleForm from "./ContractModuleForm";
 import { useAllProducts } from "@/pages/products/lib/product.hook";
-import { Textarea } from "@/components/ui/textarea";
+import FormSkeleton from "@/components/FormSkeleton";
+import { ContractBasicInfo } from "./ContractBasicInfo";
+import { ProductsSection } from "./ProductsSection";
+import { PaymentSidebar } from "./PaymentSidebar";
+import { InstallmentsTable } from "./InstallmentsTable";
+import type { z } from "zod";
+import { contractCreateSchema } from "@/pages/contract/lib/contract.schema";
+import { useContractForm } from "../lib/useContractForm";
 
-// 1) Tipo fuerte del formulario = OUTPUT del schema de create
 type ContractFormValues = z.output<typeof contractCreateSchema>;
 
 interface ContractFormProps {
@@ -46,281 +31,132 @@ export const ContractForm = ({
   isSubmitting = false,
   mode = "create",
 }: ContractFormProps) => {
-  // 2) Schema de runtime tipado para el resolver como ZodType<ContractFormValues>
-  const runtimeSchema =
-    mode === "create" ? contractCreateSchema : contractUpdateSchema;
-
-  const form = useForm<ContractFormValues>({
-    resolver: zodResolver(runtimeSchema),
-    defaultValues: {
-      fecha_inicio: "",
-      fecha_fin: "",
-      numero: "",
-      cliente_id: undefined as unknown as number,
-      tipo_contrato: "",
-      total: 0,
-      forma_pago: "",
-      productos_modulos: [],
-      ...defaultValues,
-    },
-    mode: "onChange",
-  });
+  const { data: clients, isLoading } = useAllClients();
+  const { data: productData } = useAllProducts();
 
   const {
+    // Form
+    form,
     control,
-    watch,
-    setValue,
     handleSubmit,
-    formState: { isValid },
-  } = form;
+    isValid,
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "productos_modulos",
-  });
+    // Products
+    fields,
+    append,
+    remove,
+    open,
+    setOpen,
 
-  const [open, setOpen] = useState(false);
+    // Calculations
+    sum,
+    manualSum,
+    recalculateSum,
 
-  const productData = useAllProducts();
+    // Installments
+    cuotaFields,
+    appendCuota,
+    removeCuota,
+    numberOfInstallments,
+    setNumberOfInstallments,
+    generateInstallments,
+    adjustExistingInstallments,
+    currentInstallmentsSum,
+    isInstallmentsUnbalanced,
 
-  const { data: clients, isLoading } = useAllClients();
-
-  // 3) total = suma(precio)
-  const productos = watch("productos_modulos");
-  const sum = useMemo(
-    () =>
-      (productos ?? []).reduce((acc, x) => acc + (Number(x?.precio) || 0), 0),
-    [productos]
-  );
-
-  useEffect(() => {
-    setValue("total", Math.round(sum * 100) / 100, { shouldValidate: true });
-  }, [sum, setValue]);
+    // Watch values
+    paymentMethod,
+    total,
+    fechaInicio,
+    fechaFin,
+  } = useContractForm({ defaultValues, mode });
 
   if (isLoading || !clients) return <FormSkeleton />;
 
   return (
     <Form {...form}>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 w-full">
-        <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-3 gap-4 bg-modal p-4 rounded-lg">
-            <Label className="font-semibold mb-2 col-span-3">Cliente</Label>
-            <FormField
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 w-full">
+        {/* Layout Grid Principal */}
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+          {/* Columna Izquierda - Información del Contrato y Productos */}
+          <div className="xl:col-span-3 space-y-6">
+            <ContractBasicInfo
+              fechaInicio={fechaInicio}
               control={control}
-              name="numero"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Número</FormLabel>
-                  <FormControl>
-                    <Input placeholder="CT-2025-001" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              clients={clients}
             />
 
-            <DatePickerFormField
+            <ProductsSection
               control={control}
-              name="fecha_inicio"
-              captionLayout="label"
-              dateFormat="dd/MM/yyyy"
-              label="Fecha Inicio"
-              placeholder="Selecciona una fecha"
-            />
-
-            <DatePickerFormField
-              control={control}
-              name="fecha_fin"
-              captionLayout="label"
-              dateFormat="dd/MM/yyyy"
-              label="Fecha Fin"
-              placeholder="Selecciona una fecha"
-            />
-
-            <FormSelect
-              control={control}
-              label="Cliente"
-              name="cliente_id"
-              placeholder="Selecciona un cliente"
-              options={clients.map((client) => ({
-                label: client.razon_social,
-                value: client.id.toString(),
-              }))}
-            />
-
-            <FormSelect
-              control={control}
-              label="Tipo de contrato"
-              name="tipo_contrato"
-              placeholder="Selecciona un tipo"
-              options={[
-                {
-                  label: "Desarrollo a Medida",
-                  value: "Desarrollo a Medida",
-                },
-                {
-                  label: "SaaS",
-                  value: "saas",
-                },
-              ]}
+              fields={fields}
+              append={append}
+              remove={remove}
+              open={open}
+              setOpen={setOpen}
+              products={productData || []}
+              sum={sum}
+              manualSum={manualSum}
+              recalculateSum={recalculateSum}
             />
           </div>
 
-          <div className="flex flex-col bg-modal p-4 rounded-lg">
-            <div className="flex items-center justify-between mb-3">
-              <Label className="font-semibold mb-2 col-span-3">
-                Lista de Productos
-              </Label>
-              <Button type="button" onClick={() => setOpen(!open)}>
-                Agregar
-              </Button>
-              <ContractModuleForm
-                open={open}
-                onAssign={append}
+          {/* Columna Derecha - Todo lo relacionado con Pagos */}
+          <div className="xl:col-span-2 xl:col-start-4 xl:px-6 xl:border-l h-full space-y-4">
+            <PaymentSidebar
+              control={control}
+              paymentMethod={paymentMethod}
+              total={total}
+              fieldsLength={fields.length}
+              sum={sum}
+              manualSum={manualSum}
+              cuotaFields={cuotaFields}
+              numberOfInstallments={numberOfInstallments}
+              setNumberOfInstallments={setNumberOfInstallments}
+              generateInstallments={generateInstallments}
+              appendCuota={appendCuota}
+              adjustExistingInstallments={adjustExistingInstallments}
+              isInstallmentsUnbalanced={isInstallmentsUnbalanced}
+              currentInstallmentsSum={currentInstallmentsSum}
+              fechaInicio={fechaInicio}
+              fechaFin={fechaFin}
+            />
+            {paymentMethod === "parcial" && (
+              <InstallmentsTable
                 control={control}
-                products={productData.data || []}
-                onOpenChange={() => setOpen(!open)}
+                cuotaFields={cuotaFields}
+                removeCuota={removeCuota}
+                total={total}
+                currentInstallmentsSum={currentInstallmentsSum}
+                onTrigger={() => form.trigger("cuotas")}
               />
-            </div>
-
-            <div className="w-fit mx-auto">
-              {fields.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  No hay items. Agrega al menos uno.
-                </p>
-              )}
-
-              {fields.length > 0 && (
-                <div className="grid grid-cols-12 items-center gap-2 mb-2 font-semibold text-sm text-muted-foreground">
-                  <span className="col-span-1"></span>
-                  <span className="col-span-3">Producto</span>
-                  <span className="col-span-4">Módulo ID</span>
-                  <span className="col-span-3">Precio</span>
-                  <span className="col-span-1"></span>
-                </div>
-              )}
-
-              {fields.map((row, index) => (
-                <div
-                  key={row.id ?? index}
-                  className="grid grid-cols-12 items-center gap-2 mb-2"
-                >
-                  <span className="col-span-1 text-sm text-muted-foreground">
-                    {index + 1 < 10 ? `0${index + 1}` : index + 1}
-                  </span>
-
-                  <div className="col-span-3">
-                    <Label>
-                      {
-                        productData.data?.find((p) => p.id === row.producto_id)
-                          ?.nombre
-                      }
-                    </Label>
-                  </div>
-
-                  <div className="col-span-4">
-                    <Label>
-                      {
-                        productData.data
-                          ?.find((p) => p.id === row.producto_id)
-                          ?.modulos.find((m) => m.id === row.modulo_id)?.nombre
-                      }
-                    </Label>
-                  </div>
-
-                  <div className="col-span-3">
-                    <FormField
-                      control={control}
-                      name={`productos_modulos.${index}.precio`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="precio"
-                              value={field.value ?? ""}
-                              onChange={(e) =>
-                                field.onChange(
-                                  e.target.value === ""
-                                    ? undefined
-                                    : Number(e.target.value)
-                                )
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="col-span-1 text-right">
-                    <Button
-                      type="button"
-                      size="icon"
-                      onClick={() => remove(index)}
-                    >
-                      <Trash className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-
-              {fields.length > 0 && (
-                <div className="mt-3 text-right text-sm text-muted-foreground">
-                  Subtotal módulos: {sum.toFixed(2)}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 bg-modal p-4 rounded-lg">
-            <FormSelect
-              control={control}
-              label="Forma de pago"
-              name="forma_pago"
-              placeholder="Selecciona una forma de pago"
-              options={[
-                { label: "Parcial", value: "parcial" },
-                { label: "Total", value: "total" },
-              ]}
-            />
-
-            <FormField
-              control={control}
-              name="total"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Precio Total</FormLabel>
-                  <FormControl>
-                    <Input type="number" value={field.value ?? 0} disabled />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormItem className="col-span-2">
-              <FormLabel>Observaciones</FormLabel>
-              <FormControl>
-                <Textarea />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+            )}
           </div>
         </div>
+        {/* <pre>
+          <code>{JSON.stringify(form.getValues(), null, 2)}</code>
+          <code>{JSON.stringify(form.formState.errors, null, 2)}</code>
+        </pre> */}
 
-        <div className="flex gap-4 w-full justify-end">
-          <Button type="button" variant="outline" onClick={onCancel}>
+        {/* Botones de acción */}
+        <div className="flex flex-col sm:flex-row gap-4 w-full justify-end pt-6 border-t">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className="w-full sm:w-auto"
+          >
             Cancelar
           </Button>
 
-          <Button type="submit" disabled={isSubmitting || !isValid}>
+          <Button
+            type="submit"
+            disabled={isSubmitting || !isValid}
+            className="w-full sm:w-auto"
+          >
             <Loader
               className={`mr-2 h-4 w-4 ${!isSubmitting ? "hidden" : ""}`}
             />
-            {isSubmitting ? "Guardando" : "Guardar"}
+            {isSubmitting ? "Guardando contrato..." : "Guardar contrato"}
           </Button>
         </div>
       </form>

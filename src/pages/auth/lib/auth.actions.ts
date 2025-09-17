@@ -29,6 +29,7 @@ export async function authenticate(): Promise<AuthResponse> {
   try {
     const { data } = await api.get<AuthResponse>("/authenticate");
     const { setUser } = useAuthStore.getState();
+    
 
     setUser(data.usuario);
 

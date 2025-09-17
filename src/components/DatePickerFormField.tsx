@@ -28,6 +28,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+import { Matcher } from "react-day-picker";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -46,9 +53,15 @@ interface DatePickerFormFieldProps<T extends FieldValues> {
   label?: string;
   placeholder?: string;
   description?: string;
+  tooltip?: string | React.ReactNode;
   dateFormat?: string;
   disabled?: boolean;
+  disabledRange?: Matcher | Matcher[];
   captionLayout?: "label" | "dropdown" | "dropdown-months" | "dropdown-years";
+  variantButton?: "default" | "outline" | "ghost" | "input";
+  fromYear?: number;
+  toYear?: number;
+  onChange?: (date: Date | undefined) => void;
 }
 
 export function DatePickerFormField<T extends FieldValues>({
@@ -57,9 +70,15 @@ export function DatePickerFormField<T extends FieldValues>({
   label,
   placeholder = "Selecciona una fecha",
   description,
+  tooltip,
   dateFormat = "yyyy-MM-dd",
   disabled = false,
+  disabledRange,
   captionLayout = "label",
+  variantButton = "ghost",
+  fromYear = 2020,
+  toYear = new Date().getFullYear() + 3,
+  onChange,
 }: DatePickerFormFieldProps<T>) {
   const isMobile = useIsMobile();
   const { field, fieldState } = useController({ control, name });
@@ -94,21 +113,40 @@ export function DatePickerFormField<T extends FieldValues>({
     } else {
       field.onChange("");
     }
+    onChange?.(date);
   };
 
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
     <FormItem className="flex flex-col">
-      {label && <FormLabel>{label}</FormLabel>}
+      {label && (
+        <FormLabel className="flex justify-start items-center">
+          {label}
+          {tooltip && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge
+                  variant="default"
+                  className="ml-2 p-0 aspect-square w-4 h-4 text-center justify-center"
+                >
+                  ?
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>{tooltip}</TooltipContent>
+            </Tooltip>
+          )}
+        </FormLabel>
+      )}
 
+      {description && <FormDescription>{description}</FormDescription>}
       {isMobile ? (
         <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
           <DrawerTrigger asChild>
             <FormControl>
               <Button
-                variant="input"
-                className="w-full justify-between font-normal"
+                variant={variantButton}
+                className="w-full justify-between font-normal shadow"
                 disabled={disabled}
               >
                 {displayValue}
@@ -129,6 +167,8 @@ export function DatePickerFormField<T extends FieldValues>({
               captionLayout={captionLayout}
               onSelect={handleChange}
               disabled={disabled}
+              startMonth={fromYear ? new Date(fromYear, 0) : undefined}
+              endMonth={toYear ? new Date(toYear, 11) : undefined}
               className="mx-auto [--cell-size:clamp(0px,calc(100vw/7.5),52px)]"
             />
           </DrawerContent>
@@ -138,9 +178,9 @@ export function DatePickerFormField<T extends FieldValues>({
           <PopoverTrigger asChild>
             <FormControl>
               <Button
-                variant="input"
+                variant={variantButton}
                 className={cn(
-                  "w-full justify-start text-left font-normal",
+                  "w-full justify-start text-left font-normal shadow",
                   !parsedDate && "text-muted-foreground"
                 )}
                 disabled={disabled}
@@ -159,14 +199,15 @@ export function DatePickerFormField<T extends FieldValues>({
               onMonthChange={setVisibleMonth}
               captionLayout={captionLayout}
               onSelect={handleChange}
-              disabled={disabled}
-              initialFocus
+              disabled={disabledRange}
+              startMonth={fromYear ? new Date(fromYear, 0) : undefined}
+              endMonth={toYear ? new Date(toYear, 11) : undefined}
+              autoFocus
             />
           </PopoverContent>
         </Popover>
       )}
 
-      {description && <FormDescription>{description}</FormDescription>}
       <FormMessage>{fieldState.error?.message}</FormMessage>
     </FormItem>
   );

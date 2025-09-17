@@ -36,6 +36,7 @@ interface FormSelectProps {
   placeholder?: string;
   options: Option[];
   control: Control<any>;
+  onChange?: (value: string) => void;
 }
 
 export function FormSelect({
@@ -45,6 +46,7 @@ export function FormSelect({
   placeholder,
   options,
   control,
+  onChange,
 }: FormSelectProps) {
   const [open, setOpen] = useState(false);
   return (
@@ -66,10 +68,10 @@ export function FormSelect({
               <PopoverTrigger asChild>
                 <FormControl>
                   <Button
-                    variant="input"
+                    variant="ghost"
                     role="combobox"
                     className={cn(
-                      "w-full justify-between min-h-8 border border-primary bg-transparent hover:bg-transparent",
+                      "w-full justify-between min-h-8 shadow truncate",
                       !field.value && "text-muted-foreground"
                     )}
                   >
@@ -91,6 +93,7 @@ export function FormSelect({
                             option.value === field.value ? "" : option.value;
                           field.onChange(newValue);
                           setOpen(false);
+                          onChange?.(newValue);
                         }}
                       >
                         <Check

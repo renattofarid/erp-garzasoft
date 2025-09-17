@@ -34,6 +34,7 @@ import {
   ClientRoute,
   ClientTitle,
 } from "@/pages/client/lib/client.interface";
+import { CuentasPorCobrarRoute } from "@/pages/accounts-receivable/lib/accounts-receivable.interface";
 
 const data = {
   navMain: [
@@ -92,8 +93,8 @@ const data = {
           icon: Signature,
         },
         {
-          title: "Inventario",
-          url: "#",
+          title: "Cuentas por cobrar",
+          url: CuentasPorCobrarRoute,
           icon: Box,
         },
       ],

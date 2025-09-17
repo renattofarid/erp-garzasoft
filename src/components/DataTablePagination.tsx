@@ -8,7 +8,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { per_page } from "@/lib/core.function";
 
 interface Props {
   page: number;
@@ -50,9 +49,6 @@ export default function DataTablePagination({
     pages.push(i);
   }
 
-  const quantiy = per_page - (pages.length - 1) * 2; // Ajuste para mostrar botones de paginación
-
-  // ...el resto del componente igual
   return (
     <Pagination>
       <PaginationContent className="mt-[">

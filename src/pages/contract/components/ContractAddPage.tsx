@@ -23,8 +23,12 @@ export default function ContractAddPage() {
         router(ContractRoute);
         refetch();
       })
-      .catch(() => {
-        errorToast("Hubo un error al crear el Contrato");
+      .catch((error: any) => {
+        errorToast(
+          error?.response?.data?.error ||
+            error?.response?.data?.message ||
+            "Error al crear el contrato"
+        );
       });
   };
 
@@ -41,10 +45,11 @@ export default function ContractAddPage() {
           fecha_inicio: "",
           fecha_fin: "",
           cliente_id: 0,
-          forma_pago: "",
-          tipo_contrato: "",
+          forma_pago: "unico",
+          tipo_contrato: "saas",
           total: 0,
           productos_modulos: [],
+          cuotas: [],
         }}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}

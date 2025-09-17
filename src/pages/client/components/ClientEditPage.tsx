@@ -39,9 +39,12 @@ export default function ClientEditPage() {
   };
 
   const mapClientToForm = (data: ClientResource): Partial<ClientSchema> => ({
-    sucursales: data.sucursales_clientes.map((sucursal) => ({
-      nombre: sucursal.nombre,
-    })),
+    sucursales:
+      data.sucursales_clientes.length > 0
+        ? data.sucursales_clientes.map((sucursal) => ({
+            nombre: sucursal.nombre,
+          }))
+        : [{ nombre: "" }],
     contactos: data.contactos_clientes.map((contacto) => ({
       nombre: contacto.nombre,
       celular: contacto.celular,

@@ -33,11 +33,15 @@ export default function ContractEditPage() {
   const handleSubmit = async (data: ContractSchema) => {
     await updateContract(Number(id), data)
       .then(() => {
-        successToast("Tipo de Usuario actualizado exitosamente");
+        successToast("Contrato actualizado exitosamente");
         router(ContractRoute);
       })
-      .catch(() => {
-        errorToast("Hubo un error al actualizar el Tipo de Usuario");
+      .catch((error: any) => {
+        errorToast(
+          error?.response?.data?.error ||
+            error?.response?.data?.message ||
+            "Error al crear el contrato"
+        );
       });
   };
 
@@ -57,7 +61,7 @@ export default function ContractEditPage() {
       "yyyy-MM-dd"
     ),
     numero: data.numero,
-    cliente_id: data.cliente.id,
+    cliente_id: data.cliente.id.toString(),
     tipo_contrato: data.tipo_contrato,
     total: Number(data.total),
     forma_pago: data.forma_pago,
@@ -66,6 +70,18 @@ export default function ContractEditPage() {
       modulo_id: item.modulo_id,
       producto_id: item.producto_id,
       precio: Number(item.precio),
+    })),
+    cuotas: data.cuotas.map((item) => ({
+      id: item.id,
+      monto: Number(item.monto),
+      fecha_vencimiento: format(
+        parse(
+          item.fecha_vencimiento.split("T").shift() || "",
+          "yyyy-MM-dd",
+          new Date()
+        ),
+        "yyyy-MM-dd"
+      ),
     })),
   });
 

@@ -1,10 +1,10 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/DataTable.tsx";
-import { ProductResource } from "../lib/contract.interface.ts";
+import { ContractResource } from "../lib/contract.interface";
 
 interface Props {
-  columns: ColumnDef<ProductResource>[];
-  data: ProductResource[];
+  columns: ColumnDef<ContractResource>[];
+  data: ContractResource[];
   children?: React.ReactNode;
   isLoading?: boolean;
 }

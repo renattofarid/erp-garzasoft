@@ -11,10 +11,11 @@ const inputVariants = cva(
         default: "",
         primary:
           "border-primary focus-visible:ring-primary/50 focus-visible:border-primary",
+        neutral: "bg-background shadow-sm focus-visible:ring-primary/50",
       },
     },
     defaultVariants: {
-      variant: "primary",
+      variant: "neutral",
     },
   }
 );

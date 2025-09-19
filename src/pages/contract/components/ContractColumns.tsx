@@ -4,11 +4,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SelectActions } from "@/components/SelectActions";
 import { ColumnDef } from "@tanstack/react-table";
-import { ContractResource } from "../lib/contract.interface.ts";
+import {
+  ContractResource,
+  ContractType,
+  FormaPago,
+} from "../lib/contract.interface.ts";
 import { Modulo } from "../lib/contract.interface.ts";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge.tsx";
 import { format, parse } from "date-fns";
+import {
+  castContractType,
+  castPaymentType,
+  getIconByContractType,
+  getIconByPaymentType,
+} from "../lib/contract.function.ts";
 
 export const ContractColumns = ({
   onDelete,
@@ -44,7 +54,7 @@ export const ContractColumns = ({
         ),
         "dd/MM/yyyy"
       );
-      return <Badge>{`${fechaInicio} - ${fechaFin}`}</Badge>;
+      return <Badge variant="outline">{`${fechaInicio} - ${fechaFin}`}</Badge>;
     },
   },
   {
@@ -54,6 +64,31 @@ export const ContractColumns = ({
   {
     accessorKey: "tipo_contrato",
     header: "Tipo de Contrato",
+    cell: ({ row }) => {
+      const contractType = row.original.tipo_contrato as ContractType;
+      const IconComponent = getIconByContractType(contractType);
+
+      return (
+        <Badge className="capitalize flex items-center gap-2" variant="default">
+          {IconComponent && <IconComponent className="min-w-4 min-h-4" />}
+          {castContractType(contractType)}
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "forma_pago",
+    header: "Forma de Pago",
+    cell: ({ row }) => {
+      const typePayment = row.original.forma_pago as FormaPago;
+      const IconComponent = getIconByPaymentType(typePayment);
+      return (
+        <Badge className="capitalize" variant="secondary">
+          {IconComponent && <IconComponent className="min-w-4 min-h-4" />}
+          {castPaymentType(typePayment)}
+        </Badge>
+      );
+    },
   },
   {
     accessorKey: "modulos",
@@ -77,6 +112,9 @@ export const ContractColumns = ({
     cell: ({ row }) => {
       const router = useNavigate();
       const id = row.original.id;
+      const overduePaymentCount = row.original.cuotas.filter(
+        (cuota) => cuota.situacion === "vencido"
+      ).length;
 
       return (
         <SelectActions>
@@ -84,9 +122,12 @@ export const ContractColumns = ({
             <DropdownMenuItem onClick={() => router(`/contratos/editar/${id}`)}>
               Editar
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onNotification(id)}>
-              Notificar
-            </DropdownMenuItem>
+            {overduePaymentCount > 0 && (
+              <DropdownMenuItem onSelect={() => onNotification(id)}>
+                Notificar{" "}
+                <Badge className="rounded-full">{overduePaymentCount}</Badge>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onSelect={() => onDelete(id)}>
               Eliminar
             </DropdownMenuItem>

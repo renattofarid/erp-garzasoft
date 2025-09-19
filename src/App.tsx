@@ -27,6 +27,8 @@ import {
 import ContractPage from "@/pages/contract/components/ContractPage.tsx";
 import ContractAddPage from "@/pages/contract/components/ContractAddPage.tsx";
 import ContractEditPage from "@/pages/contract/components/ContractEditPage.tsx";
+import { CuentasPorCobrarRoute } from "./pages/accounts-receivable/lib/accounts-receivable.interface";
+import CuentasPorCobrarPage from "./pages/accounts-receivable/components/AccountsReceivablePage";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { token } = useAuthStore();
@@ -145,6 +147,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ContractEditPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path={CuentasPorCobrarRoute}
+            element={
+              <ProtectedRoute>
+                <CuentasPorCobrarPage />
               </ProtectedRoute>
             }
           />

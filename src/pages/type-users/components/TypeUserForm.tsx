@@ -56,7 +56,6 @@ export const TypeUserForm = ({
                 <FormLabel>Nombre</FormLabel>
                 <FormControl>
                   <Input
-                    variant="primary"
                     placeholder="Ej: Productividad"
                     {...field}
                   />

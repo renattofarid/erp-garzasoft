@@ -61,7 +61,7 @@ export default function UserEditPage({
       }}
       title={UserTitle}
       subtitle={UserDescriptionEdit}
-      maxWidth="max-w-(--breakpoint-sm)"
+      maxWidth="!max-w-(--breakpoint-md)"
     >
       {isFinding || !User ? (
         <FormSkeleton />

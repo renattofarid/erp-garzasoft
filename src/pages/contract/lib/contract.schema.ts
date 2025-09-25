@@ -35,29 +35,32 @@ const contractBaseObject = z.object({
   numero: z
     .string()
     .min(1, { message: "Número de contrato obligatorio" })
-    .max(100),
+    .max(100, { message: "Número de contrato muy largo" }),
   cliente_id: z
     .string()
-    .or(z.number().int().positive())
-    .refine((val) => {
-      if (typeof val === "string") {
-        return val.length > 0;
-      }
-      return true;
-    }),
+    .or(z.number().int().positive({ message: "ID de cliente inválido" }))
+    .refine(
+      (val) => {
+        if (typeof val === "string") {
+          return val.length > 0;
+        }
+        return true;
+      },
+      { message: "Cliente obligatorio" }
+    ),
   tipo_contrato: z.enum(["desarrollo", "saas", "soporte"], {
     message: "Solo se permite desarrollo, saas o soporte",
   }),
   total: z.coerce
-    .number()
+    .number({ message: "Total debe ser un número" })
     .nonnegative({ message: "El total no puede ser negativo" }),
   forma_pago: z.enum(["unico", "parcial"], {
     message: "Solo se permite unico o parcial",
   }),
   productos_modulos: z
-    .array(productoModuloSchema)
+    .array(productoModuloSchema, { message: "Productos inválidos" })
     .min(1, { message: "Debe agregar al menos un módulo" }),
-  cuotas: z.array(cuotaSchema).optional(),
+  cuotas: z.array(cuotaSchema, { message: "Cuotas inválidas" }).optional(),
 });
 
 // helper para comparar decimales

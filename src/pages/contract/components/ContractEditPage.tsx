@@ -61,7 +61,7 @@ export default function ContractEditPage() {
       "yyyy-MM-dd"
     ),
     numero: data.numero,
-    cliente_id: data.cliente.id.toString(),
+    cliente_id: data.cliente?.id.toString() ?? "",
     tipo_contrato: data.tipo_contrato,
     total: Number(data.total),
     forma_pago: data.forma_pago,

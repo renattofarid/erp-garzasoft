@@ -8,6 +8,7 @@ import { useCuentasPorCobrarStore } from "../lib/accounts-receivable.store";
 import { useCuentaPorCobrar } from "../lib/accounts-receivable.hook";
 import { PagoSchema } from "../lib/accounts-receivable.schema";
 import { PagoForm } from "./PaymentForm";
+import { updateCuentaPorCobrar } from "../lib/accounts-receivable.actions";
 
 export default function PagoModal({
   cuotaId,
@@ -29,8 +30,24 @@ export default function PagoModal({
     await createPago(data)
       .then(() => {
         setOpen(false);
-        successToast("Pago registrado exitosamente");
-        onSuccess?.();
+        if (data.monto_pagado === cuentaPorCobrar?.monto) {
+          updateCuentaPorCobrar(cuotaId, {
+            situacion: "pagado",
+            fecha_pago: data.fecha_pago,
+          }).then(() => {
+            onSuccess && onSuccess();
+            successToast("Pago registrado correctamente");
+          });
+        } else {
+          // Si el monto pagado es menor al monto de la cuota, marcar como pendiente
+          updateCuentaPorCobrar(cuotaId, {
+            situacion: "pendiente",
+            fecha_pago: data.fecha_pago,
+          }).then(() => {
+            onSuccess && onSuccess();
+            successToast("Pago registrado correctamente");
+          });
+        }
       })
       .catch(() => {
         errorToast("Hubo un error al registrar el pago");

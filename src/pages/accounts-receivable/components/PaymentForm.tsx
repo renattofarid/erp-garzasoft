@@ -206,7 +206,9 @@ export const PagoForm = ({
             disabled={isSubmitting || !form.formState.isValid}
           >
             <Loader
-              className={`mr-2 h-4 w-4 ${!isSubmitting ? "hidden" : ""}`}
+              className={`mr-2 h-4 w-4 animate-spin ${
+                !isSubmitting ? "hidden" : ""
+              }`}
             />
             {isSubmitting ? "Registrando pago" : "Registrar pago"}
           </Button>

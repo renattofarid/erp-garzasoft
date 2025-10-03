@@ -29,7 +29,7 @@ export default function ContractEditPage() {
   const { data: contract, isFinding } = useContract(Number(id));
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const { isSubmitting, updateContract } = useContractStore();
-
+  
   const handleSubmit = async (data: ContractSchema) => {
     await updateContract(Number(id), data)
       .then(() => {

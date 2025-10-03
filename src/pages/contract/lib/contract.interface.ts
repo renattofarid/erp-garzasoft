@@ -66,6 +66,11 @@ interface ContratoProductoModulo {
   created_at: string;
   updated_at: string;
   deleted_at?: string;
+  producto: {
+    name: string;
+    id: number;
+  };
+  modulo: Modulo;
 }
 
 interface Cuota {

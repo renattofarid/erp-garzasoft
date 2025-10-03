@@ -5,7 +5,7 @@ import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ClientAddRoute } from "../lib/client.interface.ts";
 
-export default function ClientActions() {
+export default function  ClientActions() {
   const router = useNavigate();
 
   const handleAddClient = () => {

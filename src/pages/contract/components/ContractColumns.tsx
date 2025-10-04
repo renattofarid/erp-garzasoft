@@ -9,7 +9,6 @@ import {
   ContractType,
   FormaPago,
 } from "../lib/contract.interface.ts";
-import { Modulo } from "../lib/contract.interface.ts";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge.tsx";
 import { format, parse } from "date-fns";
@@ -93,13 +92,14 @@ export const ContractColumns = ({
   {
     accessorKey: "modulos",
     header: "Módulos",
-    cell: ({ getValue }) => {
-      const sucursales = getValue() as Modulo[];
+    cell: ({ row }) => {
+      const sucursales = row.original.contrato_producto_modulos;
+      
       return (
         <div className="space-y-1">
-          {sucursales.map((contacto, i) => (
-            <div key={i} className="text-sm">
-              <span className="font-semibold">{contacto.nombre}</span>
+          {sucursales?.map((contacto) => (
+            <div key={contacto.id} className="text-sm">
+              <span className="font-semibold">-{contacto.modulo?.nombre}</span>
             </div>
           ))}
         </div>

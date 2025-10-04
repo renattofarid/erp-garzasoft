@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
@@ -77,11 +77,13 @@ export const useContractForm = ({
     control,
     name: "cuotas",
   });
-
+  
   // State
   const [open, setOpen] = useState(false);
   const [numberOfInstallments, setNumberOfInstallments] = useState<number>(1);
   const [manualSum, setManualSum] = useState<number>(0);
+
+
 
   // Watch values
   const productos = watch("productos_modulos");
@@ -101,7 +103,7 @@ export const useContractForm = ({
   }, [productos, form]);
 
   // Manual sum recalculation
-  const recalculateSum = () => {
+  const recalculateSum = useCallback(() => {
     const currentValues = form.getValues("productos_modulos") || [];
     const newSum = currentValues.reduce((acc, x) => {
       const precio = Number(x?.precio) || 0;
@@ -109,13 +111,15 @@ export const useContractForm = ({
     }, 0);
     setManualSum(newSum);
     return newSum;
-  };
+  }, [form]);
 
   // Calculate installments sum and check balance
-  const currentInstallmentsSum = cuotaFields.reduce(
-    (acc, cuota) => acc + (Number((cuota as any).monto) || 0),
-    0
-  );
+  const currentInstallmentsSum = useMemo(() => {
+    return cuotaFields.reduce(
+      (acc, cuota) => acc + (Number((cuota as any).monto) || 0),
+      0
+    );
+  }, [cuotaFields]);
 
   const isInstallmentsUnbalanced =
     paymentMethod === "parcial" &&
@@ -269,6 +273,13 @@ export const useContractForm = ({
       shouldValidate: true,
     });
   }, [sum, manualSum, setValue]);
+
+
+  useEffect(() => {
+    if (mode === "update") {
+      setNumberOfInstallments(cuotaFields.length || 1);
+    }
+  }, [mode]);
 
   return {
     // Form

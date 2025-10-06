@@ -67,7 +67,10 @@ export default function CuentasPorCobrarEditPage({
         )
       : undefined,
     situacion: data.situacion,
+    pagos_cuota: data.pagos_cuota
+
   });
+  
 
   if (!isFinding && !cuentaPorCobrar) return <NotFound />;
 
@@ -84,6 +87,7 @@ export default function CuentasPorCobrarEditPage({
       {isFinding || !cuentaPorCobrar ? (
         <FormSkeleton />
       ) : (
+       <>
         <CuentasPorCobrarForm
           defaultValues={mapCuentaPorCobrarToForm(cuentaPorCobrar)}
           onSubmit={handleSubmit}
@@ -91,6 +95,9 @@ export default function CuentasPorCobrarEditPage({
           mode="update"
           onCancel={() => setOpen(false)}
         />
+
+      
+       </>
       )}
     </GeneralModal>
   );

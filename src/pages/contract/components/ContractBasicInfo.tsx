@@ -49,7 +49,7 @@ export const ContractBasicInfo = ({
           name="numero"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Número de Contrato</FormLabel>
+              <FormLabel>Número de Contrato<span className="text-red-500">*</span> </FormLabel>
               <FormControl>
                 <Input placeholder="CT-2025-001" {...field} />
               </FormControl>

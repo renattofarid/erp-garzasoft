@@ -97,9 +97,12 @@ export const CuentasPorCobrarColumns = ({
       return (
         <SelectActions>
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => onEdit(id)}>
+            {/* {situacion === "pagado" && ( */}
+             <DropdownMenuItem onClick={() => onEdit(id)}>
               Editar
             </DropdownMenuItem>
+            {/* )
+           } */}
             {situacion !== "pagado" && (
               <DropdownMenuItem onClick={() => onPay(id)}>
                 Registrar Pago

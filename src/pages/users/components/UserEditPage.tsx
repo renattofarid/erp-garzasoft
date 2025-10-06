@@ -47,7 +47,7 @@ export default function UserEditPage({
     nombres: data.nombres,
     apellidos: data.apellidos,
     usuario: data.usuario,
-    tipo_usuario_id: data.tipo_usuario_id,
+    tipo_usuario_id: data.tipo_usuario_id.toString(),
     password: data.password,
   });
 

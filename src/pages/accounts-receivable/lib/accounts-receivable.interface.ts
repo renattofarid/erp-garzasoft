@@ -32,6 +32,7 @@ export interface CuentasPorCobrarResource {
   created_at: string;
   updated_at: string;
   contrato: Contrato;
+  pagos_cuota?: PagoResource[]; // Para los pagos asociados
 }
 
 export interface Contrato {

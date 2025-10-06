@@ -76,6 +76,7 @@ export const useContractForm = ({
   } = useFieldArray({
     control,
     name: "cuotas",
+    
   });
   
   // State
@@ -114,18 +115,19 @@ export const useContractForm = ({
   }, [form]);
 
   // Calculate installments sum and check balance
-  const currentInstallmentsSum = useMemo(() => {
-    return cuotaFields.reduce(
-      (acc, cuota) => acc + (Number((cuota as any).monto) || 0),
-      0
-    );
-  }, [cuotaFields]);
+ const currentInstallmentsSum = watch("cuotas")?.reduce(
+  (acc, cuota) => acc + (Number(cuota.monto) || 0),
+  0
+);
+
+  console.log(currentInstallmentsSum);
+  
 
   const isInstallmentsUnbalanced =
     paymentMethod === "parcial" &&
     cuotaFields.length > 0 &&
     total > 0 &&
-    Math.abs(currentInstallmentsSum - total) > 0.01;
+    Math.abs((currentInstallmentsSum || 0) - total) > 0.01;
 
   // Adjust existing installments
   const adjustExistingInstallments = () => {
@@ -148,7 +150,7 @@ export const useContractForm = ({
     replaceCuotas(updatedCuotas);
     setTimeout(() => form.trigger("cuotas"), 0);
   };
-
+  
   // Generate installments
   const generateInstallments = () => {
     if (

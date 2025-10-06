@@ -26,7 +26,7 @@ import { useState } from "react";
 
 interface Option {
   label: string;
-  value: string;
+  value: string | number;
 }
 
 interface FormSelectProps {
@@ -49,13 +49,14 @@ export function FormSelect({
   onChange,
 }: FormSelectProps) {
   const [open, setOpen] = useState(false);
+  
   return (
     <FormField
       control={control}
       name={name}
       render={({ field }) => {
         const selected = options.find((opt) => opt.value === field.value);
-
+        
         return (
           <FormItem className="flex flex-col justify-start">
             <FormLabel>{label}</FormLabel>
@@ -93,7 +94,7 @@ export function FormSelect({
                             option.value === field.value ? "" : option.value;
                           field.onChange(newValue);
                           setOpen(false);
-                          onChange?.(newValue);
+                          onChange?.(String(newValue));
                         }}
                       >
                         <Check

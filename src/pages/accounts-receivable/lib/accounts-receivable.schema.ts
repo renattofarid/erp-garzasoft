@@ -17,6 +17,7 @@ export const cuentasPorCobrarSchemaCreate = z.object({
     .min(1, { message: "La fecha de vencimiento es obligatoria" }),
   fecha_pago: z.string().nullable().optional(),
   situacion: situacionCuotaSchema,
+  pagos_cuota: z.array(z.any()).optional(), // Para los archivos
 });
 
 export const cuentasPorCobrarSchemaUpdate =

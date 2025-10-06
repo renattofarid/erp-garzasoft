@@ -1,14 +1,13 @@
 import { onlyLettersSchema } from "@/lib/core.schema";
-import { z } from "zod";
+import { string, z } from "zod";
 
 export const metricSchemaCreate = z.object({
   usuario: onlyLettersSchema("usuario"),
-  nombres: onlyLettersSchema("nombre"),
-  apellidos: onlyLettersSchema("apellido"),
+  nombres: string().nonempty("El nombre es obligatorio"),
+  apellidos: string().nonempty("El apellido es obligatorio"),
   tipo_usuario_id: z
-    .number()
-    .int()
-    .positive("El tipo de usuario es obligatorio"),
+    .string()
+    .nonempty("El tipo de usuario es obligatorio"),
   password: z.string().nonempty("La contraseña es obligatoria"),
 });
 

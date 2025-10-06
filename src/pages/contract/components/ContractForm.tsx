@@ -73,6 +73,9 @@ export const ContractForm = ({
 
   if (isLoading || !clients) return <FormSkeleton />;
 
+  console.log(currentInstallmentsSum);
+  
+
   return (
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 w-full">
@@ -116,7 +119,7 @@ export const ContractForm = ({
               appendCuota={appendCuota}
               adjustExistingInstallments={adjustExistingInstallments}
               isInstallmentsUnbalanced={isInstallmentsUnbalanced}
-              currentInstallmentsSum={currentInstallmentsSum}
+              currentInstallmentsSum={currentInstallmentsSum || 0}
               fechaInicio={fechaInicio}
               fechaFin={fechaFin}
             />
@@ -126,7 +129,7 @@ export const ContractForm = ({
                 cuotaFields={cuotaFields}
                 removeCuota={removeCuota}
                 total={total}
-                currentInstallmentsSum={currentInstallmentsSum}
+                currentInstallmentsSum={currentInstallmentsSum || 0}
                 onTrigger={() => form.trigger("cuotas")}
               />
             )}

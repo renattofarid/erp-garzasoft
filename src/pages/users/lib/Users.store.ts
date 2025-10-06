@@ -39,6 +39,8 @@ export const useUserStore = create<UserStore>((set) => ({
       set({ Users: data, meta: meta, isLoading: false });
     } catch (err) {
       set({ error: "Error al cargar tipos de usuarios", isLoading: false });
+      console.log(err);
+      
     }
   },
   fetchUser: async (id: number) => {
@@ -48,6 +50,8 @@ export const useUserStore = create<UserStore>((set) => ({
       set({ User: data, isFinding: false });
     } catch (err) {
       set({ error: "Error al cargar el usuario", isFinding: false });
+      console.log(err);
+      
     }
   },
 

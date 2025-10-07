@@ -64,6 +64,11 @@ export const PagoForm = ({
   };
 
   const handleSubmit = (data: PagoSchema) => {
+    if(cuota?.monto && data.monto_pagado > cuota.monto) {
+      form.setError("monto_pagado", { message: "El monto pagado no puede ser mayor al monto de la cuota." });
+      return;
+    }
+   
     onSubmit({
       ...data,
       comprobante: selectedFile || undefined,
@@ -148,6 +153,7 @@ export const PagoForm = ({
                     type="number"
                     step="0.01"
                     placeholder="0.00"
+                    max={cuota?.monto}
                     {...field}
                     onChange={(e) => field.onChange(Number(e.target.value))}
                   />

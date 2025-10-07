@@ -58,7 +58,6 @@ export const CuentasPorCobrarForm = ({
     mode: "onChange",
   });
 
-
   if (isLoading) return <FormSkeleton />;
 
   return (
@@ -160,7 +159,7 @@ export const CuentasPorCobrarForm = ({
                     <div className="flex flex-col md:flex-row md:items-center gap-2">
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
                         Monto pagado:{" "}
-                        <b className="ml-1">${pago.monto_pagado}</b>
+                        <b className="ml-1">S/.{pago.monto_pagado}</b>
                       </span>
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                         Fecha de pago:{" "}
@@ -199,15 +198,36 @@ export const CuentasPorCobrarForm = ({
             Cancelar
           </Button>
 
-          <Button
-            type="submit"
-            disabled={isSubmitting || !form.formState.isValid}
-          >
-            <Loader
-              className={`mr-2 h-4 w-4 ${!isSubmitting ? "hidden" : ""}`}
-            />
-            {isSubmitting ? "Guardando" : "Guardar"}
-          </Button>
+          {defaultValues.situacion === "pagado" && mode === "update" ? (
+            <>
+              <Button type="button" disabled>
+                <svg
+                  className="mr-2 h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                Completado
+              </Button>
+            </>
+          ) : (
+            <Button
+              type="submit"
+              disabled={isSubmitting || !form.formState.isValid}
+            >
+              <Loader
+                className={`mr-2 h-4 w-4 ${!isSubmitting ? "hidden" : ""}`}
+              />
+              {isSubmitting ? "Guardando" : "Guardar"}
+            </Button>
+          )}
         </div>
       </form>
     </Form>

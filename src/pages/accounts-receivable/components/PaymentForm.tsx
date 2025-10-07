@@ -99,7 +99,7 @@ export const PagoForm = ({
               <div>
                 <span className="text-muted-foreground">Monto:</span>{" "}
                 <span className="font-semibold">
-                  S/. {cuota.monto.toFixed(2)}
+                  S/. {defaultValues.monto_pagado?.toFixed(2)}
                 </span>
               </div>
               <div>

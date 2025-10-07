@@ -32,10 +32,22 @@ export default function PagoModal({
         successToast("Pago registrado exitosamente");
         onSuccess?.();
       })
-      .catch(() => {
-        errorToast("Hubo un error al registrar el pago");
+      .catch((error) => {
+        errorToast(
+          error?.response?.data?.message || "Hubo un error al registrar el pago"
+        );
       });
   };
+
+  const montoPorPagar = Number(
+    (
+      (cuentaPorCobrar?.monto || 0) -
+      (cuentaPorCobrar?.pagos_cuota?.reduce(
+        (acc, pago) => acc + pago.monto_pagado,
+        0
+      ) || 0)
+    ).toFixed(2)
+  );
 
   if (!isFinding && !cuentaPorCobrar) return <NotFound />;
 
@@ -56,7 +68,7 @@ export default function PagoModal({
           defaultValues={{
             cuota_id: cuotaId,
             fecha_pago: new Date().toISOString().split("T")[0],
-            monto_pagado: cuentaPorCobrar.monto,
+            monto_pagado: montoPorPagar,
           }}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}

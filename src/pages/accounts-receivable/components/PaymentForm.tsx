@@ -48,13 +48,16 @@ export const PagoForm = ({
       mode === "create" ? pagoSchemaCreate : pagoSchemaUpdate
     ),
     defaultValues: {
-      cuota_id: 0,
+      ...defaultValues, // primero el spread
+      monto_pagado:
+        cuota?.monto_pendiente ?? defaultValues?.monto_pendiente ?? 0,
+      cuota_id: defaultValues?.cuota_id ?? 0,
       fecha_pago: "",
-      monto_pagado: 0,
-      ...defaultValues,
     },
     mode: "onChange",
   });
+
+  
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -64,18 +67,19 @@ export const PagoForm = ({
   };
 
   const handleSubmit = (data: PagoSchema) => {
-    if(cuota?.monto && data.monto_pagado > cuota.monto) {
-      form.setError("monto_pagado", { message: "El monto pagado no puede ser mayor al monto de la cuota." });
+    if (cuota?.monto_total && data.monto_pagado > cuota.monto_total) {
+      form.setError("monto_pagado", {
+        message: "El monto pagado no puede ser mayor al monto de la cuota.",
+      });
       return;
     }
-   
+
     onSubmit({
       ...data,
       comprobante: selectedFile || undefined,
     });
   };
-
-
+  
   return (
     <Form {...form}>
       <form
@@ -100,21 +104,22 @@ export const PagoForm = ({
               <div>
                 <span className="text-muted-foreground">Monto por pagar:</span>{" "}
                 <span className="font-semibold">
-                  S/. {defaultValues.monto_pagado?.toFixed(2)}
+                  S/. {defaultValues.monto_pendiente?.toFixed(2)}
                 </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Monto pagado:</span>{" "}
                 <span className="font-semibold">
-                  S/.{" "}
-                  {cuota.pagos_cuota
-                    ? cuota.pagos_cuota
-                        .reduce((acc, pago) => acc + pago.monto_pagado, 0)
-                        .toFixed(2)
-                    : "0.00"}
+                  S/. {defaultValues.monto_pagado?.toFixed(2) || "0.00"}
                 </span>
               </div>
-            
+              <div>
+                <span className="text-muted-foreground">Monto total:</span>{" "}
+                <span className="font-semibold">
+                  S/. {defaultValues.monto_total?.toFixed(2)}
+                </span>
+              </div>
+
               <div>
                 <span className="text-muted-foreground">Vencimiento:</span>{" "}
                 <Badge variant="outline">
@@ -166,7 +171,7 @@ export const PagoForm = ({
                     type="number"
                     step="0.01"
                     placeholder="0.00"
-                    max={defaultValues.monto_pagado?.toString()}
+                    max={defaultValues.monto_pendiente?.toString()}
                     {...field}
                     onChange={(e) => field.onChange(Number(e.target.value))}
                   />

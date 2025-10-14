@@ -25,7 +25,9 @@ export type SituacionCuota = "pendiente" | "pagado" | "vencido";
 export interface CuentasPorCobrarResource {
   id: number;
   contrato_id: number;
-  monto: number;
+  monto_total: number;
+  monto_pagado: number;
+  monto_pendiente: number;
   fecha_vencimiento: string;
   fecha_pago: string | null;
   situacion: SituacionCuota;

@@ -47,7 +47,7 @@ export default function CuentasPorCobrarEditPage({
     data: CuentasPorCobrarResource
   ): Partial<CuentasPorCobrarSchema> => ({
     contrato_id: data.contrato_id,
-    monto: data.monto,
+    monto: data.monto_total,
     fecha_vencimiento: format(
       parse(
         data.fecha_vencimiento.split("T").shift() || "",

@@ -41,11 +41,27 @@ export const CuentasPorCobrarColumns = ({
   },
   {
     accessorKey: "monto",
-    header: "Monto",
+    header: "Monto total",
     cell: ({ getValue }) => (
       <span className="font-semibold">S/. {Number(getValue()).toFixed(2)}</span>
     ),
   },
+  // {
+  //   accessorKey: "monto_pagado",
+  //   header: "Monto pagado",
+  //   cell: ({ row }) => {
+  //     const monto_pagado = row.original.pagos_cuota
+  //       ? row.original.pagos_cuota.reduce(
+  //           (acc, pago) => acc + pago.monto_pagado,
+  //           0
+  //         )
+  //       : 0;
+      
+  //     return (
+  //       <span className="font-semibold">S/. {monto_pagado.toFixed(2)}</span>
+  //     );
+  //   },
+  // },
   {
     accessorKey: "fecha_vencimiento",
     header: "Fecha de Vencimiento",
@@ -98,10 +114,8 @@ export const CuentasPorCobrarColumns = ({
         <SelectActions>
           <DropdownMenuGroup>
             {/* {situacion === "pagado" && ( */}
-             <DropdownMenuItem onClick={() => onEdit(id)}>
-              {
-                situacion === "pagado" ? "Ver Detalles" : "Editar Pago"
-              }
+            <DropdownMenuItem onClick={() => onEdit(id)}>
+              {situacion === "pagado" ? "Ver Detalles" : "Editar Pago"}
             </DropdownMenuItem>
             {/* )
            } */}

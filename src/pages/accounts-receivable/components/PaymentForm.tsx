@@ -75,6 +75,7 @@ export const PagoForm = ({
     });
   };
 
+
   return (
     <Form {...form}>
       <form
@@ -97,11 +98,23 @@ export const PagoForm = ({
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Monto:</span>{" "}
+                <span className="text-muted-foreground">Monto por pagar:</span>{" "}
                 <span className="font-semibold">
                   S/. {defaultValues.monto_pagado?.toFixed(2)}
                 </span>
               </div>
+              <div>
+                <span className="text-muted-foreground">Monto pagado:</span>{" "}
+                <span className="font-semibold">
+                  S/.{" "}
+                  {cuota.pagos_cuota
+                    ? cuota.pagos_cuota
+                        .reduce((acc, pago) => acc + pago.monto_pagado, 0)
+                        .toFixed(2)
+                    : "0.00"}
+                </span>
+              </div>
+            
               <div>
                 <span className="text-muted-foreground">Vencimiento:</span>{" "}
                 <Badge variant="outline">
@@ -147,13 +160,13 @@ export const PagoForm = ({
             name="monto_pagado"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Monto Pagado</FormLabel>
+                <FormLabel>Monto por pagar</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
                     step="0.01"
                     placeholder="0.00"
-                    max={cuota?.monto}
+                    max={defaultValues.monto_pagado?.toString()}
                     {...field}
                     onChange={(e) => field.onChange(Number(e.target.value))}
                   />

@@ -24,7 +24,8 @@ export default function PagoModal({
 
   const { data: cuentaPorCobrar, isFinding } = useCuentaPorCobrar(cuotaId);
   const { isSubmitting, createPago } = useCuentasPorCobrarStore();
-
+  console.log(cuentaPorCobrar);
+  
   const handleSubmit = async (data: PagoSchema & { comprobante?: File }) => {
     await createPago(data)
       .then(() => {

@@ -1,18 +1,14 @@
 import { useEffect } from "react";
 import { useCuentasPorCobrarStore } from "./accounts-receivable.store";
 
-export function useCuentasPorCobrar(params?: Record<string, any>) {
-  const { 
-    cuentasPorCobrar, 
-    meta, 
-    isLoading, 
-    error, 
-    fetchCuentasPorCobrar 
+export function useCuentasPorCobrar() {
+  const {
+    cuentasPorCobrar,
+    meta,
+    isLoading,
+    error,
+    fetchCuentasPorCobrar,
   } = useCuentasPorCobrarStore();
-
-  useEffect(() => {
-    if (!cuentasPorCobrar) fetchCuentasPorCobrar(params);
-  }, [cuentasPorCobrar, fetchCuentasPorCobrar]);
 
   return {
     data: cuentasPorCobrar,

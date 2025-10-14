@@ -19,12 +19,12 @@ export default function PagoModal({
   open: boolean;
   setOpen: (open: boolean) => void;
   onSuccess?: () => void;
+  page?: number;
 }) {
   if (!cuotaId) return <NotFound />;
 
   const { data: cuentaPorCobrar, isFinding } = useCuentaPorCobrar(cuotaId);
   const { isSubmitting, createPago } = useCuentasPorCobrarStore();
-  console.log(cuentaPorCobrar);
   
   const handleSubmit = async (data: PagoSchema & { comprobante?: File }) => {
     await createPago(data)
@@ -70,6 +70,7 @@ export default function PagoModal({
             cuota_id: cuotaId,
             fecha_pago: new Date().toISOString().split("T")[0],
             monto_pagado: montoPorPagar,
+            pagos_cuota: cuentaPorCobrar.pagos_cuota,
           }}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}

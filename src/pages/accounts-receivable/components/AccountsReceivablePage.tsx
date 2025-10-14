@@ -29,6 +29,7 @@ export default function CuentasPorCobrarPage() {
 
   useEffect(() => {
     const params: Record<string, any> = { page, search };
+
     if (situacionFilter) {
       params.situacion = situacionFilter;
     }
@@ -99,7 +100,7 @@ export default function CuentasPorCobrarPage() {
           cuotaId={payId}
           open={true}
           setOpen={() => setPayId(null)}
-          onSuccess={() => refetch()}
+          onSuccess={() => refetch({ page })}
         />
       )}
 

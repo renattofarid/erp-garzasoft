@@ -34,7 +34,9 @@ export const pagoSchemaCreate = z.object({
     .number()
     .positive({ message: "El monto pagado debe ser mayor que 0" }),
   comprobante: z.any().optional(), // Para el archivo
-  pagos_cuota: z.array(z.any()).optional(), // Para los archivos
+  pagos_cuota: z.array(z.any()).optional(), 
+  monto_pendiente: z.number().optional(), 
+  monto_total: z.number().optional(), 
 });
 
 export const pagoSchemaUpdate = pagoSchemaCreate.partial();

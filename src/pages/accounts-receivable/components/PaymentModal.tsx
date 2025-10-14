@@ -40,15 +40,7 @@ export default function PagoModal({
       });
   };
 
-  const montoPorPagar = Number(
-    (
-      (cuentaPorCobrar?.monto || 0) -
-      (cuentaPorCobrar?.pagos_cuota?.reduce(
-        (acc, pago) => acc + pago.monto_pagado,
-        0
-      ) || 0)
-    ).toFixed(2)
-  );
+  
 
   if (!isFinding && !cuentaPorCobrar) return <NotFound />;
 
@@ -69,8 +61,10 @@ export default function PagoModal({
           defaultValues={{
             cuota_id: cuotaId,
             fecha_pago: new Date().toISOString().split("T")[0],
-            monto_pagado: montoPorPagar,
+            monto_pagado: cuentaPorCobrar.monto_pagado,
             pagos_cuota: cuentaPorCobrar.pagos_cuota,
+            monto_pendiente: cuentaPorCobrar.monto_pendiente,
+            monto_total: cuentaPorCobrar.monto_total,
           }}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}

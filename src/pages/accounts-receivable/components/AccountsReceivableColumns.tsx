@@ -42,26 +42,29 @@ export const CuentasPorCobrarColumns = ({
   {
     accessorKey: "monto",
     header: "Monto total",
-    cell: ({ getValue }) => (
-      <span className="font-semibold">S/. {Number(getValue()).toFixed(2)}</span>
+    cell: ({ row }) => (
+      <span className="font-semibold">S/. {Number(row.original.monto_total).toFixed(2)}</span>
     ),
   },
-  // {
-  //   accessorKey: "monto_pagado",
-  //   header: "Monto pagado",
-  //   cell: ({ row }) => {
-  //     const monto_pagado = row.original.pagos_cuota
-  //       ? row.original.pagos_cuota.reduce(
-  //           (acc, pago) => acc + pago.monto_pagado,
-  //           0
-  //         )
-  //       : 0;
-      
-  //     return (
-  //       <span className="font-semibold">S/. {monto_pagado.toFixed(2)}</span>
-  //     );
-  //   },
-  // },
+  {
+    accessorKey: "monto_pagado",
+    header: "Monto pagado",
+    cell: ({ row }) => {
+    
+      return (
+        <span className="font-semibold">S/. {row.original.monto_pagado.toFixed(2)}</span>
+      );
+    },
+  },
+  {
+    accessorKey: "monto_pendiente",
+    header: "Monto pendiente",
+    cell: ({ row }) => (
+      <span className={`font-semibold ${row.original.monto_pendiente > 0 ? "text-red-500" : "text-green-500"}`}>
+        S/. {row.original.monto_pendiente.toFixed(2)}
+      </span>
+    ),
+  },
   {
     accessorKey: "fecha_vencimiento",
     header: "Fecha de Vencimiento",

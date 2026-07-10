@@ -613,14 +613,14 @@ function ClientNodeSection({
             </div>
           </div>
 
-          <div className="space-y-4 mt-4">
+          <div className="space-y-4 pt-1">
             {children.fields.length === 0 ? (
               <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
                 Sin elementos asociados.
               </div>
             ) : (
               children.fields.map((item, index) => (
-                <div key={item.id} className="rounded-xl border p-4">
+                <div key={item.id} className={index === 0 ? "px-4 pb-4 pt-0" : "p-4"}>
                   <ClientNodeSection
                     control={control}
                     basePath={joinPath(basePath, `hijos.${index}`)}

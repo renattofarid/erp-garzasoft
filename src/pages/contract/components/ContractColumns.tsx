@@ -18,6 +18,39 @@ import {
   getIconByContractType,
   getIconByPaymentType,
 } from "../lib/contract.function.ts";
+import { getClientDisplayName } from "@/pages/client/lib/client.interface";
+
+function ContractActionsCell({
+  id,
+  overduePaymentCount,
+  onDelete,
+  onNotification,
+}: {
+  id: number;
+  overduePaymentCount: number;
+  onDelete: (id: number) => void;
+  onNotification: (id: number) => void;
+}) {
+  const router = useNavigate();
+
+  return (
+    <SelectActions>
+      <DropdownMenuGroup>
+        <DropdownMenuItem onClick={() => router(`/contratos/editar/${id}`)}>
+          Editar
+        </DropdownMenuItem>
+        {overduePaymentCount > 0 && (
+          <DropdownMenuItem onSelect={() => onNotification(id)}>
+            Notificar <Badge className="rounded-full">{overduePaymentCount}</Badge>
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem onSelect={() => onDelete(id)}>
+          Eliminar
+        </DropdownMenuItem>
+      </DropdownMenuGroup>
+    </SelectActions>
+  );
+}
 
 export const ContractColumns = ({
   onDelete,
@@ -59,6 +92,7 @@ export const ContractColumns = ({
   {
     accessorKey: "cliente.razon_social",
     header: "Cliente",
+    cell: ({ row }) => getClientDisplayName(row.original.cliente),
   },
   {
     accessorKey: "tipo_contrato",
@@ -110,29 +144,18 @@ export const ContractColumns = ({
     id: "actions",
     header: "Acciones",
     cell: ({ row }) => {
-      const router = useNavigate();
       const id = row.original.id;
       const overduePaymentCount = row.original.cuotas.filter(
         (cuota) => cuota.situacion === "vencido"
       ).length;
 
       return (
-        <SelectActions>
-          <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => router(`/contratos/editar/${id}`)}>
-              Editar
-            </DropdownMenuItem>
-            {overduePaymentCount > 0 && (
-              <DropdownMenuItem onSelect={() => onNotification(id)}>
-                Notificar{" "}
-                <Badge className="rounded-full">{overduePaymentCount}</Badge>
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem onSelect={() => onDelete(id)}>
-              Eliminar
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-        </SelectActions>
+        <ContractActionsCell
+          id={id}
+          overduePaymentCount={overduePaymentCount}
+          onDelete={onDelete}
+          onNotification={onNotification}
+        />
       );
     },
   },

@@ -1,4 +1,4 @@
-"use contract";
+"use client";
 
 import { errorToast, successToast } from "@/lib/core.function";
 import { ContractSchema, ContractUpdate } from "../lib/contract.schema.ts";
@@ -61,7 +61,8 @@ export default function ContractEditPage() {
       "yyyy-MM-dd"
     ),
     numero: data.numero,
-    cliente_id: data.cliente.id.toString(),
+    cliente_padre_id: data.cliente.id,
+    cliente_id: data.cliente.id,
     tipo_contrato: data.tipo_contrato,
     total: Number(data.total),
     forma_pago: data.forma_pago,

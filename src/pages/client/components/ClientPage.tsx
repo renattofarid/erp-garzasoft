@@ -21,6 +21,9 @@ export default function ClientPage() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const { data, meta, isLoading, refetch } = useClients();
+  const rootClients = (data || []).filter(
+    (client) => !client.parent_cliente_id
+  );
 
   useEffect(() => {
     refetch({ page, search });
@@ -53,7 +56,7 @@ export default function ClientPage() {
       <ClientTable
         isLoading={isLoading}
         columns={ClientColumns({ onDelete: setDeleteId })}
-        data={data || []}
+        data={rootClients}
       >
         <ClientOptions search={search} setSearch={setSearch} />
       </ClientTable>

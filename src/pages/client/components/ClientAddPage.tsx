@@ -4,15 +4,18 @@ import {
   ClientRoute,
   ClientTitle,
 } from "../lib/client.interface.ts";
+import { createEmptyClientNode } from "../lib/client.interface.ts";
 import { errorToast, successToast } from "@/lib/core.function";
 import { ClientForm } from "./ClientForm.tsx";
 import { useClientStore } from "../lib/client.store.ts";
 import TitleFormComponent from "@/components/TitleFormComponent.tsx";
 import { useNavigate } from "react-router-dom";
+import { useMemo } from "react";
 
 export default function ClientAddPage() {
   const router = useNavigate();
   const { isSubmitting, createClient } = useClientStore();
+  const defaultValues = useMemo(() => createEmptyClientNode("local"), []);
 
   const handleSubmit = async (data: ClientSchema) => {
     await createClient(data)
@@ -33,19 +36,7 @@ export default function ClientAddPage() {
         icon={ClientIconName}
       />
       <ClientForm
-        defaultValues={{
-          sucursales: [{ nombre: "" }],
-          contactos: [{ nombre: "", celular: "", email: "" }],
-          tipo: "",
-          ruc: "",
-          razon_social: "",
-          dueno_nombre: "",
-          dueno_celular: "",
-          dueno_email: "",
-          representante_nombre: "",
-          representante_celular: "",
-          representante_email: "",
-        }}
+        defaultValues={defaultValues}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
         mode="create"

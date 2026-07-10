@@ -42,7 +42,7 @@ export default function ProductAddPage() {
         maxWidth="!max-w-(--breakpoint-lg)"
       >
         <ProductForm
-          defaultValues={{ nombre: "" }}
+          defaultValues={{ nombre: "", tipo: "servicio", modulos: [{ nombre: "", precio_unitario: 0 }] }}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
           mode="create"

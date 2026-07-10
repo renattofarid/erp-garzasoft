@@ -1,6 +1,11 @@
 import { AxiosRequestConfig } from "axios";
 import {
+  ClientSchema,
+} from "./client.schema.ts";
+import {
+  ClientDniLookupResponse,
   getClientProps,
+  ClientLookupResponse,
   ClientResource,
   ClientResourceById,
   ClientResponse,
@@ -36,20 +41,38 @@ export async function findClientById(id: number): Promise<ClientResourceById> {
   return response.data;
 }
 
-export async function storeClient(data: any): Promise<ClientResponse> {
+export async function lookupClientByRuc(
+  ruc: string
+): Promise<ClientLookupResponse> {
+  const response = await api.get<ClientLookupResponse>(
+    `${ENDPOINT}/consulta-ruc/${ruc}`
+  );
+  return response.data;
+}
+
+export async function lookupClientByDni(
+  dni: string
+): Promise<ClientDniLookupResponse> {
+  const response = await api.get<ClientDniLookupResponse>(
+    `${ENDPOINT}/consulta-dni/${dni}`
+  );
+  return response.data;
+}
+
+export async function storeClient(data: ClientSchema): Promise<ClientResponse> {
   const response = await api.post<ClientResponse>(ENDPOINT, data);
   return response.data;
 }
 
 export async function updateClient(
   id: number,
-  data: any
+  data: ClientSchema
 ): Promise<ClientResponse> {
   const response = await api.put<ClientResponse>(`${ENDPOINT}/${id}`, data);
   return response.data;
 }
 
-export async function deleteClient(id: number): Promise<any> {
-  const { data } = await api.delete<any>(`${ENDPOINT}/${id}`);
+export async function deleteClient(id: number): Promise<unknown> {
+  const { data } = await api.delete<unknown>(`${ENDPOINT}/${id}`);
   return data;
 }

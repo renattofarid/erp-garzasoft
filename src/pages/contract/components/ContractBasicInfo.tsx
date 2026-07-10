@@ -1,34 +1,89 @@
-import { Control } from "react-hook-form";
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
+import { useEffect, type ReactNode } from "react";
+import { Control, useFormContext, useWatch } from "react-hook-form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { FileText } from "lucide-react";
 import { DatePickerFormField } from "@/components/DatePickerFormField";
 import { FormSelect } from "@/components/FormSelect";
 import { Matcher } from "react-day-picker";
 import { parse } from "date-fns";
-
-interface Client {
-  id: number;
-  razon_social: string;
-}
+import { getClientDisplayName, type ClientResource } from "@/pages/client/lib/client.interface";
+import { findClientById, findRootClientById, getClientHierarchyLabel, getLeafClients } from "../lib/contract.tree";
 
 interface ContractBasicInfoProps {
   control: Control<any>;
-  clients: Client[];
+  clients: ClientResource[];
   fechaInicio: string;
 }
+
+const RequiredMark = () => <span className="ml-1 text-red-500">*</span>;
+
+const RequiredLabel = ({ children }: { children: ReactNode }) => (
+  <>
+    {children}
+    <RequiredMark />
+  </>
+);
 
 export const ContractBasicInfo = ({
   control,
   clients,
   fechaInicio,
 }: ContractBasicInfoProps) => {
+  const { setValue } = useFormContext();
+  const selectedClientId = useWatch({ control, name: "cliente_id" }) as number | string | undefined;
+  const selectedParentId = useWatch({ control, name: "cliente_padre_id" }) as number | string | undefined;
+
+  const currentClientId = Number(selectedClientId) || undefined;
+  const currentParentId = Number(selectedParentId) || undefined;
+
+  const selectedParentClient =
+    findClientById(clients, currentParentId) ||
+    findRootClientById(clients, currentClientId);
+
+  const leafClients = selectedParentClient ? getLeafClients(selectedParentClient) : [];
+  const localOptions = leafClients.length > 0 ? leafClients : selectedParentClient ? [selectedParentClient] : [];
+
+  const rootOptions = clients;
+
+  const syncParentAndClient = (parentId: string) => {
+    const nextParentId = Number(parentId);
+    const nextParent = findClientById(clients, nextParentId);
+    if (!nextParent) return;
+
+    const nextLeaves = getLeafClients(nextParent);
+    const preservedClient = nextLeaves.find((client) => client.id === currentClientId);
+    const nextClient = preservedClient ?? (nextLeaves.length === 1 ? nextLeaves[0] : null);
+
+    setValue("cliente_padre_id", nextParent.id, { shouldDirty: true, shouldValidate: true });
+    setValue("cliente_id", nextClient?.id ?? undefined, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
+
+  const syncClient = (clientId: string) => {
+    const nextClientId = Number(clientId);
+    const nextClient = findClientById(clients, nextClientId);
+    if (!nextClient) return;
+
+    const rootParent = findRootClientById(clients, nextClientId) ?? nextClient;
+    setValue("cliente_padre_id", rootParent.id, { shouldDirty: true, shouldValidate: true });
+    setValue("cliente_id", nextClient.id, { shouldDirty: true, shouldValidate: true });
+  };
+
+  useEffect(() => {
+    if (!currentClientId || clients.length === 0) return;
+
+    const rootClient = findRootClientById(clients, currentClientId);
+    if (rootClient && currentParentId !== rootClient.id) {
+      setValue("cliente_padre_id", rootClient.id, {
+        shouldDirty: false,
+        shouldValidate: true,
+      });
+    }
+  }, [clients, currentClientId, currentParentId, setValue]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -37,9 +92,7 @@ export const ContractBasicInfo = ({
         </div>
         <div>
           <h2 className="text-xl font-semibold">Información del Contrato</h2>
-          <p className="text-sm text-muted-foreground">
-            Datos básicos y cliente
-          </p>
+          <p className="text-sm text-muted-foreground">Datos básicos y cliente final</p>
         </div>
       </div>
 
@@ -49,7 +102,9 @@ export const ContractBasicInfo = ({
           name="numero"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Número de Contrato<span className="text-red-500">*</span> </FormLabel>
+              <FormLabel>
+                <RequiredLabel>Número de Contrato</RequiredLabel>
+              </FormLabel>
               <FormControl>
                 <Input placeholder="CT-2025-001" {...field} />
               </FormControl>
@@ -61,12 +116,31 @@ export const ContractBasicInfo = ({
         <FormSelect
           control={control}
           label="Cliente"
-          name="cliente_id"
-          placeholder="Selecciona un cliente"
-          options={clients.map((client) => ({
-            label: client.razon_social,
+          name="cliente_padre_id"
+          placeholder="Selecciona una corporación, empresa o local"
+          options={rootOptions.map((client) => ({
+            label: getClientDisplayName(client),
             value: client.id.toString(),
           }))}
+          onChange={syncParentAndClient}
+        />
+
+        <FormSelect
+          control={control}
+          label="Local"
+          name="cliente_id"
+          placeholder={
+            selectedParentClient
+              ? localOptions.length > 0
+                ? "Selecciona el local"
+                : "Este cliente no tiene locales"
+              : "Primero selecciona un cliente"
+          }
+          options={localOptions.map((client) => ({
+            label: getClientHierarchyLabel(clients, client.id),
+            value: client.id.toString(),
+          }))}
+          onChange={syncClient}
         />
 
         <DatePickerFormField
@@ -108,6 +182,10 @@ export const ContractBasicInfo = ({
             { label: "Soporte", value: "soporte" },
           ]}
         />
+      </div>
+
+      <div className="rounded-lg border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+        El contrato se asigna al local final seleccionado. Si el cliente elegido no tiene hijos, se usará ese mismo registro.
       </div>
     </div>
   );

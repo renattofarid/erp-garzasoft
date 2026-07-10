@@ -20,7 +20,7 @@ interface ClientStore {
   isFinding: boolean;
   error: string | null;
   isSubmitting: boolean;
-  fetchClients: (params?: Record<string, any>) => Promise<void>;
+  fetchClients: (params?: Record<string, unknown>) => Promise<void>;
   fetchAllClients: () => Promise<void>;
   fetchClient: (id: number) => Promise<void>;
   createClient: (data: ClientSchema) => Promise<void>;
@@ -37,13 +37,13 @@ export const useClientStore = create<ClientStore>((set) => ({
   isSubmitting: false,
   error: null,
 
-  fetchClients: async (params?: Record<string, any>) => {
+  fetchClients: async (params?: Record<string, unknown>) => {
     set({ isLoading: true, error: null });
     try {
       const { data, meta } = await getClient({ params });
       set({ clients: data, meta, isLoading: false });
-    } catch (err) {
-      set({ error: "Error al cargar tipos de usuarios", isLoading: false });
+    } catch {
+      set({ error: "Error al cargar clientes", isLoading: false });
     }
   },
 
@@ -52,8 +52,8 @@ export const useClientStore = create<ClientStore>((set) => ({
     try {
       const data = await getAllClients();
       set({ allClients: data, isLoading: false });
-    } catch (err) {
-      set({ error: "Error al cargar tipos de usuarios", isLoading: false });
+    } catch {
+      set({ error: "Error al cargar clientes", isLoading: false });
     }
   },
 
@@ -62,8 +62,8 @@ export const useClientStore = create<ClientStore>((set) => ({
     try {
       const { data } = await findClientById(id);
       set({ client: data, isFinding: false });
-    } catch (err) {
-      set({ error: "Error al cargar el tipo de usuario", isFinding: false });
+    } catch {
+      set({ error: "Error al cargar el cliente", isFinding: false });
     }
   },
 
@@ -71,8 +71,9 @@ export const useClientStore = create<ClientStore>((set) => ({
     set({ isSubmitting: true, error: null });
     try {
       await storeClient(data);
+      set({ clients: null, allClients: null });
     } catch (err) {
-      set({ error: "Error al crear el Tipo de Usuario" });
+      set({ error: "Error al crear el cliente" });
       throw err;
     } finally {
       set({ isSubmitting: false });
@@ -83,8 +84,9 @@ export const useClientStore = create<ClientStore>((set) => ({
     set({ isSubmitting: true, error: null });
     try {
       await updateClient(id, data);
+      set({ clients: null, allClients: null, client: null });
     } catch (err) {
-      set({ error: "Error al actualizar el Tipo de Usuario" });
+      set({ error: "Error al actualizar el cliente" });
       throw err;
     } finally {
       set({ isSubmitting: false });

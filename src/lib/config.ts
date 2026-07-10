@@ -1,9 +1,19 @@
 import axios from "axios";
 import { errorToast } from "./core.function";
 
-const baseURL = "https://develop.garzasoft.com:83/erp-mrsoft-backend/public/api/";
-export const prodAssetURL =
-  "https://develop.garzasoft.com:83/erp-mrsoft-backend/public/";
+const defaultApiUrl =
+  "http://localhost/Garzasoft/ERPMRSOFT/erp-mrsoft-backend/public/api/";
+const defaultAssetUrl =
+  "http://localhost/Garzasoft/ERPMRSOFT/erp-mrsoft-backend/public/";
+
+const normalizeUrl = (url: string) => (url.endsWith("/") ? url : `${url}/`);
+
+const baseURL = normalizeUrl(
+  import.meta.env.VITE_API_URL?.trim() || defaultApiUrl
+);
+export const prodAssetURL = normalizeUrl(
+  import.meta.env.VITE_ASSET_URL?.trim() || defaultAssetUrl
+);
 
 export const api = axios.create({
   baseURL,

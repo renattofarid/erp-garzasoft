@@ -55,7 +55,9 @@ export function FormSelect({
       control={control}
       name={name}
       render={({ field }) => {
-        const selected = options.find((opt) => opt.value === field.value);
+        const selected = options.find(
+          (opt) => String(opt.value) === String(field.value)
+        );
         
         return (
           <FormItem className="flex flex-col justify-start">
@@ -100,7 +102,7 @@ export function FormSelect({
                         <Check
                           className={cn(
                             "mr-2 h-4 w-4",
-                            option.value === field.value
+                            String(option.value) === String(field.value)
                               ? "opacity-100"
                               : "opacity-0"
                           )}

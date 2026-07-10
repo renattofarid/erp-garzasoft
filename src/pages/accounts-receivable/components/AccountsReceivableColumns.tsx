@@ -15,6 +15,7 @@ import {
   getIconBySituacion,
   getSituacionVariant,
 } from "../lib/accounts-receivable.functions";
+import { getClientDisplayName } from "@/pages/client/lib/client.interface";
 
 export const CuentasPorCobrarColumns = ({
   onEdit,
@@ -35,8 +36,10 @@ export const CuentasPorCobrarColumns = ({
   {
     accessorKey: "contrato.cliente.razon_social",
     header: "Cliente",
-    cell: ({ getValue }) => (
-      <span className="font-medium">{getValue() as string}</span>
+    cell: ({ row }) => (
+      <span className="font-medium">
+        {getClientDisplayName(row.original.contrato?.cliente)}
+      </span>
     ),
   },
   {

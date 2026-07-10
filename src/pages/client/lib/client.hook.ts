@@ -2,12 +2,12 @@
 import { useEffect } from "react";
 import { useClientStore } from "./client.store.ts";
 
-export function useClients(params?: Record<string, any>) {
+export function useClients(params?: Record<string, unknown>) {
   const { clients, meta, isLoading, error, fetchClients } = useClientStore();
 
   useEffect(() => {
     if (!clients) fetchClients(params);
-  }, [clients, fetchClients]);
+  }, [clients, fetchClients, params]);
 
   return {
     data: clients,
@@ -37,8 +37,10 @@ export function useClient(id: number) {
   const { client, isFinding, error, fetchClient } = useClientStore();
 
   useEffect(() => {
-    fetchClient(id);
-  }, [id]);
+    if (id > 0) {
+      fetchClient(id);
+    }
+  }, [id, fetchClient]);
 
   return {
     data: client,

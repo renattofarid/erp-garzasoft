@@ -27,6 +27,7 @@ import { ContractResource } from "@/pages/contract/lib/contract.interface";
 import { Input } from "@/components/ui/input";
 import { format, parse } from "date-fns";
 import { useEffect } from "react";
+import { getClientDisplayName } from "@/pages/client/lib/client.interface";
 
 // 1) Tipo fuerte del formulario = OUTPUT del schema de create
 type ContractFormValues = z.output<typeof notificationSchemaCreate>;
@@ -85,10 +86,7 @@ export const NotificationForm = ({
                 <Input
                   disabled
                   placeholder="Cliente"
-                  value={
-                    contract?.cliente.razon_social ??
-                    contract?.cliente.dueno_nombre
-                  }
+                  value={getClientDisplayName(contract?.cliente)}
                 />
               </FormControl>
               <FormMessage />

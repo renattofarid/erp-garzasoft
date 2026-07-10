@@ -23,6 +23,7 @@ import { useState } from "react";
 import { CuentasPorCobrarResource } from "../lib/accounts-receivable.interface";
 import { Badge } from "@/components/ui/badge";
 import { format, parse } from "date-fns";
+import { getClientDisplayName } from "@/pages/client/lib/client.interface";
 
 interface PagoFormProps {
   defaultValues: Partial<PagoSchema>;
@@ -98,7 +99,7 @@ export const PagoForm = ({
               <div>
                 <span className="text-muted-foreground">Cliente:</span>{" "}
                 <span className="font-medium">
-                  {cuota.contrato?.cliente?.razon_social ?? "Sin cliente"}
+                  {getClientDisplayName(cuota.contrato?.cliente)}
                 </span>
               </div>
               <div>

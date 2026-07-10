@@ -55,14 +55,16 @@ export interface Contrato {
 export interface Cliente {
   id: number;
   tipo: string;
-  ruc: string;
-  razon_social: string;
+  ruc: string | null;
+  razon_social: string | null;
+  nombre_comercial?: string | null;
+  nombre_cliente?: string | null;
   dueno_nombre: string;
-  dueno_celular: string;
-  dueno_email: string;
-  representante_nombre: string;
-  representante_celular: string;
-  representante_email: string;
+  dueno_celular: string | null;
+  dueno_email: string | null;
+  representante_nombre: string | null;
+  representante_celular: string | null;
+  representante_email: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

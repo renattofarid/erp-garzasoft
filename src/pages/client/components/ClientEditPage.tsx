@@ -4,6 +4,7 @@ import { errorToast, successToast } from "@/lib/core.function";
 import { ClientSchema } from "../lib/client.schema.ts";
 import {
   ClientIconName,
+  ClientFormNode,
   ClientResource,
   ClientRoute,
   ClientTitle,
@@ -15,55 +16,105 @@ import { useClient } from "../lib/client.hook.ts";
 import { useNavigate, useParams } from "react-router-dom";
 import TitleFormComponent from "@/components/TitleFormComponent.tsx";
 import FormSkeleton from "@/components/FormSkeleton.tsx";
+import { normalizeNodeType } from "../lib/client.schema.ts";
+import { useMemo } from "react";
+
+const normalizeContact = (contact?: {
+  dni?: string | null;
+  nombre?: string | null;
+  celular?: string | null;
+  email?: string | null;
+}) => ({
+  dni: contact?.dni ?? "",
+  nombre: contact?.nombre ?? "",
+  celular: contact?.celular ?? "",
+  email: contact?.email ?? "",
+});
+
+const sameContact = (
+  left?: ReturnType<typeof normalizeContact> | null,
+  right?: ReturnType<typeof normalizeContact> | null
+) =>
+  !!left &&
+  !!right &&
+  left.dni === right.dni &&
+  left.nombre === right.nombre &&
+  left.celular === right.celular &&
+  left.email === right.email;
 
 export default function ClientEditPage() {
   const { id } = useParams<{ id: string }>();
   const router = useNavigate();
+  const numericId = Number(id ?? 0);
+  const isValidId = Number.isFinite(numericId) && numericId > 0;
+  const { data: client, isFinding } = useClient(isValidId ? numericId : 0);
+  const { isSubmitting, updateClient } = useClientStore();
 
-  if (!id || isNaN(Number(id))) {
+  if (!isValidId) {
     return <NotFound />;
   }
 
-  const { data: client, isFinding } = useClient(Number(id));
-  const { isSubmitting, updateClient } = useClientStore();
-
   const handleSubmit = async (data: ClientSchema) => {
-    await updateClient(Number(id), data)
+    await updateClient(numericId, data)
       .then(() => {
-        successToast("Tipo de Usuario actualizado exitosamente");
+        successToast("Cliente actualizado exitosamente");
         router(ClientRoute);
       })
       .catch(() => {
-        errorToast("Hubo un error al actualizar el Tipo de Usuario");
+        errorToast("Hubo un error al actualizar el cliente");
       });
   };
 
-  const mapClientToForm = (data: ClientResource): Partial<ClientSchema> => ({
-    sucursales:
-      data.sucursales_clientes.length > 0
-        ? data.sucursales_clientes.map((sucursal) => ({
-            nombre: sucursal.nombre,
-          }))
-        : [{ nombre: "" }],
-    contactos: data.contactos_clientes.map((contacto) => ({
-      nombre: contacto.nombre,
-      celular: contacto.celular,
-      email: contacto.email,
-    })),
-    tipo: data.tipo,
-    ruc: data.ruc,
-    razon_social: data.razon_social,
-    dueno_nombre: data.dueno_nombre,
-    dueno_celular: data.dueno_celular,
-    dueno_email: data.dueno_email,
-    representante_nombre: data.representante_nombre,
-    representante_celular: data.representante_celular,
-    representante_email: data.representante_email,
-  });
+  const mapClientToForm = (
+    data: ClientResource,
+    parentMainContact?: ReturnType<typeof normalizeContact> | null
+  ): ClientFormNode => {
+    const contactos = data.contactos_clientes.map((contacto) =>
+      normalizeContact(contacto)
+    );
+    const contactoPrincipal =
+      contactos[0] ??
+      normalizeContact({
+        dni: null,
+        nombre: data.dueno_nombre,
+        celular: data.dueno_celular,
+        email: data.dueno_email,
+      });
+    const contactoIgualEmpresa =
+      Boolean(data.contacto_igual_empresa) ||
+      (data.tipo_ui === "local" && sameContact(contactoPrincipal, parentMainContact));
+
+    return {
+      id: String(data.id),
+      tipo: normalizeNodeType(data.tipo_ui ?? data.tipo),
+      ruc: data.ruc ?? "",
+      razon_social: data.razon_social ?? "",
+      nombre_comercial: data.nombre_comercial ?? "",
+      direccion: data.direccion ?? "",
+      contacto: contactoPrincipal,
+      contactos:
+        contactos.length > 0
+          ? contactos
+          : [
+              {
+                dni: "",
+                nombre: data.dueno_nombre ?? "",
+                celular: data.dueno_celular ?? "",
+                email: data.dueno_email ?? "",
+              },
+            ],
+      contacto_igual_empresa: contactoIgualEmpresa,
+      hijos: (data.hijos_clientes ?? []).map((child) =>
+        mapClientToForm(child, contactoPrincipal)
+      ),
+    };
+  };
+
+  const defaultValues = useMemo(() => (client ? mapClientToForm(client) : null), [client]);
 
   if (isFinding) return <FormSkeleton />;
 
-  if (!client) return <NotFound />;
+  if (!client || !defaultValues) return <NotFound />;
 
   return (
     <div className="max-w-(--breakpoint-xl) w-full mx-auto space-y-6">
@@ -73,7 +124,7 @@ export default function ClientEditPage() {
         icon={ClientIconName}
       />
       <ClientForm
-        defaultValues={mapClientToForm(client)}
+        defaultValues={defaultValues}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
         mode="update"

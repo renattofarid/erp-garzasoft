@@ -1,5 +1,3 @@
-// import { Links, Meta } from "@/src/shared/lib/pagination.interface";
-
 import { Links, Meta } from "@/lib/pagination.interface";
 import { ShoppingBag } from "lucide-react";
 
@@ -8,12 +6,14 @@ export const ProductRoute = "/productos";
 export const ProductAddRoute = "/productos/agregar";
 export const ProductEditRoute = "/productos/editar";
 export const ProductIconName = "ShoppingBag";
-export const ProductTitle = "Productos";
-export const ProductDescription = "Gestiona los Prodcutos en el sistema.";
+export const ProductTitle = "Productos y servicios";
+export const ProductDescription = "Gestiona los productos y servicios en el sistema.";
 export const ProductDescriptionAdd =
-  "Crea un nuevo producto para ofrecer a tus clientes.";
+  "Crea un nuevo servicio o producto con sus conceptos.";
 export const ProductDescriptionEdit =
-  "Edita un producto existente para actualizar su información.";
+  "Edita un servicio o producto existente.";
+
+export type ProductType = "servicio" | "producto";
 
 export interface ProductResponse {
   data: ProductResource[];
@@ -24,7 +24,8 @@ export interface ProductResponse {
 export interface ProductResource {
   id: number;
   nombre: string;
-  descripcion: string;
+  tipo: ProductType;
+  descripcion: string | null;
   modulos: Modulo[];
   avisos_saas: any[];
   created_at: string;
@@ -47,6 +48,7 @@ export interface ProductResourceById {
   message: string;
   data: ProductResource;
 }
+
 export interface getProductProps {
   params?: Record<string, any>;
 }

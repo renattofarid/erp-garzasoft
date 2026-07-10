@@ -10,6 +10,20 @@ const isoDate = z.coerce
       .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Formato válido: YYYY-MM-DD" })
   );
 
+const emptyToUndefined = (value: unknown) => {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  return trimmed === "" ? undefined : trimmed;
+};
+
+const requiredClientId = z.preprocess(
+  emptyToUndefined,
+  z.coerce
+    .number()
+    .int({ message: "Seleccione un cliente válido" })
+    .positive({ message: "Seleccione un cliente válido" })
+);
+
 const productoModuloSchema = z.object({
   producto_id: z.coerce
     .number()
@@ -36,15 +50,8 @@ const contractBaseObject = z.object({
     .string()
     .min(1, { message: "Número de contrato obligatorio" })
     .max(100),
-  cliente_id: z
-    .string()
-    .or(z.number().int().positive())
-    .refine((val) => {
-      if (typeof val === "string") {
-        return val.length > 0;
-      }
-      return true;
-    }),
+  cliente_padre_id: requiredClientId,
+  cliente_id: requiredClientId,
   tipo_contrato: z.enum(["desarrollo", "saas", "soporte"], {
     message: "Solo se permite desarrollo, saas o soporte",
   }),
@@ -66,7 +73,6 @@ const eq = (n: number) => Math.round(n * 100) / 100;
 // 2) CREATE: valida todo
 export const contractCreateSchema = contractBaseObject.superRefine(
   (data, ctx) => {
-    // fecha_fin >= fecha_inicio
     const ini = new Date(data.fecha_inicio);
     const fin = new Date(data.fecha_fin);
     if (fin < ini) {
@@ -77,7 +83,6 @@ export const contractCreateSchema = contractBaseObject.superRefine(
       });
     }
 
-    // duplicados (producto_id, modulo_id)
     const map: Record<string, number[]> = {};
     data.productos_modulos.forEach((pm, i) => {
       const key = `${pm.producto_id}-${pm.modulo_id}`;
@@ -88,25 +93,21 @@ export const contractCreateSchema = contractBaseObject.superRefine(
         const last = indices[indices.length - 1];
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "No se permiten duplicados de producto–módulo",
+          message: "No se permiten duplicados de producto-módulo",
           path: ["productos_modulos", last],
         });
       }
     });
 
-    // total === suma productos
     const sum = data.productos_modulos.reduce((acc, x) => acc + x.precio, 0);
     if (eq(data.total) !== eq(sum)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: `El total (${eq(
-          data.total
-        )}) debe ser igual a la suma de los módulos (${eq(sum)})`,
+        message: `El total (${eq(data.total)}) debe ser igual a la suma de los módulos (${eq(sum)})`,
         path: ["total"],
       });
     }
 
-    // validaciones de cuotas
     if (data.forma_pago === "parcial") {
       if (!data.cuotas || data.cuotas.length === 0) {
         ctx.addIssue({
@@ -115,27 +116,20 @@ export const contractCreateSchema = contractBaseObject.superRefine(
           path: ["cuotas"],
         });
       } else {
-        // suma de cuotas = total
         const sumCuotas = data.cuotas.reduce((acc, c) => acc + c.monto, 0);
         if (eq(sumCuotas) !== eq(data.total)) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: `La suma de las cuotas (${eq(
-              sumCuotas
-            )}) debe ser igual al total (${eq(data.total)})`,
+            message: `La suma de las cuotas (${eq(sumCuotas)}) debe ser igual al total (${eq(data.total)})`,
             path: ["cuotas"],
           });
         }
 
-        // última cuota = fecha_fin
         const maxFecha = data.cuotas
           .map((c) => new Date(c.fecha_vencimiento))
           .sort((a, b) => a.getTime() - b.getTime())
           .pop();
-        if (
-          maxFecha &&
-          maxFecha.toISOString().slice(0, 10) !== data.fecha_fin
-        ) {
+        if (maxFecha && maxFecha.toISOString().slice(0, 10) !== data.fecha_fin) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message:
@@ -152,7 +146,6 @@ export const contractCreateSchema = contractBaseObject.superRefine(
 export const contractUpdateSchema = contractBaseObject
   .partial()
   .superRefine((data, ctx) => {
-    // fecha_fin >= fecha_inicio si ambos vienen
     if (data.fecha_inicio && data.fecha_fin) {
       const ini = new Date(data.fecha_inicio);
       const fin = new Date(data.fecha_fin);
@@ -165,7 +158,6 @@ export const contractUpdateSchema = contractBaseObject
       }
     }
 
-    // duplicados si productos_modulos viene
     if (data.productos_modulos) {
       const map: Record<string, number[]> = {};
       data.productos_modulos.forEach((pm, i) => {
@@ -177,56 +169,42 @@ export const contractUpdateSchema = contractBaseObject
           const last = indices[indices.length - 1];
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "No se permiten duplicados de producto–módulo",
+            message: "No se permiten duplicados de producto-módulo",
             path: ["productos_modulos", last],
           });
         }
       });
 
-      // total si viene
       if (typeof data.total === "number") {
-        const sum = data.productos_modulos.reduce(
-          (acc, x) => acc + x.precio,
-          0
-        );
+        const sum = data.productos_modulos.reduce((acc, x) => acc + x.precio, 0);
         if (eq(data.total) !== eq(sum)) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: `El total (${eq(
-              data.total
-            )}) debe ser igual a la suma de los módulos (${eq(sum)})`,
+            message: `El total (${eq(data.total)}) debe ser igual a la suma de los módulos (${eq(sum)})`,
             path: ["total"],
           });
         }
       }
     }
 
-    // validaciones de cuotas si vienen
     if (data.forma_pago === "parcial" && data.cuotas) {
-      // suma de cuotas = total si ambos vienen
       if (typeof data.total === "number") {
         const sumCuotas = data.cuotas.reduce((acc, c) => acc + c.monto, 0);
         if (eq(sumCuotas) !== eq(data.total)) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: `La suma de las cuotas (${eq(
-              sumCuotas
-            )}) debe ser igual al total (${eq(data.total)})`,
+            message: `La suma de las cuotas (${eq(sumCuotas)}) debe ser igual al total (${eq(data.total)})`,
             path: ["cuotas"],
           });
         }
       }
 
-      // última cuota = fecha_fin si ambas vienen
       if (data.fecha_fin) {
         const maxFecha = data.cuotas
           .map((c) => new Date(c.fecha_vencimiento))
           .sort((a, b) => a.getTime() - b.getTime())
           .pop();
-        if (
-          maxFecha &&
-          maxFecha.toISOString().slice(0, 10) !== data.fecha_fin
-        ) {
+        if (maxFecha && maxFecha.toISOString().slice(0, 10) !== data.fecha_fin) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message:

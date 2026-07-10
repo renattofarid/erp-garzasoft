@@ -23,6 +23,7 @@ import { FormSelect } from "@/components/FormSelect";
 import { useAllContracts } from "@/pages/contract/lib/contract.hook";
 import FormSkeleton from "@/components/FormSkeleton";
 import { format, parse } from "date-fns";
+import { getClientDisplayName } from "@/pages/client/lib/client.interface";
 
 interface CuentasPorCobrarFormProps {
   defaultValues: Partial<CuentasPorCobrarSchema>;
@@ -71,9 +72,9 @@ export const CuentasPorCobrarForm = ({
             placeholder="Selecciona un contrato"
             options={
               contracts?.map((contract) => ({
-                label: `${contract.numero} - ${
-                  contract.cliente?.razon_social || "Sin cliente"
-                }`,
+                label: `${contract.numero} - ${getClientDisplayName(
+                  contract.cliente
+                )}`,
                 value: contract.id,
               })) || []
             }

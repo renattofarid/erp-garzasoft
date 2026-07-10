@@ -42,6 +42,7 @@ export const useContractForm = ({
       fecha_inicio: "",
       fecha_fin: "",
       numero: "",
+      cliente_padre_id: undefined as unknown as number,
       cliente_id: undefined as unknown as number,
       tipo_contrato: "saas",
       total: 0,

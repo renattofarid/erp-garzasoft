@@ -4,8 +4,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SelectActions } from "@/components/SelectActions";
 import { ColumnDef } from "@tanstack/react-table";
-import { ProductResource } from "../lib/product.interface";
-import { Modulo } from "../lib/product.interface";
+import { ProductResource, Modulo } from "../lib/product.interface";
 
 export const ProductColumns = ({
   onEdit,
@@ -22,6 +21,13 @@ export const ProductColumns = ({
     ),
   },
   {
+    accessorKey: "tipo",
+    header: "Tipo",
+    cell: ({ getValue }) => (
+      <span className="capitalize">{getValue() as string}</span>
+    ),
+  },
+  {
     accessorKey: "descripcion",
     header: "Descripción",
     cell: ({ getValue }) => (
@@ -30,14 +36,14 @@ export const ProductColumns = ({
   },
   {
     accessorKey: "modulos",
-    header: "Módulos",
+    header: "Conceptos",
     cell: ({ getValue }) => {
-      const sucursales = getValue() as Modulo[];
+      const conceptos = getValue() as Modulo[];
       return (
         <div className="space-y-1">
-          {sucursales.map((contacto, i) => (
+          {conceptos.map((concepto, i) => (
             <div key={i} className="text-sm">
-              <span className="font-semibold">{contacto.nombre}</span>
+              <span className="font-semibold">{concepto.nombre}</span>
             </div>
           ))}
         </div>

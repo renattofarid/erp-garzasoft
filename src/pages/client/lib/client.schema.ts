@@ -1,68 +1,118 @@
 import { z } from "zod";
+import { type ClientTypeUi } from "./client.interface";
 
-export const typeClientSchema = z.enum(["corporacion", "unico"]);
+const phoneError = "Número de celular inválido. Debe tener 9 dígitos.";
 
-export const clientContactSchema = z.object({
-  nombre: z.string().min(1, "El nombre es requerido"),
-  celular: z
+const emptyToUndefined = (value: unknown) => {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  return trimmed === "" ? undefined : trimmed;
+};
+
+const optionalText = z.preprocess(emptyToUndefined, z.string().optional());
+
+const optionalPhone = z.preprocess(
+  emptyToUndefined,
+  z
     .string()
-    .nonempty("Debes ingresar el celular del responsable")
     .regex(/^[0-9]+$/, { message: "Solo se permiten números" })
-    .refine((val) => val.length === 9, {
-      message: "Numero de celular inválido. Debe tener 9 dígitos.",
-    }),
-  email: z.string().email({ message: "Correo inválido" }),
+    .length(9, phoneError)
+    .optional()
+);
+
+const optionalDni = z.preprocess(
+  emptyToUndefined,
+  z
+    .string()
+    .regex(/^[0-9]+$/, { message: "Solo se permiten números" })
+    .length(8, "El DNI debe tener 8 dígitos")
+    .optional()
+);
+
+const optionalEmail = z.preprocess(
+  emptyToUndefined,
+  z.string().email({ message: "Correo inválido" }).optional()
+);
+
+export const typeClientSchema = z.enum(["corporacion", "empresa", "local"]);
+
+const contactSchema = z.object({
+  dni: optionalDni,
+  nombre: z.string().trim().min(1, "El nombre completo es requerido"),
+  celular: optionalPhone,
+  email: optionalEmail,
 });
 
-export const clientSucursalSchema = z.object({
-  nombre: z.string().min(1, "El nombre de la sucursal es requerido"),
+const looseContactSchema = z.object({
+  dni: optionalDni,
+  nombre: optionalText,
+  celular: optionalPhone,
+  email: optionalEmail,
 });
 
-export const clientSchemaCreate = z.object({
-  tipo: z
-    .string()
-    .min(1, "El tipo es requerido")
-    .refine((value) => typeClientSchema.safeParse(value).success, {
-      message: "Tipo de cliente inválido. Debe ser 'corporacion' o 'unico'.",
-    }),
-  ruc: z
-    .string()
-    .nonempty("Debes ingresar el documento")
-    .regex(/^[0-9]+$/, { message: "Solo se permiten números" })
-    .refine((val) => val.length === 11, {
-      message: "Debe tener 11 dígitos",
-    }),
-  razon_social: z.string().min(1, "La razón social es requerida"),
-  dueno_nombre: z.string().min(1, "El nombre del dueño es requerido"),
-  dueno_celular: z
-    .string()
-    .nonempty("Debes ingresar el celular del dueño")
-    .regex(/^[0-9]+$/, { message: "Solo se permiten números" })
-    .refine((val) => val.length === 9, {
-      message: "Numero de celular inválido. Debe tener 9 dígitos.",
-    }),
-  dueno_email: z.string().email("El email del dueño es inválido"),
-  representante_nombre: z
-    .string()
-    .min(1, "El nombre del representante es requerido"),
-  representante_celular: z
-    .string()
-    .nonempty("Debes ingresar el celular del representante")
-    .regex(/^[0-9]+$/, { message: "Solo se permiten números" })
-    .refine((val) => val.length === 9, {
-      message: "Numero de celular inválido. Debe tener 9 dígitos.",
-    }),
-  representante_email: z
-    .string()
-    .email("El email del representante es inválido"),
-  contactos: z
-    .array(clientContactSchema)
-    .min(1, "Debe agregar al menos un contacto"),
-  sucursales: z
-    .array(clientSucursalSchema)
-    .min(1, "Debe agregar al menos una sucursal"),
-});
+const createClientNodeSchema: z.ZodType<any> = z.lazy(() =>
+  z
+    .object({
+      tipo: typeClientSchema,
+      ruc: optionalText,
+      razon_social: optionalText,
+      nombre_comercial: optionalText,
+      direccion: optionalText,
+      contacto: looseContactSchema,
+      contactos: z.array(contactSchema).optional().default([]),
+      contacto_igual_empresa: z.boolean().optional().default(false),
+      hijos: z.array(createClientNodeSchema).default([]),
+    })
+    .superRefine((data, ctx) => {
+      if (!data.nombre_comercial) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["nombre_comercial"],
+          message: "El nombre comercial es obligatorio.",
+        });
+      }
 
-export const clientSchemaUpdate = clientSchemaCreate.partial();
+      if ((data.tipo === "empresa" || data.tipo === "local") && !data.direccion) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["direccion"],
+          message: "La dirección es obligatoria para empresas y locales.",
+        });
+      }
 
-export type ClientSchema = z.infer<typeof clientSchemaCreate>;
+      const hasPrincipalContact =
+        Boolean(data.contacto?.nombre) || Boolean(data.contactos?.[0]?.nombre);
+
+      if (!hasPrincipalContact) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: data.contactos?.length ? ["contactos", 0, "nombre"] : ["contacto", "nombre"],
+          message: "El nombre completo del contacto es obligatorio.",
+        });
+      }
+
+      if (data.tipo === "corporacion" && data.hijos.some((child: any) => child?.tipo !== "empresa")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["hijos"],
+          message: "La corporación solo puede contener empresas.",
+        });
+      }
+
+      if (data.tipo === "empresa" && data.hijos.some((child: any) => child?.tipo !== "local")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["hijos"],
+          message: "La empresa solo puede contener locales.",
+        });
+      }
+    })
+);
+
+export const clientSchemaCreate = createClientNodeSchema;
+export const clientSchemaUpdate = createClientNodeSchema;
+
+export type ClientSchema = z.infer<typeof createClientNodeSchema>;
+
+export const normalizeNodeType = (tipo?: string | null): ClientTypeUi =>
+  tipo === "empresa" ? "empresa" : tipo === "corporacion" ? "corporacion" : "local";

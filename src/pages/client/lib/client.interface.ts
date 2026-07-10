@@ -1,5 +1,3 @@
-// import { Links, Meta } from "@/src/shared/lib/pagination.interface";
-
 import { Links, Meta } from "@/lib/pagination.interface";
 import { Receipt } from "lucide-react";
 
@@ -14,59 +12,189 @@ export const ClientDescriptionAdd = "Crea un nuevo cliente para el sistema.";
 export const ClientDescriptionEdit =
   "Edita un cliente existente en el sistema.";
 
+export type ClientTypeUi = "corporacion" | "empresa" | "local";
+export type ClientTypeDb = ClientTypeUi | "unico";
+
 export interface ClientResponse {
   data: ClientResource[];
   links: Links;
   meta: Meta;
 }
 
+export interface ClientContact {
+  dni?: string | null;
+  nombre: string;
+  celular?: string | null;
+  email?: string | null;
+}
+
 export interface ClientResource {
   id: number;
-  tipo: string;
-  ruc: string;
-  razon_social: string;
-  dueno_nombre: string;
-  dueno_celular: string;
-  dueno_email: string;
-  representante_nombre: string;
-  representante_celular: string;
-  representante_email: string;
+  parent_cliente_id?: number | null;
+  tipo: ClientTypeDb;
+  tipo_ui?: ClientTypeUi;
+  ruc: string | null;
+  razon_social: string | null;
+  nombre_comercial: string | null;
+  direccion?: string | null;
+  nombre_cliente?: string | null;
+  contacto_principal?: ClientContact | null;
+  dueno_nombre: string | null;
+  dueno_celular: string | null;
+  dueno_email: string | null;
+  dueno_es_representante?: boolean;
+  dueno_es_responsable?: boolean;
+  contacto_igual_empresa?: boolean;
+  representante_nombre: string | null;
+  representante_celular: string | null;
+  representante_email: string | null;
+  responsable_nombre?: string | null;
+  responsable_celular?: string | null;
+  responsable_email?: string | null;
   created_at: string;
   updated_at: string;
-  deleted_at: string;
+  deleted_at?: string | null;
   contactos_clientes: ContactosCliente[];
-  contratos: any[];
+  contratos: unknown[];
   sucursales_clientes: SucursalesCliente[];
-  notificaciones: any[];
-  avisos_saas: any[];
+  hijos_clientes: ClientResource[];
+  notificaciones: unknown[];
+  avisos_saas: unknown[];
+}
+
+export interface ClientLookupResponse {
+  status: number;
+  data: {
+    ruc: string;
+    razon_social: string | null;
+    nombre_comercial: string | null;
+    direccion?: string | null;
+    estado?: string | null;
+    condicion?: string | null;
+    raw?: {
+      code?: number;
+      RUC?: string;
+      RazonSocial?: string | null;
+      Direccion?: string | null;
+      Tipo?: string | null;
+      Inscripcion?: string | null;
+      [key: string]: unknown;
+    };
+  };
+}
+
+export interface ClientDniLookupResponse {
+  status: number;
+  data: {
+    dni: string;
+    nombres?: string | null;
+    apepat?: string | null;
+    apemat?: string | null;
+    nombre_completo?: string | null;
+    fechanac?: string | null;
+    raw?: {
+      code?: number;
+      nombres?: string | null;
+      apepat?: string | null;
+      apemat?: string | null;
+      fecnac?: string | null;
+      [key: string]: unknown;
+    };
+  };
 }
 
 export interface ClientResourceById {
   status: number;
-  message: string;
+  message?: string;
   data: ClientResource;
 }
 
 export interface getClientProps {
-  params?: Record<string, any>;
-}
-
-export interface SucursalesCliente {
-  id: number;
-  cliente_id: number;
-  nombre: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string;
+  params?: Record<string, unknown>;
 }
 
 export interface ContactosCliente {
-  id: number;
-  cliente_id: number;
+  id?: number;
+  cliente_id?: number;
+  dni?: string | null;
   nombre: string;
-  celular: string;
-  email: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string;
+  celular?: string | null;
+  email?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  deleted_at?: string | null;
 }
+
+export interface SucursalesCliente {
+  id?: number;
+  cliente_id?: number;
+  nombre: string;
+  ruc?: string | null;
+  razon_social?: string | null;
+  nombre_comercial?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  deleted_at?: string | null;
+}
+
+export interface ClientFormNode {
+  id: string;
+  tipo: ClientTypeUi;
+  ruc?: string;
+  razon_social?: string;
+  nombre_comercial?: string;
+  direccion?: string;
+  contacto: ClientContact;
+  contactos: ClientContact[];
+  contacto_igual_empresa?: boolean;
+  hijos: ClientFormNode[];
+}
+
+export const createEmptyClientNode = (
+  tipo: ClientTypeUi = "local"
+): ClientFormNode => ({
+  id: crypto.randomUUID(),
+  tipo,
+  ruc: "",
+  razon_social: "",
+  nombre_comercial: "",
+  direccion: "",
+  contacto: {
+    dni: "",
+    nombre: "",
+    celular: "",
+    email: "",
+  },
+  contactos: [
+    {
+      dni: "",
+      nombre: "",
+      celular: "",
+      email: "",
+    },
+  ],
+  contacto_igual_empresa: false,
+  hijos: [],
+});
+
+export const getClientDisplayName = (
+  client?:
+    | Partial<ClientResource>
+    | {
+        tipo?: string | null;
+        nombre_cliente?: string | null;
+        razon_social?: string | null;
+        nombre_comercial?: string | null;
+        dueno_nombre?: string | null;
+      }
+    | null
+) => {
+  if (!client) return "Sin cliente";
+  return (
+    client.nombre_cliente ||
+    client.razon_social ||
+    client.nombre_comercial ||
+    client.dueno_nombre ||
+    "Sin cliente"
+  );
+};

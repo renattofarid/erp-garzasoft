@@ -45,6 +45,7 @@ export default function ProductEditPage({
 
   const mapProductToForm = (data: ProductResource): Partial<ProductSchema> => ({
     nombre: data.nombre,
+    tipo: data.tipo,
     descripcion: data.descripcion,
     modulos: data.modulos,
   });

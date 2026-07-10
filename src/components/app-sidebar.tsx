@@ -4,6 +4,7 @@ import {
   BookOpen,
   Box,
   Cog,
+  FileText,
   LayoutGrid,
   MessageSquareText,
   ShieldUser,
@@ -35,6 +36,7 @@ import {
   ClientTitle,
 } from "@/pages/client/lib/client.interface";
 import { CuentasPorCobrarRoute } from "@/pages/accounts-receivable/lib/accounts-receivable.interface";
+import { InvoicingRoute } from "@/pages/invoicing/lib/invoicing.interface";
 
 const data = {
   navMain: [
@@ -96,6 +98,11 @@ const data = {
           title: "Cuentas por cobrar",
           url: CuentasPorCobrarRoute,
           icon: Box,
+        },
+        {
+          title: "Facturacion electronica",
+          url: InvoicingRoute,
+          icon: FileText,
         },
       ],
     },

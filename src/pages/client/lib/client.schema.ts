@@ -58,6 +58,7 @@ const createClientNodeSchema: z.ZodType<any> = z.lazy(() =>
       razon_social: optionalText,
       nombre_comercial: optionalText,
       direccion: optionalText,
+      tipos_local: z.array(z.string().trim().min(1)).default([]),
       contacto: looseContactSchema,
       contactos: z.array(contactSchema).optional().default([]),
       contacto_igual_empresa: z.boolean().optional().default(false),
@@ -77,6 +78,14 @@ const createClientNodeSchema: z.ZodType<any> = z.lazy(() =>
           code: z.ZodIssueCode.custom,
           path: ["direccion"],
           message: "La dirección es obligatoria para empresas y locales.",
+        });
+      }
+
+      if (data.tipo === "local" && (!data.tipos_local || data.tipos_local.length === 0)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["tipos_local"],
+          message: "Debes seleccionar al menos un tipo de local.",
         });
       }
 

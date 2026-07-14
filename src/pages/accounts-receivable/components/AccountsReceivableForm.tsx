@@ -24,6 +24,7 @@ import { useAllContracts } from "@/pages/contract/lib/contract.hook";
 import FormSkeleton from "@/components/FormSkeleton";
 import { format, parse } from "date-fns";
 import { getClientDisplayName } from "@/pages/client/lib/client.interface";
+import { prodAssetURL } from "@/lib/config";
 
 interface CuentasPorCobrarFormProps {
   defaultValues: Partial<CuentasPorCobrarSchema>;
@@ -41,6 +42,56 @@ export const CuentasPorCobrarForm = ({
   mode = "create",
 }: CuentasPorCobrarFormProps) => {
   const { data: contracts, isLoading } = useAllContracts();
+
+  const getComprobanteType = (url?: string | null) => {
+    if (!url) return "unknown";
+
+    const cleanUrl = url.split("?")[0].toLowerCase();
+
+    if (cleanUrl.endsWith(".pdf")) return "pdf";
+    if (
+      cleanUrl.endsWith(".png") ||
+      cleanUrl.endsWith(".jpg") ||
+      cleanUrl.endsWith(".jpeg") ||
+      cleanUrl.endsWith(".webp")
+    ) {
+      return "image";
+    }
+
+    return "unknown";
+  };
+
+  const resolveComprobanteUrl = (path?: string | null) => {
+    if (!path) return "";
+
+    if (/^https?:\/\//i.test(path)) {
+      return path;
+    }
+
+    const normalizedPath = path.replace(/\\/g, "/");
+    const publicStorageMarker = "/storage/app/public/";
+
+    if (normalizedPath.includes(publicStorageMarker)) {
+      const [, relativePath = ""] = normalizedPath.split(publicStorageMarker);
+      return `${prodAssetURL}/storage/${relativePath}`.replace(/([^:]\/)\/+/g, "$1");
+    }
+
+    if (normalizedPath.startsWith("storage/")) {
+      return `${prodAssetURL}/${normalizedPath}`.replace(/([^:]\/)\/+/g, "$1");
+    }
+
+    if (
+      normalizedPath.startsWith("comprobantes/") ||
+      normalizedPath.startsWith("/comprobantes/")
+    ) {
+      return `${prodAssetURL}/storage/${normalizedPath.replace(/^\/+/, "")}`.replace(
+        /([^:]\/)\/+/g,
+        "$1"
+      );
+    }
+
+    return normalizedPath;
+  };
 
   const form = useForm<CuentasPorCobrarSchema>({
     resolver: zodResolver(
@@ -154,42 +205,79 @@ export const CuentasPorCobrarForm = ({
       {/* SCROLL AGREGADO AQUÍ */}
       <ul className="space-y-4 overflow-y-auto max-h-[290px] pr-2">
         {defaultValues.pagos_cuota.map((pago) => (
+          (() => {
+            const comprobanteUrl = resolveComprobanteUrl(pago.comprobante);
+
+            return (
           <li
             key={pago.id}
-            className="flex items-center justify-between bg-modal rounded-md px-4 py-3 border border-gray-200"
+            className="bg-modal rounded-md px-4 py-3 border border-gray-200 space-y-4"
           >
-            <div className="flex flex-col md:flex-row md:items-center gap-2">
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                Monto pagado:{" "}
-                <b className="ml-1">S/.{pago.monto_pagado}</b>
-              </span>
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                Fecha de pago:{" "}
-                <b className="ml-1">
-                  {pago.fecha_pago
-                    ? format(
-                        parse(
-                          pago.fecha_pago.split("T").shift() || "",
-                          "yyyy-MM-dd",
-                          new Date()
-                        ),
-                        "dd/MM/yyyy"
-                      )
-                    : "Sin fecha"}
-                </b>
-              </span>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col md:flex-row md:items-center gap-2">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                  Monto pagado:{" "}
+                  <b className="ml-1">S/.{pago.monto_pagado}</b>
+                </span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                  Fecha de pago:{" "}
+                  <b className="ml-1">
+                    {pago.fecha_pago
+                      ? format(
+                          parse(
+                            pago.fecha_pago.split("T").shift() || "",
+                            "yyyy-MM-dd",
+                            new Date()
+                          ),
+                          "dd/MM/yyyy"
+                        )
+                      : "Sin fecha"}
+                  </b>
+                </span>
+              </div>
+              {pago.comprobante && (
+                <a
+                  href={comprobanteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 underline shrink-0"
+                >
+                  Abrir comprobante
+                </a>
+              )}
             </div>
             {pago.comprobante && (
-              <a
-                href={pago.comprobante}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-blue-600 underline ml-4"
-              >
-                Ver comprobante
-              </a>
+              <div className="rounded-lg border border-white/10 bg-black/10 p-3">
+                {getComprobanteType(comprobanteUrl) === "image" ? (
+                  <img
+                    src={comprobanteUrl}
+                    alt={`Comprobante de pago ${pago.id}`}
+                    className="max-h-[420px] w-full rounded-md object-contain bg-background"
+                  />
+                ) : getComprobanteType(comprobanteUrl) === "pdf" ? (
+                  <iframe
+                    src={comprobanteUrl}
+                    title={`Comprobante PDF ${pago.id}`}
+                    className="h-[420px] w-full rounded-md bg-background"
+                  />
+                ) : (
+                  <div className="flex items-center justify-between gap-4 rounded-md border border-dashed px-4 py-6 text-sm text-muted-foreground">
+                    <span>No se puede previsualizar este archivo aquí.</span>
+                    <a
+                      href={comprobanteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline"
+                    >
+                      Abrir archivo
+                    </a>
+                  </div>
+                )}
+              </div>
             )}
           </li>
+            );
+          })()
         ))}
       </ul>
     </div>

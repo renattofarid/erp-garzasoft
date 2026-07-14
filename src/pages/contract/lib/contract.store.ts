@@ -1,6 +1,6 @@
 // stores/ContractStore.ts
 import { create } from "zustand";
-import { ContractResource } from "./contract.interface.ts";
+import { ContractMutationResponse, ContractResource } from "./contract.interface.ts";
 import {
   findContractById,
   getAllContracts,
@@ -24,8 +24,8 @@ interface ContractStore {
   fetchContracts: (params?: Record<string, any>) => Promise<void>;
   fetchAllContracts: (params?: Record<string, any>) => Promise<void>;
   fetchContract: (id: number) => Promise<void>;
-  createContract: (data: ContractSchema) => Promise<void>;
-  updateContract: (id: number, data: ContractSchema) => Promise<void>;
+  createContract: (data: ContractSchema) => Promise<ContractMutationResponse>;
+  updateContract: (id: number, data: ContractSchema) => Promise<ContractMutationResponse>;
 }
 
 export const useContractStore = create<ContractStore>((set) => ({
@@ -77,7 +77,7 @@ export const useContractStore = create<ContractStore>((set) => ({
   createContract: async (data) => {
     set({ isSubmitting: true, error: null });
     try {
-      await storeContract(data);
+      return await storeContract(data);
     } catch (err) {
       set({ error: "Error al crear el Contrato" });
       throw err;
@@ -89,7 +89,7 @@ export const useContractStore = create<ContractStore>((set) => ({
   updateContract: async (id: number, data: ContractSchema) => {
     set({ isSubmitting: true, error: null });
     try {
-      await updateContract(id, data);
+      return await updateContract(id, data);
     } catch (err) {
       set({ error: "Error al actualizar el Contrato" });
       throw err;

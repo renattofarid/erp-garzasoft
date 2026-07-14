@@ -64,8 +64,11 @@ export default function ContractEditPage() {
     cliente_padre_id: data.cliente.id,
     cliente_id: data.cliente.id,
     tipo_contrato: data.tipo_contrato,
+    vigencia_contrato: data.vigencia_contrato ?? "anual",
+    duracion_anios: data.duracion_anios ?? 1,
     total: Number(data.total),
     forma_pago: data.forma_pago,
+    periodicidad_cuota: data.periodicidad_cuota ?? "mensual",
     productos_modulos: data.contrato_producto_modulos.map((item) => ({
       id: item.id,
       modulo_id: item.modulo_id,

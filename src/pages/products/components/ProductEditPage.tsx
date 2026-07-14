@@ -47,7 +47,11 @@ export default function ProductEditPage({
     nombre: data.nombre,
     tipo: data.tipo,
     descripcion: data.descripcion,
-    modulos: data.modulos,
+    modulos: data.modulos.map((modulo) => ({
+      nombre: modulo.nombre,
+      precio_mensual: modulo.precio_mensual ?? modulo.precio_unitario,
+      precio_anual: modulo.precio_anual ?? modulo.precio_unitario,
+    })),
   });
 
   if (!isFinding && !Product) return <NotFound />;

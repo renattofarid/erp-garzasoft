@@ -3,7 +3,6 @@ import TitleComponent from "@/components/TitleComponent";
 import ContractActions from "./ContractActions.tsx";
 import ContractTable from "./ContractTable.tsx";
 import ContractOptions from "./ContractOptions.tsx";
-import { SimpleDeleteDialog } from "@/components/SimpleDeleteDialog";
 import { successToast, errorToast } from "@/lib/core.function";
 import { ContractColumns } from "./ContractColumns.tsx";
 import DataTablePagination from "@/components/DataTablePagination";
@@ -13,14 +12,20 @@ import {
   ContractTitle,
 } from "@/pages/contract/lib/contract.interface.ts";
 import { deleteContract } from "@/pages/contract/lib/contract.actions.ts";
+import { openContractPdf } from "@/pages/contract/lib/contract.actions.ts";
 import { useContracts } from "@/pages/contract/lib/contract.hook.ts";
 import NotificationModal from "@/pages/notifications/components/NotificationModal.tsx";
+import { ContractCancelDialog } from "./ContractCancelDialog.tsx";
+import { ContractResource } from "../lib/contract.interface.ts";
+import { ContractInstallmentsDialog } from "./ContractInstallmentsDialog.tsx";
 
 export default function ContractPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [notificationId, setNotificationId] = useState<number | null>(null);
+  const [installmentsContract, setInstallmentsContract] =
+    useState<ContractResource | null>(null);
 
   const { data, meta, isLoading, refetch } = useContracts();
 
@@ -28,14 +33,17 @@ export default function ContractPage() {
     refetch({ page, search });
   }, [page, search]);
 
-  const handleDelete = async () => {
+  const handleDelete = async (payload: {
+    motivo_anulacion?: string;
+    fecha_anulacion: string;
+  }) => {
     if (!deleteId) return;
     try {
-      await deleteContract(deleteId);
+      await deleteContract(deleteId, payload);
       await refetch();
-      successToast("Contrato eliminado correctamente.");
+      successToast("Contrato anulado correctamente.");
     } catch {
-      errorToast("Error al eliminar el Contrato.");
+      errorToast("Error al anular el Contrato.");
     } finally {
       setDeleteId(null);
     }
@@ -58,6 +66,12 @@ export default function ContractPage() {
         columns={ContractColumns({
           onDelete: setDeleteId,
           onNotification: setNotificationId,
+          onPreview: (id) => {
+            openContractPdf(id).catch(() =>
+              errorToast("No se pudo abrir el PDF del contrato.")
+            );
+          },
+          onViewInstallments: setInstallmentsContract,
         })}
         data={data || []}
       >
@@ -78,12 +92,17 @@ export default function ContractPage() {
       )}
       {/* Formularios */}
       {deleteId !== null && (
-        <SimpleDeleteDialog
+        <ContractCancelDialog
           open={true}
           onOpenChange={(open) => !open && setDeleteId(null)}
           onConfirm={handleDelete}
         />
       )}
+      <ContractInstallmentsDialog
+        open={installmentsContract !== null}
+        onClose={() => setInstallmentsContract(null)}
+        contract={installmentsContract}
+      />
     </div>
   );
 }

@@ -19,6 +19,7 @@ import axios from "axios";
 import { lookupClientByDni, lookupClientByRuc } from "../lib/client.actions";
 import {
   ClientFormNode,
+  LocalKind,
   ClientTypeUi,
   createEmptyClientNode,
 } from "../lib/client.interface";
@@ -29,6 +30,8 @@ import {
 } from "../lib/client.schema";
 import { Building2, Loader2, Plus, Search, Trash2, UsersRound } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { getAllLocalTypes } from "@/pages/local-types/lib/localType.actions";
+import { LocalTypeResource } from "@/pages/local-types/lib/localType.interface";
 
 interface ClientFormProps {
   defaultValues: Partial<ClientSchema>;
@@ -105,6 +108,7 @@ const stripNode = (node: ClientFormNode, isRoot = false): ClientSchema => {
     razon_social: node.razon_social,
     nombre_comercial: node.nombre_comercial,
     direccion: node.direccion,
+    tipos_local: node.tipos_local ?? [],
     contacto: contactoPrincipal,
     contactos: isRoot ? normalizedContacts : [],
     contacto_igual_empresa: node.contacto_igual_empresa ?? false,
@@ -118,6 +122,7 @@ function ClientNodeSection({
   title,
   onLookupRuc,
   onLookupDni,
+  localTypeOptions,
   lookupLoadingPath,
 }: {
   control: Control<any>;
@@ -125,6 +130,7 @@ function ClientNodeSection({
   title: string;
   onLookupRuc: (path: string) => Promise<void>;
   onLookupDni: (path: string) => Promise<void>;
+  localTypeOptions: LocalTypeResource[];
   lookupLoadingPath?: string | null;
 }) {
   const { setValue } = useFormContext<ClientSchema>();
@@ -133,10 +139,15 @@ function ClientNodeSection({
     name: joinPath(basePath, "tipo") as Path<any>,
   }) as ClientTypeUi | undefined;
   const sameCompanyContactPath = joinPath(basePath, "contacto_igual_empresa");
+  const localTypesPath = joinPath(basePath, "tipos_local");
   const sameCompanyContact = useWatch({
     control,
     name: sameCompanyContactPath as Path<any>,
   }) as boolean | undefined;
+  const selectedLocalTypes = useWatch({
+    control,
+    name: localTypesPath as Path<any>,
+  }) as LocalKind[] | undefined;
 
   const childTypes: ClientTypeUi[] =
     tipo === "corporacion" ? ["empresa"] : tipo === "empresa" ? ["local"] : [];
@@ -338,6 +349,43 @@ function ClientNodeSection({
           )}
         </div>
       </div>
+
+      {isLocal && (
+        <FormField
+          control={control}
+          name={localTypesPath as Path<any>}
+          render={() => (
+            <FormItem>
+              <FormLabel>
+                <RequiredLabel>Tipos de local</RequiredLabel>
+              </FormLabel>
+              <div className="flex flex-wrap gap-4 rounded-lg border bg-background/30 px-4 py-3">
+                {localTypeOptions.map((option) => (
+                  <label key={option.codigo} className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={selectedLocalTypes?.includes(option.codigo) ?? false}
+                      onCheckedChange={(checked) => {
+                        const current = selectedLocalTypes ?? [];
+                        const next =
+                          checked === true
+                            ? Array.from(new Set([...current, option.codigo]))
+                            : current.filter((item) => item !== option.codigo);
+
+                        setValue(localTypesPath as Path<ClientSchema>, next as any, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
+                      }}
+                    />
+                    <span>{option.nombre}</span>
+                  </label>
+                ))}
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
 
       <div className="rounded-xl border p-4">
         <div className="flex items-center justify-between gap-3">
@@ -627,6 +675,7 @@ function ClientNodeSection({
                     title={`${childTypes[0] === "empresa" ? "Empresa" : "Local"} ${index + 1}`}
                     onLookupRuc={onLookupRuc}
                     onLookupDni={onLookupDni}
+                    localTypeOptions={localTypeOptions}
                     lookupLoadingPath={lookupLoadingPath}
                   />
                   <div className="flex justify-end pt-3">
@@ -653,6 +702,7 @@ export const ClientForm = ({
   mode = "create",
 }: ClientFormProps) => {
   const [lookupLoadingPath, setLookupLoadingPath] = useState<string | null>(null);
+  const [localTypeOptions, setLocalTypeOptions] = useState<LocalTypeResource[]>([]);
   const form = useForm<ClientSchema>({
     resolver: zodResolver(
       mode === "create" ? clientSchemaCreate : clientSchemaUpdate
@@ -672,6 +722,14 @@ export const ClientForm = ({
       )
     );
   }, [defaultValues, form]);
+
+  useEffect(() => {
+    getAllLocalTypes()
+      .then(setLocalTypeOptions)
+      .catch(() => {
+        errorToast("No se pudieron cargar los tipos de local.");
+      });
+  }, []);
 
   const handleLookupRuc = async (path: string) => {
     const ruc = form.getValues(path as Path<ClientSchema>)?.trim();
@@ -771,6 +829,7 @@ export const ClientForm = ({
           title="Datos del cliente"
           onLookupRuc={handleLookupRuc}
           onLookupDni={handleLookupDni}
+          localTypeOptions={localTypeOptions}
           lookupLoadingPath={lookupLoadingPath}
         />
 

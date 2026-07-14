@@ -31,6 +31,10 @@ import { CuentasPorCobrarRoute } from "./pages/accounts-receivable/lib/accounts-
 import CuentasPorCobrarPage from "./pages/accounts-receivable/components/AccountsReceivablePage";
 import InvoicingPage from "./pages/invoicing/components/InvoicingPage";
 import { InvoicingRoute } from "./pages/invoicing/lib/invoicing.interface";
+import LocalTypePage from "./pages/local-types/components/LocalTypePage";
+import { LocalTypeRoute } from "./pages/local-types/lib/localType.interface";
+import FacturadorPage from "./pages/facturador/components/FacturadorPage";
+import { FacturadorRoute } from "./pages/facturador/lib/facturador.interface";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { token } = useAuthStore();
@@ -163,10 +167,28 @@ export default function App() {
           />
 
           <Route
+            path={LocalTypeRoute}
+            element={
+              <ProtectedRoute>
+                <LocalTypePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path={InvoicingRoute}
             element={
               <ProtectedRoute>
                 <InvoicingPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path={FacturadorRoute}
+            element={
+              <ProtectedRoute>
+                <FacturadorPage />
               </ProtectedRoute>
             }
           />

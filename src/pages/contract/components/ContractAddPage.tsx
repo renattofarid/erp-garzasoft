@@ -10,18 +10,37 @@ import {
 import { ContractCreate } from "@/pages/contract/lib/contract.schema.ts";
 import TitleFormComponent from "@/components/TitleFormComponent.tsx";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { getNextContractNumber, openContractPdf } from "../lib/contract.actions.ts";
+import { ContractCreatedDialog } from "./ContractCreatedDialog.tsx";
 
 export default function ContractAddPage() {
   const { isSubmitting, createContract } = useContractStore();
   const { refetch } = useContracts();
   const router = useNavigate();
+  const [nextNumber, setNextNumber] = useState("CT-2025-001");
+  const [createdContract, setCreatedContract] = useState<{
+    id: number;
+    numero: string;
+  } | null>(null);
+
+  useEffect(() => {
+    getNextContractNumber()
+      .then(setNextNumber)
+      .catch(() => {
+        // fallback silencioso
+      });
+  }, []);
 
   const handleSubmit = async (data: ContractCreate) => {
     await createContract(data)
-      .then(() => {
+      .then((response) => {
         successToast("Contrato creado exitosamente");
-        router(ContractRoute);
         refetch();
+        setCreatedContract({
+          id: response.data.id,
+          numero: response.data.numero,
+        });
       })
       .catch((error: any) => {
         errorToast(
@@ -41,13 +60,16 @@ export default function ContractAddPage() {
       />
       <ContractForm
         defaultValues={{
-          numero: "",
+          numero: nextNumber,
           fecha_inicio: "",
           fecha_fin: "",
           cliente_padre_id: undefined as unknown as number,
           cliente_id: 0,
           forma_pago: "unico",
+          periodicidad_cuota: "mensual",
           tipo_contrato: "saas",
+          vigencia_contrato: "anual",
+          duracion_anios: 1,
           total: 0,
           productos_modulos: [],
           cuotas: [],
@@ -56,6 +78,22 @@ export default function ContractAddPage() {
         isSubmitting={isSubmitting}
         mode="create"
         onCancel={() => router(ContractRoute)}
+        key={nextNumber}
+      />
+      <ContractCreatedDialog
+        open={createdContract !== null}
+        contractNumber={createdContract?.numero ?? ""}
+        onClose={() => setCreatedContract(null)}
+        onViewPdf={() => {
+          if (!createdContract) return;
+          openContractPdf(createdContract.id).catch(() =>
+            errorToast("No se pudo abrir el PDF del contrato.")
+          );
+        }}
+        onGoToList={() => {
+          setCreatedContract(null);
+          router(ContractRoute);
+        }}
       />
     </div>
   );

@@ -36,8 +36,14 @@ export const useProductStore = create<ProductStore>((set) => ({
   fetchProducts: async (params?: Record<string, any>) => {
     set({ isLoading: true, error: null });
     try {
-      const { data, meta } = await getProduct({ params });
-      set({ Products: data, meta, isLoading: false });
+      const response = await getProduct({ params });
+
+      if (Array.isArray(response)) {
+        set({ Products: response, meta: null, isLoading: false });
+        return;
+      }
+
+      set({ Products: response.data, meta: response.meta, isLoading: false });
     } catch (err) {
       set({ error: "Error al cargar tipos de usuarios", isLoading: false });
     }

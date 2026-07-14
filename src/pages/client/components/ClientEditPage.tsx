@@ -91,6 +91,7 @@ export default function ClientEditPage() {
       razon_social: data.razon_social ?? "",
       nombre_comercial: data.nombre_comercial ?? "",
       direccion: data.direccion ?? "",
+      tipos_local: data.tipos_local ?? [],
       contacto: contactoPrincipal,
       contactos:
         contactos.length > 0

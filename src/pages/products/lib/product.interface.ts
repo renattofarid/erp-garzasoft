@@ -36,6 +36,8 @@ export interface Modulo {
   id: number;
   nombre: string;
   precio_unitario: number;
+  precio_mensual: number;
+  precio_anual: number;
   producto_id: number;
   created_at: Date;
   updated_at: Date;

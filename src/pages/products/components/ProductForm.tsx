@@ -56,7 +56,7 @@ export const ProductForm = ({
       nombre: "",
       tipo: "servicio",
       descripcion: "",
-      modulos: [{ nombre: "", precio_unitario: 0 }],
+      modulos: [{ nombre: "", precio_mensual: 0, precio_anual: 0 }],
       ...defaultValues,
     },
     mode: "onChange",
@@ -137,7 +137,7 @@ export const ProductForm = ({
               <Button
                 type="button"
                 size="icon"
-                onClick={() => append({ nombre: "", precio_unitario: 0 })}
+                onClick={() => append({ nombre: "", precio_mensual: 0, precio_anual: 0 })}
               >
                 <Plus className="w-4 h-4" />
               </Button>
@@ -152,8 +152,9 @@ export const ProductForm = ({
             {conceptos.length > 0 && (
               <div className="grid grid-cols-12 items-center gap-2 mb-2 font-semibold text-sm text-muted-foreground">
                 <span className="col-span-1"></span>
-                <span className="col-span-6">Nombre del concepto</span>
-                <span className="col-span-4">Precio</span>
+                <span className="col-span-5">Nombre del concepto</span>
+                <span className="col-span-3">Precio mensual</span>
+                <span className="col-span-2">Precio anual</span>
                 <span className="col-span-1"></span>
               </div>
             )}
@@ -167,7 +168,7 @@ export const ProductForm = ({
                   {index + 1 < 10 ? `0${index + 1}` : index + 1}
                 </span>
 
-                <div className="col-span-6">
+                <div className="col-span-5">
                   <FormField
                     control={form.control}
                     name={`modulos.${index}.nombre`}
@@ -182,16 +183,38 @@ export const ProductForm = ({
                   />
                 </div>
 
-                <div className="col-span-4">
+                <div className="col-span-3">
                   <FormField
                     control={form.control}
-                    name={`modulos.${index}.precio_unitario`}
+                    name={`modulos.${index}.precio_mensual`}
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
                           <Input
                             type="number"
-                            placeholder="Precio"
+                            placeholder="Mensual"
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(Number(e.target.value))
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <FormField
+                    control={form.control}
+                    name={`modulos.${index}.precio_anual`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Anual"
                             {...field}
                             onChange={(e) =>
                               field.onChange(Number(e.target.value))

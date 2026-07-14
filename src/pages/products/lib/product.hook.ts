@@ -22,11 +22,10 @@ export function useAllProducts() {
   const { Products, meta, isLoading, error, fetchProducts } = useProductStore();
 
   useEffect(() => {
-    if (!Products)
-      fetchProducts({
-        all: true,
-      });
-  }, [Products, fetchProducts]);
+    fetchProducts({
+      all: true,
+    });
+  }, [fetchProducts]);
 
   return {
     data: Products,

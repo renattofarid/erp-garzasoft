@@ -21,9 +21,18 @@ export interface ContractResponse {
   meta: Meta;
 }
 
+export interface ContractMutationResponse {
+  status: number;
+  message: string;
+  data: ContractResource;
+}
+
 export type ContractType = "desarrollo" | "saas" | "soporte";
+export type VigenciaContrato = "semestral" | "anual";
 export type SituacionCuota = "pendiente" | "pagado" | "vencido";
 export type FormaPago = "unico" | "parcial";
+export type PeriodicidadCuota = "mensual" | "anual";
+export type EstadoContrato = "activo" | "anulado";
 
 export interface ContractResource {
   id: number;
@@ -31,8 +40,14 @@ export interface ContractResource {
   fecha_fin: string;
   numero: string;
   tipo_contrato: ContractType;
+  vigencia_contrato: VigenciaContrato;
+  duracion_anios: number;
   total: string;
   forma_pago: FormaPago;
+  estado: EstadoContrato;
+  periodicidad_cuota?: PeriodicidadCuota | null;
+  motivo_anulacion?: string | null;
+  fecha_anulacion?: string | null;
   cliente: Cliente;
   cuotas: Cuota[];
   contrato_producto_modulos: ContratoProductoModulo[];
@@ -42,6 +57,8 @@ export interface Modulo {
   id: number;
   nombre: string;
   precio_unitario: number;
+  precio_mensual?: number;
+  precio_anual?: number;
   contracto_id: number;
   created_at: Date;
   updated_at: Date;

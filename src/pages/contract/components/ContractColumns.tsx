@@ -21,17 +21,22 @@ import {
 import { getClientDisplayName } from "@/pages/client/lib/client.interface";
 
 function ContractActionsCell({
-  id,
+  contract,
   overduePaymentCount,
   onDelete,
   onNotification,
+  onPreview,
+  onViewInstallments,
 }: {
-  id: number;
+  contract: ContractResource;
   overduePaymentCount: number;
   onDelete: (id: number) => void;
   onNotification: (id: number) => void;
+  onPreview: (id: number) => void;
+  onViewInstallments: (contract: ContractResource) => void;
 }) {
   const router = useNavigate();
+  const id = contract.id;
 
   return (
     <SelectActions>
@@ -39,13 +44,19 @@ function ContractActionsCell({
         <DropdownMenuItem onClick={() => router(`/contratos/editar/${id}`)}>
           Editar
         </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onPreview(id)}>
+          Ver PDF
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onViewInstallments(contract)}>
+          Ver cuotas
+        </DropdownMenuItem>
         {overduePaymentCount > 0 && (
           <DropdownMenuItem onSelect={() => onNotification(id)}>
             Notificar <Badge className="rounded-full">{overduePaymentCount}</Badge>
           </DropdownMenuItem>
         )}
         <DropdownMenuItem onSelect={() => onDelete(id)}>
-          Eliminar
+          Anular
         </DropdownMenuItem>
       </DropdownMenuGroup>
     </SelectActions>
@@ -55,9 +66,13 @@ function ContractActionsCell({
 export const ContractColumns = ({
   onDelete,
   onNotification,
+  onPreview,
+  onViewInstallments,
 }: {
   onDelete: (id: number) => void;
   onNotification: (id: number) => void;
+  onPreview: (id: number) => void;
+  onViewInstallments: (contract: ContractResource) => void;
 }): ColumnDef<ContractResource>[] => [
   {
     accessorKey: "numero",
@@ -124,6 +139,15 @@ export const ContractColumns = ({
     },
   },
   {
+    accessorKey: "estado",
+    header: "Estado",
+    cell: ({ row }) => (
+      <Badge variant={row.original.estado === "anulado" ? "destructive" : "secondary"}>
+        {row.original.estado === "anulado" ? "Anulado" : "Activo"}
+      </Badge>
+    ),
+  },
+  {
     accessorKey: "modulos",
     header: "Módulos",
     cell: ({ row }) => {
@@ -144,17 +168,18 @@ export const ContractColumns = ({
     id: "actions",
     header: "Acciones",
     cell: ({ row }) => {
-      const id = row.original.id;
       const overduePaymentCount = row.original.cuotas.filter(
         (cuota) => cuota.situacion === "vencido"
       ).length;
 
       return (
         <ContractActionsCell
-          id={id}
+          contract={row.original}
           overduePaymentCount={overduePaymentCount}
           onDelete={onDelete}
           onNotification={onNotification}
+          onPreview={onPreview}
+          onViewInstallments={onViewInstallments}
         />
       );
     },

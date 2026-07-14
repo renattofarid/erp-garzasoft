@@ -14,6 +14,7 @@ export const ClientDescriptionEdit =
 
 export type ClientTypeUi = "corporacion" | "empresa" | "local";
 export type ClientTypeDb = ClientTypeUi | "unico";
+export type LocalKind = string;
 
 export interface ClientResponse {
   data: ClientResource[];
@@ -37,6 +38,7 @@ export interface ClientResource {
   razon_social: string | null;
   nombre_comercial: string | null;
   direccion?: string | null;
+  tipos_local?: LocalKind[];
   nombre_cliente?: string | null;
   contacto_principal?: ClientContact | null;
   dueno_nombre: string | null;
@@ -144,6 +146,7 @@ export interface ClientFormNode {
   razon_social?: string;
   nombre_comercial?: string;
   direccion?: string;
+  tipos_local?: LocalKind[];
   contacto: ClientContact;
   contactos: ClientContact[];
   contacto_igual_empresa?: boolean;
@@ -159,6 +162,7 @@ export const createEmptyClientNode = (
   razon_social: "",
   nombre_comercial: "",
   direccion: "",
+  tipos_local: [],
   contacto: {
     dni: "",
     nombre: "",

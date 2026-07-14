@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, Send, RefreshCcw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import TitleComponent from "@/components/TitleComponent";
 import DataTablePagination from "@/components/DataTablePagination";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ const estadoColor: Record<string, string> = {
 };
 
 export default function InvoicingPage() {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
@@ -195,6 +197,9 @@ export default function InvoicingPage() {
           icon={InvoicingIconName as any}
         />
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate("/empresa-emisora")}>
+            Configurar emisor
+          </Button>
           <Button variant="outline" onClick={handleReenviar}>
             <RefreshCcw className="mr-2 size-4" />
             Reenviar pendientes

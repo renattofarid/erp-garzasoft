@@ -35,7 +35,8 @@ export default function ContractModuleForm({
   onOpenChange,
   existingItems = [],
 }: Props) {
-  const productId = useWatch({ control, name: "productos_modulos.product_id" });
+  const productId = useWatch({ control, name: "producto_modal_id" });
+  const periodicity = useWatch({ control, name: "periodicidad_cuota" });
 
   const [selectedModules, setSelectedModules] = useState<number[]>([]);
   const [selectAll, setSelectAll] = useState(false);
@@ -105,6 +106,16 @@ export default function ContractModuleForm({
     }
   }, [selectedModules, availableModules]);
 
+  const resolveModuloPrice = (
+    modulo: ProductResource["modulos"][number]
+  ) => {
+    if (periodicity === "anual") {
+      return modulo.precio_anual ?? modulo.precio_unitario;
+    }
+
+    return modulo.precio_mensual ?? modulo.precio_unitario;
+  };
+
   const onSave = () => {
     if (!selectedProduct) return;
 
@@ -116,7 +127,7 @@ export default function ContractModuleForm({
       onAssign({
         producto_id: selectedProduct.id,
         modulo_id: modulo.id,
-        precio: modulo.precio_unitario,
+        precio: Number(resolveModuloPrice(modulo).toFixed(2)),
       });
     });
 
@@ -134,7 +145,7 @@ export default function ContractModuleForm({
       <FormSelect
         control={control}
         label="Producto"
-        name="productos_modulos.product_id"
+        name="producto_modal_id"
         options={products.map((product) => ({
           label: product.nombre,
           value: String(product.id),
@@ -161,7 +172,7 @@ export default function ContractModuleForm({
                       {modulo.nombre}
                     </span>
                     <Badge variant="secondary" className="ml-auto text-xs">
-                      S/. {modulo.precio_unitario.toFixed(2)}
+                      S/. {resolveModuloPrice(modulo).toFixed(2)}
                     </Badge>
                   </div>
                 ))}
@@ -202,7 +213,7 @@ export default function ContractModuleForm({
                   />
                   <span className="flex-1">{modulo.nombre}</span>
                   <Badge variant="outline">
-                    S/. {modulo.precio_unitario.toFixed(2)}
+                    S/. {resolveModuloPrice(modulo).toFixed(2)}
                   </Badge>
                 </div>
               ))}

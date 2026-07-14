@@ -11,16 +11,18 @@ import { per_page } from "@/lib/core.function";
 
 const ENDPOINT = "productos";
 
+export type ProductCollectionResponse = ProductResponse | ProductResource[];
+
 export async function getProduct({
   params,
-}: getProductProps): Promise<ProductResponse> {
+}: getProductProps): Promise<ProductCollectionResponse> {
   const config: AxiosRequestConfig = {
     params: {
       ...params,
       per_page,
     },
   };
-  const { data } = await api.get<ProductResponse>(ENDPOINT, config);
+  const { data } = await api.get<ProductCollectionResponse>(ENDPOINT, config);
   return data;
 }
 

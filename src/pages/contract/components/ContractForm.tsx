@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Loader } from "lucide-react";
@@ -39,7 +40,6 @@ export const ContractForm = ({
     form,
     control,
     handleSubmit,
-    isValid,
 
     // Products
     fields,
@@ -59,6 +59,7 @@ export const ContractForm = ({
     removeCuota,
     numberOfInstallments,
     setNumberOfInstallments,
+    setInstallmentsTouched,
     generateInstallments,
     adjustExistingInstallments,
     currentInstallmentsSum,
@@ -66,10 +67,58 @@ export const ContractForm = ({
 
     // Watch values
     paymentMethod,
+    contractType,
+    vigenciaContrato,
+    duracionAnios,
+    paymentPeriodicity,
     total,
     fechaInicio,
     fechaFin,
   } = useContractForm({ defaultValues, mode });
+
+  const selectedModules = form.watch("productos_modulos");
+
+  useEffect(() => {
+    if (contractType !== "saas" || !productData || selectedModules.length === 0) {
+      return;
+    }
+
+    const nextModules = selectedModules.map((item) => {
+      const product = productData.find((entry) => entry.id === item.producto_id);
+      const module = product?.modulos.find((entry) => entry.id === item.modulo_id);
+
+      if (!module) {
+        return item;
+      }
+
+      const nextPrice =
+        paymentPeriodicity === "anual"
+          ? module.precio_anual ?? module.precio_unitario
+          : module.precio_mensual ?? module.precio_unitario;
+
+      return {
+        ...item,
+        precio: Number(nextPrice.toFixed(2)),
+      };
+    });
+
+    const hasChanges = nextModules.some(
+      (item, index) => item.precio !== selectedModules[index]?.precio
+    );
+
+    if (hasChanges) {
+      form.setValue("productos_modulos", nextModules, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [
+    contractType,
+    form,
+    paymentPeriodicity,
+    productData,
+    selectedModules,
+  ]);
 
   if (isLoading || !clients) return <FormSkeleton />;
 
@@ -87,34 +136,36 @@ export const ContractForm = ({
               fechaInicio={fechaInicio}
               control={control}
               clients={clients}
+              vigenciaContrato={vigenciaContrato}
+              duracionAnios={duracionAnios}
+              contractType={contractType}
             />
 
-            <ProductsSection
-              control={control}
-              fields={fields}
-              append={append}
-              remove={remove}
-              open={open}
-              setOpen={setOpen}
-              products={productData || []}
-              sum={sum}
-              manualSum={manualSum}
-              recalculateSum={recalculateSum}
-            />
+            {contractType === "saas" && (
+              <ProductsSection
+                control={control}
+                fields={fields}
+                append={append}
+                remove={remove}
+                open={open}
+                setOpen={setOpen}
+                products={productData || []}
+                sum={sum}
+                manualSum={manualSum}
+                recalculateSum={recalculateSum}
+              />
+            )}
           </div>
 
           {/* Columna Derecha - Todo lo relacionado con Pagos */}
           <div className="xl:col-span-2 xl:col-start-4 xl:px-6 xl:border-l h-full space-y-4">
             <PaymentSidebar
-              control={control}
               paymentMethod={paymentMethod}
               total={total}
-              fieldsLength={fields.length}
-              sum={sum}
-              manualSum={manualSum}
               cuotaFields={cuotaFields}
               numberOfInstallments={numberOfInstallments}
               setNumberOfInstallments={setNumberOfInstallments}
+              setInstallmentsTouched={setInstallmentsTouched}
               generateInstallments={generateInstallments}
               appendCuota={appendCuota}
               adjustExistingInstallments={adjustExistingInstallments}
@@ -153,7 +204,7 @@ export const ContractForm = ({
 
           <Button
             type="submit"
-            disabled={isSubmitting || !isValid}
+            disabled={isSubmitting}
             className="w-full sm:w-auto"
           >
             <Loader

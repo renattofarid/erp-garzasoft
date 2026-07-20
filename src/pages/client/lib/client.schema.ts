@@ -41,6 +41,8 @@ const contactSchema = z.object({
   nombre: z.string().trim().min(1, "El nombre completo es requerido"),
   celular: optionalPhone,
   email: optionalEmail,
+  es_dueno: z.boolean().optional().default(false),
+  es_vendedor: z.boolean().optional().default(false),
 });
 
 const looseContactSchema = z.object({
@@ -48,6 +50,8 @@ const looseContactSchema = z.object({
   nombre: optionalText,
   celular: optionalPhone,
   email: optionalEmail,
+  es_dueno: z.boolean().optional().default(false),
+  es_vendedor: z.boolean().optional().default(false),
 });
 
 const createClientNodeSchema: z.ZodType<any> = z.lazy(() =>

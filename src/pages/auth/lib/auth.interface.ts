@@ -6,10 +6,22 @@ export interface AuthResponse {
 
 export interface Usuario {
   id: number;
+  cliente_id?: number | null;
   nombres: string;
   apellidos: string;
   usuario: string;
   tipo_usuario_id: number;
+  tipos_usuario?: {
+    id: number;
+    nombre: string;
+  } | null;
+  cliente?: {
+    id: number;
+    razon_social?: string | null;
+    nombre_comercial?: string | null;
+    nombre_cliente?: string | null;
+    ruc?: string | null;
+  } | null;
   created_at: Date;
   updated_at: Date;
   deleted_at: null;

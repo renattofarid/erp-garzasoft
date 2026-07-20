@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Send, RefreshCcw } from "lucide-react";
+import { Search, Send, RefreshCcw, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import TitleComponent from "@/components/TitleComponent";
 import DataTablePagination from "@/components/DataTablePagination";
@@ -32,6 +32,7 @@ import {
 import {
   emitirMasivo,
   getComprobantes,
+  getComprobantePdf,
   reenviarPendientes,
 } from "../lib/invoicing.actions";
 import {
@@ -188,6 +189,17 @@ export default function InvoicingPage() {
     }
   };
 
+  const handleOpenPdf = async (id: number) => {
+    try {
+      const pdfBlob = await getComprobantePdf(id);
+      const url = URL.createObjectURL(pdfBlob);
+      window.open(url, "_blank", "noopener,noreferrer");
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch {
+      errorToast("No se pudo abrir el PDF del comprobante.");
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -235,18 +247,19 @@ export default function InvoicingPage() {
               <TableHead>Total</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Error</TableHead>
+              <TableHead>Accion</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   Cargando...
                 </TableCell>
               </TableRow>
             ) : comprobantes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   Sin comprobantes
                 </TableCell>
               </TableRow>
@@ -273,6 +286,17 @@ export default function InvoicingPage() {
                   </TableCell>
                   <TableCell className="max-w-[260px] truncate text-red-300">
                     {comprobante.error_text || "-"}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenPdf(comprobante.id)}
+                    >
+                      <FileText className="mr-2 size-4" />
+                      Ver PDF
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -367,8 +391,9 @@ export default function InvoicingPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Descripcion</Label>
+                <Label>Descripcion / glosa</Label>
                 <Input
+                  placeholder="Glosa o descripcion del servicio a facturar"
                   value={form.detalles[0].descripcion}
                   onChange={(event) =>
                     setForm((current) => ({

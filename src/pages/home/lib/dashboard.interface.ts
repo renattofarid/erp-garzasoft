@@ -36,6 +36,7 @@ export interface DashboardTopClient {
 
 export interface DashboardFacturador {
   configurado: boolean;
+  empresa_id?: string | null;
   modo?: "simulacion" | "produccion" | null;
   ruc?: string | null;
   razon_social?: string | null;

@@ -9,6 +9,7 @@ export const FacturadorIcon = Building2;
 
 export interface FacturadorResource {
   id?: number;
+  empresa_id?: string | null;
   ruc?: string | null;
   razon_social?: string | null;
   nombre_comercial?: string | null;

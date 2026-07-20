@@ -35,6 +35,7 @@ export interface ProductResource {
 export interface Modulo {
   id: number;
   nombre: string;
+  descripcion_contrato?: string | null;
   precio_unitario: number;
   precio_mensual: number;
   precio_anual: number;

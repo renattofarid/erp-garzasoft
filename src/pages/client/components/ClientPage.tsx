@@ -14,11 +14,13 @@ import { SimpleDeleteDialog } from "@/components/SimpleDeleteDialog";
 import { successToast, errorToast } from "@/lib/core.function";
 import { ClientColumns } from "./ClientColumns.tsx";
 import DataTablePagination from "@/components/DataTablePagination.tsx";
+import ClientCredentialsDialog from "./ClientCredentialsDialog.tsx";
 
 export default function ClientPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [credentialsId, setCredentialsId] = useState<number | null>(null);
 
   const { data, meta, isLoading, refetch } = useClients();
   const rootClients = (data || []).filter(
@@ -55,7 +57,10 @@ export default function ClientPage() {
 
       <ClientTable
         isLoading={isLoading}
-        columns={ClientColumns({ onDelete: setDeleteId })}
+        columns={ClientColumns({
+          onDelete: setDeleteId,
+          onCredentials: setCredentialsId,
+        })}
         data={rootClients}
       >
         <ClientOptions search={search} setSearch={setSearch} />
@@ -73,6 +78,14 @@ export default function ClientPage() {
           open={true}
           onOpenChange={(open) => !open && setDeleteId(null)}
           onConfirm={handleDelete}
+        />
+      )}
+
+      {credentialsId !== null && (
+        <ClientCredentialsDialog
+          clientId={credentialsId}
+          open={true}
+          onOpenChange={(open) => !open && setCredentialsId(null)}
         />
       )}
     </div>

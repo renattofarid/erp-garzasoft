@@ -6,6 +6,7 @@ const conceptSchema = z.object({
   nombre: z
     .string()
     .min(1, { message: "El nombre del concepto es obligatorio" }),
+  descripcion_contrato: z.string().optional().nullable(),
   precio_mensual: z.coerce
     .number()
     .min(0, "El precio mensual debe ser mayor o igual a 0"),

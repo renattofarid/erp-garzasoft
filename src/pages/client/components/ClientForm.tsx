@@ -52,6 +52,8 @@ const emptyContact = {
   nombre: "",
   celular: "",
   email: "",
+  es_dueno: false,
+  es_vendedor: false,
 };
 
 const RequiredMark = () => <span className="ml-1 text-red-500">*</span>;
@@ -94,12 +96,16 @@ const stripNode = (node: ClientFormNode, isRoot = false): ClientSchema => {
     nombre: contacto?.nombre ?? "",
     celular: contacto?.celular ?? "",
     email: contacto?.email ?? "",
+    es_dueno: contacto?.es_dueno ?? false,
+    es_vendedor: contacto?.es_vendedor ?? false,
   }));
   const contactoPrincipal = normalizedContacts[0] ?? {
     dni: "",
     nombre: "",
     celular: "",
     email: "",
+    es_dueno: false,
+    es_vendedor: false,
   };
 
   return {
@@ -210,6 +216,8 @@ function ClientNodeSection({
       nombre: companyContact?.nombre ?? "",
       celular: companyContact?.celular ?? "",
       email: companyContact?.email ?? "",
+      es_dueno: companyContact?.es_dueno ?? false,
+      es_vendedor: companyContact?.es_vendedor ?? false,
     };
 
     setValue(targetPath as Path<ClientSchema>, contactToCopy as any, {
@@ -524,6 +532,40 @@ function ClientNodeSection({
             )}
           />
           </div>
+          <div className="mt-4 flex flex-wrap gap-4 rounded-lg border bg-background/30 px-4 py-3">
+            <FormField
+              control={control}
+              name={joinPath(joinPath(basePath, "contacto"), "es_dueno") as Path<any>}
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-2 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value === true}
+                      disabled={sameCompanyContact === true}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="font-normal">Es dueño</FormLabel>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name={joinPath(joinPath(basePath, "contacto"), "es_vendedor") as Path<any>}
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-2 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value === true}
+                      disabled={sameCompanyContact === true}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="font-normal">Vendedor / referido</FormLabel>
+                </FormItem>
+              )}
+            />
+          </div>
           </>
         )}
 
@@ -626,6 +668,38 @@ function ClientNodeSection({
                             <Input placeholder="correo@empresa.com" {...field} value={field.value ?? ""} />
                           </FormControl>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-4 rounded-lg border bg-background/30 px-4 py-3">
+                    <FormField
+                      control={control}
+                      name={joinPath(contactBasePath, "es_dueno") as Path<any>}
+                      render={({ field }) => (
+                        <FormItem className="flex items-center gap-2 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value === true}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormLabel className="font-normal">Es dueño</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={control}
+                      name={joinPath(contactBasePath, "es_vendedor") as Path<any>}
+                      render={({ field }) => (
+                        <FormItem className="flex items-center gap-2 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value === true}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormLabel className="font-normal">Vendedor / referido</FormLabel>
                         </FormItem>
                       )}
                     />

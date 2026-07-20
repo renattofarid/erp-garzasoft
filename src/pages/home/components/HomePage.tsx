@@ -254,7 +254,10 @@ export default function HomePage() {
                 {dashboard?.facturador.razon_social || "Sin razón social registrada"}
               </p>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                <span>Modo: {dashboard?.facturador.modo || "-"}</span>
+                <span>
+                  ID empresa: {dashboard?.facturador.empresa_id || "-"} · Modo:{" "}
+                  {dashboard?.facturador.modo || "-"}
+                </span>
                 <Button variant="ghost" size="sm" onClick={() => navigate("/empresa-emisora")}>
                   Editar <ArrowRight className="ml-1 size-3.5" />
                 </Button>

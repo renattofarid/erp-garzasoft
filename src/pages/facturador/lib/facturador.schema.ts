@@ -3,6 +3,7 @@ import { z } from "zod";
 const optionalText = z.string().trim().optional().or(z.literal(""));
 
 export const facturadorSchema = z.object({
+  empresa_id: z.string().trim().min(1, "El ID de la empresa es obligatorio"),
   ruc: z
     .string()
     .trim()

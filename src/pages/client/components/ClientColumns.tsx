@@ -12,14 +12,16 @@ import {
 } from "../lib/client.interface.ts";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge.tsx";
-import { Building2, Mail, Phone, ReceiptText } from "lucide-react";
+import { Building2, KeyRound, Mail, Phone, ReceiptText } from "lucide-react";
 
 function ClientActionsCell({
   id,
   onDelete,
+  onCredentials,
 }: {
   id: number;
   onDelete: (id: number) => void;
+  onCredentials: (id: number) => void;
 }) {
   const router = useNavigate();
 
@@ -28,6 +30,10 @@ function ClientActionsCell({
       <DropdownMenuGroup>
         <DropdownMenuItem onClick={() => router(`${ClientEditRoute}/${id}`)}>
           Editar
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onCredentials(id)}>
+          <KeyRound className="mr-2 size-4" />
+          Usuario y clave
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => onDelete(id)}>
           Eliminar
@@ -39,8 +45,10 @@ function ClientActionsCell({
 
 export const ClientColumns = ({
   onDelete,
+  onCredentials,
 }: {
   onDelete: (id: number) => void;
+  onCredentials: (id: number) => void;
 }): ColumnDef<ClientResource>[] => [
   {
     accessorKey: "nombre_cliente",
@@ -148,6 +156,11 @@ export const ClientColumns = ({
               <span className="font-semibold">
                 {getClientDisplayName(node)}
               </span>
+              {node.ruc && (
+                <span className="text-xs text-muted-foreground">
+                  RUC: {node.ruc}
+                </span>
+              )}
               {node.tipo_ui && (
                 <Badge variant="outline" className="capitalize">
                   {node.tipo_ui}
@@ -166,6 +179,12 @@ export const ClientColumns = ({
   {
     id: "actions",
     header: "Acciones",
-    cell: ({ row }) => <ClientActionsCell id={row.original.id} onDelete={onDelete} />,
+    cell: ({ row }) => (
+      <ClientActionsCell
+        id={row.original.id}
+        onDelete={onDelete}
+        onCredentials={onCredentials}
+      />
+    ),
   },
 ];

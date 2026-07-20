@@ -6,9 +6,10 @@ import DataTablePagination from "@/components/DataTablePagination";
 import {
   CuentasPorCobrarDescription,
   CuentasPorCobrarIconName,
+  CuentasPorCobrarResource,
   CuentasPorCobrarTitle,
 } from "../lib/accounts-receivable.interface";
-import { deleteCuentaPorCobrar } from "../lib/accounts-receivable.actions";
+import { deleteCuentaPorCobrar, reenviarFacturaCuota } from "../lib/accounts-receivable.actions";
 import { useCuentasPorCobrar } from "../lib/accounts-receivable.hook";
 import CuentasPorCobrarActions from "./AccountsReceivableActions";
 import CuentasPorCobrarTable from "./AccountsReceivableTable";
@@ -46,6 +47,36 @@ export default function CuentasPorCobrarPage() {
     }
   };
 
+  const handleResendInvoice = async (cuota: CuentasPorCobrarResource) => {
+    try {
+      const response = await reenviarFacturaCuota(cuota.id);
+      successToast(response?.message || "Factura reenviada correctamente.");
+    } catch (error: any) {
+      errorToast(error?.response?.data?.message || "No se pudo reenviar la factura.");
+    }
+  };
+
+  const handleWhatsAppReminder = (cuota: CuentasPorCobrarResource) => {
+    const cliente = cuota.contrato?.cliente;
+    const rawPhone = cliente?.dueno_celular || cliente?.representante_celular || "";
+    const phone = rawPhone.replace(/\D/g, "");
+
+    if (!phone) {
+      errorToast("El cliente no tiene celular registrado para enviar WhatsApp.");
+      return;
+    }
+
+    const message = [
+      `Hola ${cliente?.dueno_nombre || cliente?.nombre_cliente || cliente?.razon_social || ""}.`,
+      `Le recordamos el pago del contrato ${cuota.contrato?.numero}.`,
+      `Monto pendiente: S/. ${Number(cuota.monto_pendiente).toFixed(2)}.`,
+      `Fecha de vencimiento: ${cuota.fecha_vencimiento}.`,
+    ].join(" ");
+
+    const normalizedPhone = phone.startsWith("51") ? phone : `51${phone}`;
+    window.open(`https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`, "_blank");
+  };
+
   return (
     <div className="space-y-4">
       {/* Encabezado */}
@@ -65,6 +96,8 @@ export default function CuentasPorCobrarPage() {
           onEdit: setEditId,
           onDelete: setDeleteId,
           onPay: setPayId,
+          onResendInvoice: handleResendInvoice,
+          onWhatsAppReminder: handleWhatsAppReminder,
         })}
         data={data || []}
       >

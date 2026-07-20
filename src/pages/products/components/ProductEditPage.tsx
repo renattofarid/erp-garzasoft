@@ -49,6 +49,7 @@ export default function ProductEditPage({
     descripcion: data.descripcion,
     modulos: data.modulos.map((modulo) => ({
       nombre: modulo.nombre,
+      descripcion_contrato: modulo.descripcion_contrato ?? "",
       precio_mensual: modulo.precio_mensual ?? modulo.precio_unitario,
       precio_anual: modulo.precio_anual ?? modulo.precio_unitario,
     })),

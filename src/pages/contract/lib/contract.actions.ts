@@ -16,8 +16,8 @@ export async function getContract({
 }: getContractProps): Promise<ContractResponse> {
   const config: AxiosRequestConfig = {
     params: {
-      ...params,
       per_page,
+      ...params,
     },
   };
   const { data } = await api.get<ContractResponse>(ENDPOINT, config);

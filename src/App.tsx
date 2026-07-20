@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import type { JSX } from "react";
 import HomePage from "./pages/home/components/HomePage";
 import LayoutComponent from "./components/layout";
@@ -35,14 +35,25 @@ import LocalTypePage from "./pages/local-types/components/LocalTypePage";
 import { LocalTypeRoute } from "./pages/local-types/lib/localType.interface";
 import FacturadorPage from "./pages/facturador/components/FacturadorPage";
 import { FacturadorRoute } from "./pages/facturador/lib/facturador.interface";
+import ClientPortalPage from "./pages/client-portal/components/ClientPortalPage";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
-  const { token } = useAuthStore();
+  const { token, user } = useAuthStore();
+  const location = useLocation();
   if (!token) {
     return <Navigate to="/login" replace />;
   }
 
+  if (user?.cliente_id && location.pathname !== "/" && location.pathname !== "/inicio") {
+    return <Navigate to="/inicio" replace />;
+  }
+
   return <LayoutComponent>{children}</LayoutComponent>;
+}
+
+function HomeByUser() {
+  const { user } = useAuthStore();
+  return user?.cliente_id ? <ClientPortalPage /> : <HomePage />;
 }
 
 export default function App() {
@@ -62,7 +73,7 @@ export default function App() {
             path="/"
             element={
               <ProtectedRoute>
-                <HomePage />
+                <HomeByUser />
               </ProtectedRoute>
             }
           />
@@ -71,7 +82,7 @@ export default function App() {
             path="/inicio"
             element={
               <ProtectedRoute>
-                <HomePage />
+                <HomeByUser />
               </ProtectedRoute>
             }
           />

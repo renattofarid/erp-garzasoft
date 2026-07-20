@@ -6,6 +6,7 @@ import {
   Box,
   Cog,
   FileText,
+  FolderOpen,
   LayoutGrid,
   MessageSquareText,
   ShieldUser,
@@ -135,13 +136,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   if (!user) {
     return null; // or a loading state, or redirect to login
   }
+
+  const isClient = Boolean(user.cliente_id);
+  const items = isClient
+    ? [
+        {
+          title: "Mi portal",
+          url: "/inicio",
+          icon: FolderOpen,
+        },
+      ]
+    : data.navMain;
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={items} />
       </SidebarContent>
       <SidebarFooter className="flex md:hidden">
         <NavUser user={user} />

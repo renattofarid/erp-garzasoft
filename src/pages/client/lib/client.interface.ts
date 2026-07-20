@@ -27,6 +27,8 @@ export interface ClientContact {
   nombre: string;
   celular?: string | null;
   email?: string | null;
+  es_dueno?: boolean;
+  es_vendedor?: boolean;
 }
 
 export interface ClientResource {
@@ -111,6 +113,34 @@ export interface ClientResourceById {
   data: ClientResource;
 }
 
+export interface ClientPortalUser {
+  id: number;
+  nombres: string;
+  apellidos: string;
+  usuario: string;
+  tipo_usuario_id: number;
+  deleted_at?: string | null;
+}
+
+export interface ClientPortalUserResponse {
+  status: number;
+  message?: string;
+  data: {
+    cliente_id: number;
+    exists: boolean;
+    usuario: ClientPortalUser | null;
+    password_visible: string | null;
+    password_message: string;
+  };
+}
+
+export interface ClientPortalUserPayload {
+  usuario: string;
+  password?: string;
+  nombres?: string;
+  apellidos?: string;
+}
+
 export interface getClientProps {
   params?: Record<string, unknown>;
 }
@@ -122,6 +152,8 @@ export interface ContactosCliente {
   nombre: string;
   celular?: string | null;
   email?: string | null;
+  es_dueno?: boolean;
+  es_vendedor?: boolean;
   created_at?: string;
   updated_at?: string;
   deleted_at?: string | null;
@@ -168,6 +200,8 @@ export const createEmptyClientNode = (
     nombre: "",
     celular: "",
     email: "",
+    es_dueno: false,
+    es_vendedor: false,
   },
   contactos: [
     {
@@ -175,6 +209,8 @@ export const createEmptyClientNode = (
       nombre: "",
       celular: "",
       email: "",
+      es_dueno: false,
+      es_vendedor: false,
     },
   ],
   contacto_igual_empresa: false,

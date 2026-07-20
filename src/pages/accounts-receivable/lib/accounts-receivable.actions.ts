@@ -19,8 +19,8 @@ export async function getCuentasPorCobrar({
 }: getCuentasPorCobrarProps): Promise<CuentasPorCobrarResponse> {
   const config: AxiosRequestConfig = {
     params: {
-      ...params,
       per_page,
+      ...params,
     },
   };
   const { data } = await api.get<CuentasPorCobrarResponse>(
@@ -77,6 +77,11 @@ export async function updateCuentaPorCobrar(
 
 export async function deleteCuentaPorCobrar(id: number): Promise<any> {
   const { data } = await api.delete<any>(`${ENDPOINT_CUOTAS}/${id}`);
+  return data;
+}
+
+export async function reenviarFacturaCuota(id: number): Promise<any> {
+  const { data } = await api.post<any>(`${ENDPOINT_CUOTAS}/${id}/reenviar-factura`);
   return data;
 }
 

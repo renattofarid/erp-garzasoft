@@ -29,6 +29,7 @@ const WSDL_ENDPOINTS = {
 } as const;
 
 const defaultValues: FacturadorSchema = {
+  empresa_id: "",
   ruc: "",
   razon_social: "",
   nombre_comercial: "MrSoft",
@@ -48,7 +49,6 @@ const defaultValues: FacturadorSchema = {
 export default function FacturadorPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [empresaId, setEmpresaId] = useState("");
 
   const form = useForm<FacturadorSchema>({
     resolver: zodResolver(facturadorSchema),
@@ -62,9 +62,9 @@ export default function FacturadorPage() {
     getActiveFacturador()
       .then((response) => {
         if (response.data) {
-          setEmpresaId(response.data.id ? String(response.data.id) : "");
           form.reset({
             ...defaultValues,
+            empresa_id: response.data.empresa_id ?? "",
             ruc: response.data.ruc ?? "",
             razon_social: response.data.razon_social ?? "",
             nombre_comercial: response.data.nombre_comercial ?? defaultValues.nombre_comercial,
@@ -138,10 +138,19 @@ export default function FacturadorPage() {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
                   <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <FormLabel>ID de la empresa</FormLabel>
-                      <Input value={empresaId} disabled placeholder="Se asigna automáticamente" />
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="empresa_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ID de la empresa</FormLabel>
+                          <FormControl>
+                            <Input placeholder="ID usado por la API del facturador" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={form.control}
                       name="ruc"

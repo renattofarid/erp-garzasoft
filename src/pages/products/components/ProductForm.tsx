@@ -56,7 +56,7 @@ export const ProductForm = ({
       nombre: "",
       tipo: "servicio",
       descripcion: "",
-      modulos: [{ nombre: "", precio_mensual: 0, precio_anual: 0 }],
+      modulos: [{ nombre: "", descripcion_contrato: "", precio_mensual: 0, precio_anual: 0 }],
       ...defaultValues,
     },
     mode: "onChange",
@@ -137,7 +137,7 @@ export const ProductForm = ({
               <Button
                 type="button"
                 size="icon"
-                onClick={() => append({ nombre: "", precio_mensual: 0, precio_anual: 0 })}
+                onClick={() => append({ nombre: "", descripcion_contrato: "", precio_mensual: 0, precio_anual: 0 })}
               >
                 <Plus className="w-4 h-4" />
               </Button>
@@ -162,9 +162,9 @@ export const ProductForm = ({
             {conceptos.map((concepto, index) => (
               <div
                 key={concepto.id || index}
-                className="grid grid-cols-12 items-center gap-2 mb-2"
+                className="grid grid-cols-12 items-start gap-2 mb-4 rounded-lg border bg-background/30 p-3"
               >
-                <span className="col-span-1 text-sm text-muted-foreground">
+                <span className="col-span-1 pt-2 text-sm text-muted-foreground">
                   {index + 1 < 10 ? `0${index + 1}` : index + 1}
                 </span>
 
@@ -236,6 +236,25 @@ export const ProductForm = ({
                   >
                     <Trash className="w-4 h-4 text-red-500" />
                   </Button>
+                </div>
+                <div className="col-span-12 pl-0 md:col-span-11 md:col-start-2">
+                  <FormField
+                    control={form.control}
+                    name={`modulos.${index}.descripcion_contrato`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descripción para contrato</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Texto que aparecerá en el contrato para este concepto"
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </div>
             ))}

@@ -39,6 +39,11 @@ export interface ComprobanteResource {
   estado_label: string;
   solicitud_facturador_id?: string | null;
   nombre_documento?: string | null;
+  xml_path?: string | null;
+  cdr_path?: string | null;
+  pdf_path?: string | null;
+  cuota_id?: number | null;
+  contrato_id?: number | null;
   error_text?: string | null;
   detalles?: ComprobanteDetalle[];
 }

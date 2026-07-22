@@ -1,6 +1,7 @@
 import { AxiosRequestConfig } from "axios";
 
 import { api } from "@/lib/config";
+import { openPdfFromFetcher } from "@/lib/pdf";
 import {
   getContractProps,
   ContractMutationResponse,
@@ -75,17 +76,10 @@ export async function getContractPdf(id: number): Promise<Blob> {
 }
 
 export async function openContractPdf(id: number): Promise<void> {
-  const previewWindow = window.open("", "_blank");
-  const blob = await getContractPdf(id);
-  const url = URL.createObjectURL(blob);
-
-  if (previewWindow) {
-    previewWindow.location.href = url;
-  } else {
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
-
-  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  return openPdfFromFetcher(
+    () => getContractPdf(id),
+    "Generando PDF del Contrato..."
+  );
 }
 
 export async function getNextContractNumber(): Promise<string> {

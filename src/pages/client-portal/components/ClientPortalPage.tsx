@@ -26,6 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { errorToast } from "@/lib/core.function";
+import { openPdfFromFetcher } from "@/lib/pdf";
 import { useAuthStore } from "@/pages/auth/lib/auth.store";
 import { getContract, openContractPdf } from "@/pages/contract/lib/contract.actions";
 import { ContractResource } from "@/pages/contract/lib/contract.interface";
@@ -87,12 +88,12 @@ export default function ClientPortalPage() {
 
   const openPdf = async (id: number) => {
     try {
-      const blob = await getComprobantePdf(id);
-      const url = URL.createObjectURL(blob);
-      window.open(url, "_blank", "noopener,noreferrer");
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } catch {
-      errorToast("No se pudo abrir el PDF.");
+      await openPdfFromFetcher(
+        () => getComprobantePdf(id),
+        "Generando PDF..."
+      );
+    } catch (err: any) {
+      errorToast(err.message || "No se pudo abrir el PDF.");
     }
   };
 

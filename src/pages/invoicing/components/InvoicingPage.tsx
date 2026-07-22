@@ -24,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { errorToast, successToast } from "@/lib/core.function";
+import { openPdfFromFetcher } from "@/lib/pdf";
 import { getAllClients } from "@/pages/client/lib/client.actions";
 import {
   ClientResource,
@@ -191,12 +192,12 @@ export default function InvoicingPage() {
 
   const handleOpenPdf = async (id: number) => {
     try {
-      const pdfBlob = await getComprobantePdf(id);
-      const url = URL.createObjectURL(pdfBlob);
-      window.open(url, "_blank", "noopener,noreferrer");
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } catch {
-      errorToast("No se pudo abrir el PDF del comprobante.");
+      await openPdfFromFetcher(
+        () => getComprobantePdf(id),
+        "Generando PDF del comprobante..."
+      );
+    } catch (err: any) {
+      errorToast(err.message || "No se pudo abrir el PDF del comprobante.");
     }
   };
 

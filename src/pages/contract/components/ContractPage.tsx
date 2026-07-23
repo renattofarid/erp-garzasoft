@@ -18,6 +18,7 @@ import NotificationModal from "@/pages/notifications/components/NotificationModa
 import { ContractCancelDialog } from "./ContractCancelDialog.tsx";
 import { ContractResource } from "../lib/contract.interface.ts";
 import { ContractInstallmentsDialog } from "./ContractInstallmentsDialog.tsx";
+import { ContractSignatureDialog } from "./ContractSignatureDialog.tsx";
 
 export default function ContractPage() {
   const [page, setPage] = useState(1);
@@ -25,6 +26,8 @@ export default function ContractPage() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [notificationId, setNotificationId] = useState<number | null>(null);
   const [installmentsContract, setInstallmentsContract] =
+    useState<ContractResource | null>(null);
+  const [signatureContract, setSignatureContract] =
     useState<ContractResource | null>(null);
 
   const { data, meta, isLoading, refetch } = useContracts();
@@ -72,6 +75,7 @@ export default function ContractPage() {
             );
           },
           onViewInstallments: setInstallmentsContract,
+          onSignature: setSignatureContract,
         })}
         data={data || []}
       >
@@ -102,6 +106,12 @@ export default function ContractPage() {
         open={installmentsContract !== null}
         onClose={() => setInstallmentsContract(null)}
         contract={installmentsContract}
+      />
+      <ContractSignatureDialog
+        open={signatureContract !== null}
+        onOpenChange={(open) => !open && setSignatureContract(null)}
+        contract={signatureContract}
+        onSuccess={() => refetch()}
       />
     </div>
   );

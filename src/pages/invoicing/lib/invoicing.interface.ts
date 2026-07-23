@@ -45,6 +45,11 @@ export interface ComprobanteResource {
   cuota_id?: number | null;
   contrato_id?: number | null;
   error_text?: string | null;
+  estado_envio_cliente?: "pendiente" | "enviado" | "error";
+  estado_envio_cliente_label?: string;
+  fecha_envio_cliente?: string | null;
+  celular_envio_cliente?: string | null;
+  error_envio_cliente?: string | null;
   detalles?: ComprobanteDetalle[];
 }
 

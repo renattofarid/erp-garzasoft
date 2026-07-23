@@ -131,7 +131,7 @@ export const ProductForm = ({
             />
           </div>
 
-          <div className="md:col-span-8 col-span-12 bg-modal p-4 rounded-lg">
+          <div className="md:col-span-8 col-span-12 bg-modal p-4 rounded-lg flex flex-col">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold">{conceptLabel(tipo)}</h3>
               <Button
@@ -149,17 +149,18 @@ export const ProductForm = ({
               </p>
             )}
 
-            {conceptos.length > 0 && (
-              <div className="grid grid-cols-12 items-center gap-2 mb-2 font-semibold text-sm text-muted-foreground">
-                <span className="col-span-1"></span>
-                <span className="col-span-5">Nombre del concepto</span>
-                <span className="col-span-3">Precio mensual</span>
-                <span className="col-span-2">Precio anual</span>
-                <span className="col-span-1"></span>
-              </div>
-            )}
+            <div className="max-h-[55vh] overflow-y-auto pr-1 space-y-3">
+              {conceptos.length > 0 && (
+                <div className="grid grid-cols-12 items-center gap-2 mb-1 font-semibold text-sm text-muted-foreground sticky top-0 bg-modal py-1 z-10">
+                  <span className="col-span-1"></span>
+                  <span className="col-span-5">Nombre del concepto</span>
+                  <span className="col-span-3">Precio mensual</span>
+                  <span className="col-span-2">Precio anual</span>
+                  <span className="col-span-1"></span>
+                </div>
+              )}
 
-            {conceptos.map((concepto, index) => (
+              {conceptos.map((concepto, index) => (
               <div
                 key={concepto.id || index}
                 className="grid grid-cols-12 items-start gap-2 mb-4 rounded-lg border bg-background/30 p-3"
@@ -258,6 +259,7 @@ export const ProductForm = ({
                 </div>
               </div>
             ))}
+            </div>
           </div>
         </div>
 

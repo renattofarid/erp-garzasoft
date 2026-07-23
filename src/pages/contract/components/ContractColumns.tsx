@@ -27,6 +27,7 @@ function ContractActionsCell({
   onNotification,
   onPreview,
   onViewInstallments,
+  onSignature,
 }: {
   contract: ContractResource;
   overduePaymentCount: number;
@@ -34,6 +35,7 @@ function ContractActionsCell({
   onNotification: (id: number) => void;
   onPreview: (id: number) => void;
   onViewInstallments: (contract: ContractResource) => void;
+  onSignature: (contract: ContractResource) => void;
 }) {
   const router = useNavigate();
   const id = contract.id;
@@ -43,6 +45,9 @@ function ContractActionsCell({
       <DropdownMenuGroup>
         <DropdownMenuItem onClick={() => router(`/contratos/editar/${id}`)}>
           Editar
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onSignature(contract)}>
+          Firmar
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => onPreview(id)}>
           Ver PDF
@@ -68,11 +73,13 @@ export const ContractColumns = ({
   onNotification,
   onPreview,
   onViewInstallments,
+  onSignature,
 }: {
   onDelete: (id: number) => void;
   onNotification: (id: number) => void;
   onPreview: (id: number) => void;
   onViewInstallments: (contract: ContractResource) => void;
+  onSignature: (contract: ContractResource) => void;
 }): ColumnDef<ContractResource>[] => [
   {
     accessorKey: "numero",
@@ -180,6 +187,7 @@ export const ContractColumns = ({
           onNotification={onNotification}
           onPreview={onPreview}
           onViewInstallments={onViewInstallments}
+          onSignature={onSignature}
         />
       );
     },

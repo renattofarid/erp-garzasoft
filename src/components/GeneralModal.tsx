@@ -38,7 +38,7 @@ export function GeneralModal({
       }}
     >
       <DialogContent
-        className={`w-[95vw] px-2 md:p-6 rounded-xl overflow-auto ${maxWidth}`}
+        className={`w-[95vw] max-h-[90vh] overflow-y-auto px-4 py-4 md:p-6 rounded-xl ${maxWidth}`}
         onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>

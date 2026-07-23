@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Send, RefreshCcw, FileText } from "lucide-react";
+import { Search, Send, RefreshCcw, FileText, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import TitleComponent from "@/components/TitleComponent";
 import DataTablePagination from "@/components/DataTablePagination";
@@ -32,6 +32,7 @@ import {
 } from "@/pages/client/lib/client.interface";
 import {
   emitirMasivo,
+  envioMasivoWhatsApp,
   getComprobantes,
   getComprobantePdf,
   reenviarPendientes,
@@ -44,6 +45,7 @@ import {
   InvoicingTitle,
   TipoDocumento,
 } from "../lib/invoicing.interface";
+import { WhatsAppComprobanteModal } from "./WhatsAppComprobanteModal";
 
 const estadoColor: Record<string, string> = {
   E: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
@@ -60,10 +62,21 @@ export default function InvoicingPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [bulkWhatsAppLoading, setBulkWhatsAppLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false);
+  const [whatsAppComprobante, setWhatsAppComprobante] =
+    useState<ComprobanteResource | null>(null);
+
   const [comprobantes, setComprobantes] = useState<ComprobanteResource[]>([]);
   const [clientes, setClientes] = useState<ClientResource[]>([]);
   const [totalPages, setTotalPages] = useState(1);
+
+  const pendingWhatsAppCount = useMemo(() => {
+    return comprobantes.filter(
+      (c) => !c.estado_envio_cliente || c.estado_envio_cliente === "pendiente" || c.estado_envio_cliente === "error"
+    ).length;
+  }, [comprobantes]);
 
   const [form, setForm] = useState<EmisionMasivaPayload>({
     cliente_ids: [],
@@ -190,6 +203,19 @@ export default function InvoicingPage() {
     }
   };
 
+  const handleEnvioMasivoWhatsApp = async () => {
+    try {
+      setBulkWhatsAppLoading(true);
+      const res = await envioMasivoWhatsApp();
+      successToast(res.message || "Envío masivo por WhatsApp completado.");
+      await loadComprobantes();
+    } catch (err: any) {
+      errorToast(err?.response?.data?.message || "Error al realizar envío masivo por WhatsApp.");
+    } finally {
+      setBulkWhatsAppLoading(false);
+    }
+  };
+
   const handleOpenPdf = async (id: number) => {
     try {
       await openPdfFromFetcher(
@@ -201,6 +227,11 @@ export default function InvoicingPage() {
     }
   };
 
+  const handleOpenWhatsAppModal = (comprobante: ComprobanteResource) => {
+    setWhatsAppComprobante(comprobante);
+    setWhatsAppModalOpen(true);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -209,13 +240,27 @@ export default function InvoicingPage() {
           subtitle={InvoicingDescription}
           icon={InvoicingIconName as any}
         />
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => navigate("/empresa-emisora")}>
             Configurar emisor
           </Button>
           <Button variant="outline" onClick={handleReenviar}>
             <RefreshCcw className="mr-2 size-4" />
             Reenviar pendientes
+          </Button>
+          <Button
+            variant="outline"
+            className="border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 gap-1.5"
+            onClick={handleEnvioMasivoWhatsApp}
+            disabled={bulkWhatsAppLoading}
+          >
+            <MessageSquare className="size-4 text-emerald-500" />
+            {bulkWhatsAppLoading ? "Notificando..." : "Envío masivo WhatsApp"}
+            {pendingWhatsAppCount > 0 && (
+              <Badge className="bg-emerald-600 text-white rounded-full ml-1 px-1.5 py-0.2 text-[10px]">
+                {pendingWhatsAppCount}
+              </Badge>
+            )}
           </Button>
           <Button onClick={() => setModalOpen(true)}>
             <Send className="mr-2 size-4" />
@@ -246,21 +291,22 @@ export default function InvoicingPage() {
               <TableHead>Tipo</TableHead>
               <TableHead>Fecha</TableHead>
               <TableHead>Total</TableHead>
-              <TableHead>Estado</TableHead>
+              <TableHead>Estado SUNAT</TableHead>
+              <TableHead>Notificación WhatsApp</TableHead>
               <TableHead>Error</TableHead>
-              <TableHead>Accion</TableHead>
+              <TableHead className="text-right">Accion</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center">
+                <TableCell colSpan={9} className="text-center">
                   Cargando...
                 </TableCell>
               </TableRow>
             ) : comprobantes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center">
+                <TableCell colSpan={9} className="text-center">
                   Sin comprobantes
                 </TableCell>
               </TableRow>
@@ -285,19 +331,45 @@ export default function InvoicingPage() {
                       {comprobante.estado_label}
                     </Badge>
                   </TableCell>
-                  <TableCell className="max-w-[260px] truncate text-red-300">
-                    {comprobante.error_text || "-"}
-                  </TableCell>
                   <TableCell>
-                    <Button
-                      type="button"
+                    <Badge
                       variant="outline"
-                      size="sm"
-                      onClick={() => handleOpenPdf(comprobante.id)}
+                      className={
+                        comprobante.estado_envio_cliente === "enviado"
+                          ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                          : comprobante.estado_envio_cliente === "error"
+                          ? "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30"
+                          : "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                      }
                     >
-                      <FileText className="mr-2 size-4" />
-                      Ver PDF
-                    </Button>
+                      {comprobante.estado_envio_cliente_label || "Pendiente de notificación"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="max-w-[200px] truncate text-red-400 text-xs">
+                    {comprobante.error_envio_cliente || comprobante.error_text || "-"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1.5">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenPdf(comprobante.id)}
+                      >
+                        <FileText className="mr-1 size-3.5" />
+                        PDF
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 gap-1"
+                        onClick={() => handleOpenWhatsAppModal(comprobante)}
+                      >
+                        <MessageSquare className="size-3.5 text-emerald-500" />
+                        WhatsApp
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -310,6 +382,13 @@ export default function InvoicingPage() {
         page={page}
         totalPages={totalPages}
         onPageChange={setPage}
+      />
+
+      <WhatsAppComprobanteModal
+        open={whatsAppModalOpen}
+        onOpenChange={setWhatsAppModalOpen}
+        comprobante={whatsAppComprobante}
+        onSuccess={loadComprobantes}
       />
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>

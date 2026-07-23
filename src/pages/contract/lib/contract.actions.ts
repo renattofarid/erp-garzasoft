@@ -89,3 +89,25 @@ export async function getNextContractNumber(): Promise<string> {
 
   return response.data.data.numero;
 }
+
+export async function saveContractSignatures(
+  id: number,
+  payload: {
+    firma_arrendador?: string | null;
+    firma_cliente?: string | null;
+    guardar_como_default_arrendador?: boolean;
+  }
+): Promise<ContractMutationResponse> {
+  const { data } = await api.post<ContractMutationResponse>(
+    `${ENDPOINT}/${id}/firmas`,
+    payload
+  );
+  return data;
+}
+
+export async function getFacturadorActivo(): Promise<any> {
+  const { data } = await api.get<{ status: number; data: any }>(
+    "facturadores/activo"
+  );
+  return data.data;
+}

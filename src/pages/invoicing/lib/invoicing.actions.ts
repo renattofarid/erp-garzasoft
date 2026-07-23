@@ -61,3 +61,27 @@ export async function downloadComprobanteFile(
   });
   return data;
 }
+
+export async function enviarComprobanteWhatsApp(
+  id: number,
+  celular?: string
+): Promise<{ status: number; message: string; data: any }> {
+  const { data } = await api.post<{ status: number; message: string; data: any }>(
+    `${ENDPOINT}/${id}/enviar-whatsapp`,
+    { celular }
+  );
+  return data;
+}
+
+export async function envioMasivoWhatsApp(): Promise<{
+  status: number;
+  message: string;
+  data: { totales: number; enviados: number; fallidos: number };
+}> {
+  const { data } = await api.post<{
+    status: number;
+    message: string;
+    data: { totales: number; enviados: number; fallidos: number };
+  }>(`${ENDPOINT}/envio-masivo-whatsapp`);
+  return data;
+}

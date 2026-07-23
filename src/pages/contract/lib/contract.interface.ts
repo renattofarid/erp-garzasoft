@@ -48,6 +48,8 @@ export interface ContractResource {
   periodicidad_cuota?: PeriodicidadCuota | null;
   motivo_anulacion?: string | null;
   fecha_anulacion?: string | null;
+  firma_arrendador?: string | null;
+  firma_cliente?: string | null;
   cliente: Cliente;
   cuotas: Cuota[];
   contrato_producto_modulos: ContratoProductoModulo[];

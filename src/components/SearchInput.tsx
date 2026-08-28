@@ -1,14 +1,17 @@
 import { Input } from "@/components/ui/input";
 import { useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 
 export default function SearchInput({
   value,
   onChange,
   placeholder = "Buscar...",
+  className,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  className?: string;
 }) {
   const [inputValue, setInputValue] = useState(value);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -29,7 +32,7 @@ export default function SearchInput({
 
   return (
     <Input
-      className="w-full md:w-64 h-9 text-sm md:text-sm"
+      className={cn("w-full md:w-64 h-9 text-sm md:text-sm", className)}
       variant="default"
       placeholder={placeholder}
       value={inputValue}

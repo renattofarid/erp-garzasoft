@@ -71,19 +71,19 @@ const currency = new Intl.NumberFormat("es-PE", {
 
 const statusBadgeVariant: Record<string, { bg: string; text: string; border: string }> = {
   pendiente: {
-    bg: "bg-amber-500/10 dark:bg-amber-500/20",
-    text: "text-amber-600 dark:text-amber-400",
-    border: "border-amber-500/30",
+    bg: "bg-amber-500/15 dark:bg-amber-500/25",
+    text: "text-amber-700 dark:text-amber-300",
+    border: "border-amber-500/40",
   },
   vencido: {
-    bg: "bg-rose-500/10 dark:bg-rose-500/20",
-    text: "text-rose-600 dark:text-rose-400",
-    border: "border-rose-500/30",
+    bg: "bg-rose-500/15 dark:bg-rose-500/25",
+    text: "text-rose-700 dark:text-rose-300",
+    border: "border-rose-500/40",
   },
   pagado: {
-    bg: "bg-emerald-500/10 dark:bg-emerald-500/20",
-    text: "text-emerald-600 dark:text-emerald-400",
-    border: "border-emerald-500/30",
+    bg: "bg-emerald-500/15 dark:bg-emerald-500/25",
+    text: "text-emerald-700 dark:text-emerald-300",
+    border: "border-emerald-500/40",
   },
 };
 
@@ -209,7 +209,7 @@ export default function ClientPortalPage() {
           icon="FolderOpen"
         />
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="gap-1.5 py-1 px-3 bg-primary/5 text-primary border-primary/20 text-xs font-semibold">
+          <Badge variant="outline" className="gap-1.5 py-1 px-3 bg-primary/10 text-primary border-primary/30 text-xs font-semibold">
             <ShieldCheck className="h-3.5 w-3.5" />
             Portal Seguro
           </Badge>
@@ -217,7 +217,7 @@ export default function ClientPortalPage() {
       </div>
 
       {/* Tarjeta de Perfil de Empresa */}
-      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-card via-card to-primary/5 p-6 shadow-sm">
+      <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-card dark:bg-zinc-900/90 p-6 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="flex items-start gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md shadow-primary/20">
@@ -225,37 +225,37 @@ export default function ClientPortalPage() {
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-xl font-bold tracking-tight">
+                <h2 className="text-xl font-bold tracking-tight text-foreground">
                   {cliente?.razon_social || cliente?.nombre_comercial || "Mi Empresa"}
                 </h2>
                 {cliente?.tipo && (
-                  <Badge variant="secondary" className="capitalize text-xs font-medium">
+                  <Badge variant="secondary" className="capitalize text-xs font-medium border border-border/60 bg-muted/80 text-foreground">
                     {cliente.tipo}
                   </Badge>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground flex items-center gap-2">
+              <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
                 <span>RUC: <strong className="text-foreground font-mono">{cliente?.ruc || "No registrado"}</strong></span>
                 {cliente?.nombre_comercial && cliente?.razon_social && (
                   <>
                     <span>•</span>
-                    <span>{cliente.nombre_comercial}</span>
+                    <span className="text-foreground/80">{cliente.nombre_comercial}</span>
                   </>
                 )}
               </p>
               {cliente?.direccion && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-1">
                   <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
-                  <span>{cliente.direccion}</span>
+                  <span className="text-foreground/80">{cliente.direccion}</span>
                 </p>
               )}
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground border-t lg:border-t-0 lg:border-l pt-4 lg:pt-0 lg:pl-6">
+          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground border-t lg:border-t-0 lg:border-l pt-4 lg:pt-0 lg:pl-6 border-border">
             {cliente?.dueno_celular && (
-              <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm rounded-lg px-3 py-2 border">
-                <Phone className="h-4 w-4 text-emerald-500" />
+              <div className="flex items-center gap-2.5 bg-background dark:bg-zinc-800/70 rounded-xl px-3.5 py-2.5 border border-border/70 shadow-xs">
+                <Phone className="h-4 w-4 text-emerald-500 shrink-0" />
                 <div>
                   <div className="font-semibold text-foreground">{cliente.dueno_celular}</div>
                   <div className="text-[10px] text-muted-foreground">Teléfono Contacto</div>
@@ -263,8 +263,8 @@ export default function ClientPortalPage() {
               </div>
             )}
             {cliente?.dueno_email && (
-              <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm rounded-lg px-3 py-2 border">
-                <Mail className="h-4 w-4 text-sky-500" />
+              <div className="flex items-center gap-2.5 bg-background dark:bg-zinc-800/70 rounded-xl px-3.5 py-2.5 border border-border/70 shadow-xs">
+                <Mail className="h-4 w-4 text-sky-500 shrink-0" />
                 <div>
                   <div className="font-semibold text-foreground">{cliente.dueno_email}</div>
                   <div className="text-[10px] text-muted-foreground">Email Notificaciones</div>
@@ -282,18 +282,18 @@ export default function ClientPortalPage() {
           value={currency.format(totals.total)}
           subtitle={`${contracts.length} contrato${contracts.length !== 1 ? "s" : ""} registrado${contracts.length !== 1 ? "s" : ""}`}
           icon={FolderOpen}
-          gradient="from-blue-500/10 to-indigo-500/5"
+          gradient="from-blue-500/10 via-card to-card dark:from-blue-950/30 dark:via-zinc-900/90 dark:to-zinc-900/90"
           iconColor="text-blue-600 dark:text-blue-400"
-          iconBg="bg-blue-500/10"
+          iconBg="bg-blue-500/15 dark:bg-blue-500/20"
         />
         <SummaryKpiCard
           title="Total Pagado"
           value={currency.format(totals.paid)}
           subtitle={`${percentPaid}% amortizado`}
           icon={CheckCircle2}
-          gradient="from-emerald-500/10 to-teal-500/5"
+          gradient="from-emerald-500/10 via-card to-card dark:from-emerald-950/30 dark:via-zinc-900/90 dark:to-zinc-900/90"
           iconColor="text-emerald-600 dark:text-emerald-400"
-          iconBg="bg-emerald-500/10"
+          iconBg="bg-emerald-500/15 dark:bg-emerald-500/20"
           progress={percentPaid}
         />
         <SummaryKpiCard
@@ -301,9 +301,9 @@ export default function ClientPortalPage() {
           value={currency.format(totals.pending)}
           subtitle={`${installments.filter((i) => i.situacion === "pendiente").length} cuotas por vencer`}
           icon={CalendarClock}
-          gradient="from-amber-500/10 to-yellow-500/5"
+          gradient="from-amber-500/10 via-card to-card dark:from-amber-950/30 dark:via-zinc-900/90 dark:to-zinc-900/90"
           iconColor="text-amber-600 dark:text-amber-400"
-          iconBg="bg-amber-500/10"
+          iconBg="bg-amber-500/15 dark:bg-amber-500/20"
         />
         <SummaryKpiCard
           title="Monto Vencido"
@@ -314,25 +314,29 @@ export default function ClientPortalPage() {
               : "Al día sin retrasos"
           }
           icon={ReceiptText}
-          gradient={totals.overdue > 0 ? "from-rose-500/15 to-red-500/10" : "from-emerald-500/10 to-teal-500/5"}
+          gradient={
+            totals.overdue > 0
+              ? "from-rose-500/15 via-card to-card dark:from-rose-950/30 dark:via-zinc-900/90 dark:to-zinc-900/90"
+              : "from-emerald-500/10 via-card to-card dark:from-emerald-950/30 dark:via-zinc-900/90 dark:to-zinc-900/90"
+          }
           iconColor={totals.overdue > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}
-          iconBg={totals.overdue > 0 ? "bg-rose-500/15" : "bg-emerald-500/10"}
+          iconBg={totals.overdue > 0 ? "bg-rose-500/20" : "bg-emerald-500/15 dark:bg-emerald-500/20"}
           alert={totals.overdue > 0}
         />
       </div>
 
       {/* Pestañas de Contenido */}
       <Tabs defaultValue="contracts" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 max-w-lg h-11 p-1 bg-muted/60">
-          <TabsTrigger value="contracts" className="text-xs sm:text-sm font-medium gap-2">
+        <TabsList className="grid w-full grid-cols-3 max-w-lg h-11 p-1 bg-muted/80 dark:bg-zinc-800/80 border border-border/50">
+          <TabsTrigger value="contracts" className="text-xs sm:text-sm font-semibold gap-2">
             <FileText className="h-4 w-4" />
             <span>Mis Contratos ({contracts.length})</span>
           </TabsTrigger>
-          <TabsTrigger value="installments" className="text-xs sm:text-sm font-medium gap-2">
+          <TabsTrigger value="installments" className="text-xs sm:text-sm font-semibold gap-2">
             <CalendarClock className="h-4 w-4" />
             <span>Cronograma ({installments.length})</span>
           </TabsTrigger>
-          <TabsTrigger value="invoices" className="text-xs sm:text-sm font-medium gap-2">
+          <TabsTrigger value="invoices" className="text-xs sm:text-sm font-semibold gap-2">
             <Receipt className="h-4 w-4" />
             <span>Facturación ({invoices.length})</span>
           </TabsTrigger>
@@ -342,7 +346,7 @@ export default function ClientPortalPage() {
         <TabsContent value="contracts" className="space-y-4 outline-none">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold tracking-tight">Contratos y Servicios Activos</h3>
+              <h3 className="text-lg font-bold tracking-tight text-foreground">Contratos y Servicios Activos</h3>
               <p className="text-xs text-muted-foreground">
                 Documentos contractuales con vigencia, módulos incluidos y descarga en PDF.
               </p>
@@ -363,30 +367,34 @@ export default function ClientPortalPage() {
                 const modulos = contract.contrato_producto_modulos || [];
 
                 return (
-                  <Card key={contract.id} className="relative overflow-hidden border-border/80 bg-card shadow-sm hover:shadow-md transition-shadow">
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-primary/80" />
+                  <Card key={contract.id} className="relative overflow-hidden border border-border/80 bg-card dark:bg-zinc-900/90 shadow-sm hover:shadow-md transition-all">
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-primary" />
                     <CardHeader className="pb-3 pt-5">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary/20 text-primary border border-primary/20">
                             <ContractIcon className="h-5 w-5" />
                           </div>
                           <div>
-                            <CardTitle className="text-base font-bold flex items-center gap-2">
+                            <CardTitle className="text-base font-bold flex items-center gap-2 text-foreground">
                               <span>Contrato {contract.numero}</span>
                               <Badge
-                                variant={contract.estado === "anulado" ? "destructive" : "secondary"}
-                                className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0"
+                                variant="outline"
+                                className={
+                                  contract.estado === "anulado"
+                                    ? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40 text-[11px] uppercase font-bold tracking-wider px-2 py-0.5"
+                                    : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 text-[11px] uppercase font-bold tracking-wider px-2 py-0.5"
+                                }
                               >
                                 {contract.estado === "anulado" ? "Anulado" : "Activo"}
                               </Badge>
                             </CardTitle>
-                            <CardDescription className="text-xs flex items-center gap-1.5 pt-0.5">
-                              <Badge variant="outline" className="text-[11px] font-normal capitalize">
+                            <CardDescription className="text-xs flex items-center gap-1.5 pt-1 text-muted-foreground">
+                              <Badge variant="outline" className="text-[11px] font-medium capitalize bg-muted/60 dark:bg-zinc-800 border-border text-foreground/90">
                                 {castContractType(contract.tipo_contrato)}
                               </Badge>
                               <span>•</span>
-                              <span className="capitalize">{contract.vigencia_contrato || "Anual"}</span>
+                              <span className="capitalize font-medium text-foreground/80">{contract.vigencia_contrato || "Anual"}</span>
                             </CardDescription>
                           </div>
                         </div>
@@ -395,7 +403,7 @@ export default function ClientPortalPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => openContractPdf(contract.id)}
-                          className="h-8 gap-1.5 text-xs font-semibold shadow-xs shrink-0 hover:bg-primary hover:text-primary-foreground transition-colors"
+                          className="h-8 gap-1.5 text-xs font-semibold shadow-xs shrink-0 border-border hover:bg-primary hover:text-primary-foreground transition-colors"
                         >
                           <Eye className="h-3.5 w-3.5" />
                           <span>Ver PDF</span>
@@ -405,18 +413,18 @@ export default function ClientPortalPage() {
 
                     <CardContent className="space-y-4 pt-1">
                       {/* Fechas de Vigencia */}
-                      <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted/40 p-3 text-xs">
-                        <div className="space-y-0.5">
+                      <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/50 dark:bg-zinc-800/60 border border-border/50 p-3 text-xs">
+                        <div className="space-y-1">
                           <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                            <Calendar className="h-3 w-3" /> Fecha Inicio
+                            <Calendar className="h-3 w-3 text-primary" /> Fecha Inicio
                           </span>
                           <span className="font-semibold text-foreground">
                             {formatDisplayDate(contract.fecha_inicio)}
                           </span>
                         </div>
-                        <div className="space-y-0.5">
+                        <div className="space-y-1">
                           <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-3 w-3" /> Fecha Fin / Vencimiento
+                            <Clock className="h-3 w-3 text-primary" /> Fecha Fin / Vencimiento
                           </span>
                           <span className="font-semibold text-foreground">
                             {formatDisplayDate(contract.fecha_fin)}
@@ -426,20 +434,30 @@ export default function ClientPortalPage() {
 
                       {/* Módulos y Productos Incluidos */}
                       {modulos.length > 0 && (
-                        <div className="space-y-1.5">
-                          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                            <Package className="h-3.5 w-3.5" />
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground/80">
+                            <Package className="h-3.5 w-3.5 text-primary" />
                             <span>Módulos y Servicios Incluidos ({modulos.length}):</span>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
                             {modulos.map((m) => {
                               const moduleName = m.modulo?.nombre || (m.producto as any)?.nombre || m.producto?.name || `Módulo #${m.modulo_id}`;
+                              const priceNum = Number(m.precio || 0);
+
                               return (
-                                <Badge key={m.id} variant="secondary" className="text-[11px] font-normal py-0.5 px-2 bg-muted">
-                                  {moduleName}
-                                  {m.precio && Number(m.precio) > 0 && (
-                                    <span className="ml-1 text-[10px] text-muted-foreground font-mono">
-                                      ({currency.format(Number(m.precio))})
+                                <Badge
+                                  key={m.id}
+                                  variant="outline"
+                                  className="text-xs font-medium py-1 px-2.5 bg-background dark:bg-zinc-800/90 border-border text-foreground dark:text-zinc-200 shadow-2xs flex items-center gap-1.5"
+                                >
+                                  <span>{moduleName}</span>
+                                  {priceNum > 0 ? (
+                                    <span className="text-[11px] font-semibold text-primary font-mono bg-primary/10 dark:bg-primary/20 dark:text-primary-300 px-1.5 py-0.5 rounded">
+                                      {currency.format(priceNum)}
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] text-muted-foreground font-mono">
+                                      (Incluido)
                                     </span>
                                   )}
                                 </Badge>
@@ -450,17 +468,17 @@ export default function ClientPortalPage() {
                       )}
 
                       {/* Resumen Financiero del Contrato */}
-                      <div className="flex items-center justify-between pt-3 border-t text-xs">
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                          <PaymentIcon className="h-4 w-4" />
+                      <div className="flex items-center justify-between pt-3 border-t border-border text-xs">
+                        <div className="flex items-center gap-1.5 font-medium text-foreground/80">
+                          <PaymentIcon className="h-4 w-4 text-muted-foreground" />
                           <span>{castPaymentType(contract.forma_pago)}</span>
                           {contract.periodicidad_cuota && (
                             <span className="capitalize text-muted-foreground">({contract.periodicidad_cuota})</span>
                           )}
                         </div>
                         <div className="text-right">
-                          <span className="text-[10px] text-muted-foreground block">Monto Total</span>
-                          <span className="text-base font-bold text-foreground">
+                          <span className="text-[10px] text-muted-foreground block font-medium">Monto Total</span>
+                          <span className="text-base font-bold text-foreground font-mono">
                             {currency.format(Number(contract.total || 0))}
                           </span>
                         </div>
@@ -477,7 +495,7 @@ export default function ClientPortalPage() {
         <TabsContent value="installments" className="space-y-4 outline-none">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-lg font-semibold tracking-tight">Cronograma de Pagos y Cuotas</h3>
+              <h3 className="text-lg font-bold tracking-tight text-foreground">Cronograma de Pagos y Cuotas</h3>
               <p className="text-xs text-muted-foreground">
                 Estado y vencimiento de cada una de tus cuotas de servicio.
               </p>
@@ -488,7 +506,7 @@ export default function ClientPortalPage() {
               <Button
                 variant={installmentFilter === "todos" ? "default" : "outline"}
                 size="sm"
-                className="h-8 text-xs"
+                className="h-8 text-xs font-semibold"
                 onClick={() => setInstallmentFilter("todos")}
               >
                 Todas ({installments.length})
@@ -496,7 +514,7 @@ export default function ClientPortalPage() {
               <Button
                 variant={installmentFilter === "pendiente" ? "default" : "outline"}
                 size="sm"
-                className="h-8 text-xs"
+                className="h-8 text-xs font-semibold"
                 onClick={() => setInstallmentFilter("pendiente")}
               >
                 Pendientes ({installments.filter((i) => i.situacion === "pendiente").length})
@@ -504,7 +522,7 @@ export default function ClientPortalPage() {
               <Button
                 variant={installmentFilter === "vencido" ? "default" : "outline"}
                 size="sm"
-                className="h-8 text-xs"
+                className="h-8 text-xs font-semibold"
                 onClick={() => setInstallmentFilter("vencido")}
               >
                 Vencidas ({installments.filter((i) => i.situacion === "vencido").length})
@@ -512,7 +530,7 @@ export default function ClientPortalPage() {
               <Button
                 variant={installmentFilter === "pagado" ? "default" : "outline"}
                 size="sm"
-                className="h-8 text-xs"
+                className="h-8 text-xs font-semibold"
                 onClick={() => setInstallmentFilter("pagado")}
               >
                 Pagadas ({installments.filter((i) => i.situacion === "pagado").length})
@@ -520,18 +538,18 @@ export default function ClientPortalPage() {
             </div>
           </div>
 
-          <Card className="border-border bg-card shadow-sm overflow-hidden">
+          <Card className="border-border/80 bg-card dark:bg-zinc-900/90 shadow-sm overflow-hidden">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-muted/40 hover:bg-muted/40">
-                      <TableHead className="font-semibold text-xs">Contrato</TableHead>
-                      <TableHead className="font-semibold text-xs">Vencimiento</TableHead>
-                      <TableHead className="font-semibold text-xs text-right">Monto Cuota</TableHead>
-                      <TableHead className="font-semibold text-xs text-right">Pagado</TableHead>
-                      <TableHead className="font-semibold text-xs text-right">Saldo Pendiente</TableHead>
-                      <TableHead className="font-semibold text-xs text-center">Estado</TableHead>
+                    <TableRow className="bg-muted/60 dark:bg-zinc-800/60 hover:bg-muted/60">
+                      <TableHead className="font-semibold text-xs text-foreground">Contrato</TableHead>
+                      <TableHead className="font-semibold text-xs text-foreground">Vencimiento</TableHead>
+                      <TableHead className="font-semibold text-xs text-right text-foreground">Monto Cuota</TableHead>
+                      <TableHead className="font-semibold text-xs text-right text-foreground">Pagado</TableHead>
+                      <TableHead className="font-semibold text-xs text-right text-foreground">Saldo Pendiente</TableHead>
+                      <TableHead className="font-semibold text-xs text-center text-foreground">Estado</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -550,29 +568,29 @@ export default function ClientPortalPage() {
                         };
 
                         return (
-                          <TableRow key={item.id} className="hover:bg-muted/30">
-                            <TableCell className="font-medium text-xs">
+                          <TableRow key={item.id} className="hover:bg-muted/30 dark:hover:bg-zinc-800/30">
+                            <TableCell className="font-medium text-xs text-foreground">
                               {item.contrato?.numero || `ID #${item.contrato_id}`}
                             </TableCell>
                             <TableCell className="text-xs">
-                              <span className="font-medium flex items-center gap-1.5">
+                              <span className="font-medium text-foreground flex items-center gap-1.5">
                                 <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                                 {formatDisplayDate(item.fecha_vencimiento)}
                               </span>
                             </TableCell>
-                            <TableCell className="text-xs text-right font-semibold">
+                            <TableCell className="text-xs text-right font-semibold font-mono text-foreground">
                               {currency.format(Number(item.monto_total || 0))}
                             </TableCell>
-                            <TableCell className="text-xs text-right text-emerald-600 dark:text-emerald-400 font-medium">
+                            <TableCell className="text-xs text-right text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
                               {currency.format(Number(item.monto_pagado || 0))}
                             </TableCell>
-                            <TableCell className="text-xs text-right font-semibold text-foreground">
+                            <TableCell className="text-xs text-right font-bold font-mono text-foreground">
                               {currency.format(Number(item.monto_pendiente || 0))}
                             </TableCell>
                             <TableCell className="text-center">
                               <Badge
                                 variant="outline"
-                                className={`text-[11px] capitalize font-medium px-2.5 py-0.5 ${variant.bg} ${variant.text} ${variant.border}`}
+                                className={`text-[11px] capitalize font-semibold px-2.5 py-0.5 ${variant.bg} ${variant.text} ${variant.border}`}
                               >
                                 {item.situacion}
                               </Badge>
@@ -592,7 +610,7 @@ export default function ClientPortalPage() {
         <TabsContent value="invoices" className="space-y-4 outline-none">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-lg font-semibold tracking-tight">Comprobantes y Facturación</h3>
+              <h3 className="text-lg font-bold tracking-tight text-foreground">Comprobantes y Facturación</h3>
               <p className="text-xs text-muted-foreground">
                 Descarga tus facturas, boletas, notas electrónicas, XML y CDR autorizados por SUNAT.
               </p>
@@ -604,22 +622,22 @@ export default function ClientPortalPage() {
                 placeholder="Buscar por N° o fecha..."
                 value={invoiceSearch}
                 onChange={(e) => setInvoiceSearch(e.target.value)}
-                className="pl-8 h-9 text-xs"
+                className="pl-8 h-9 text-xs bg-background dark:bg-zinc-800/80 border-border"
               />
             </div>
           </div>
 
-          <Card className="border-border bg-card shadow-sm overflow-hidden">
+          <Card className="border-border/80 bg-card dark:bg-zinc-900/90 shadow-sm overflow-hidden">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-muted/40 hover:bg-muted/40">
-                      <TableHead className="font-semibold text-xs">Comprobante</TableHead>
-                      <TableHead className="font-semibold text-xs">Fecha Emisión</TableHead>
-                      <TableHead className="font-semibold text-xs text-right">Monto Total</TableHead>
-                      <TableHead className="font-semibold text-xs text-center">Estado SUNAT</TableHead>
-                      <TableHead className="font-semibold text-xs text-right pr-6">Descargas</TableHead>
+                    <TableRow className="bg-muted/60 dark:bg-zinc-800/60 hover:bg-muted/60">
+                      <TableHead className="font-semibold text-xs text-foreground">Comprobante</TableHead>
+                      <TableHead className="font-semibold text-xs text-foreground">Fecha Emisión</TableHead>
+                      <TableHead className="font-semibold text-xs text-right text-foreground">Monto Total</TableHead>
+                      <TableHead className="font-semibold text-xs text-center text-foreground">Estado SUNAT</TableHead>
+                      <TableHead className="font-semibold text-xs text-right pr-6 text-foreground">Descargas</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -631,21 +649,21 @@ export default function ClientPortalPage() {
                       </TableRow>
                     ) : (
                       filteredInvoices.map((invoice) => (
-                        <TableRow key={invoice.id} className="hover:bg-muted/30">
+                        <TableRow key={invoice.id} className="hover:bg-muted/30 dark:hover:bg-zinc-800/30">
                           <TableCell className="font-mono font-bold text-xs text-primary">
                             {invoice.numero}
                           </TableCell>
-                          <TableCell className="text-xs">
-                            <span className="flex items-center gap-1.5">
+                          <TableCell className="text-xs text-foreground">
+                            <span className="flex items-center gap-1.5 font-medium">
                               <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                               {formatDisplayDate(invoice.fecha_emision)}
                             </span>
                           </TableCell>
-                          <TableCell className="text-xs text-right font-bold">
+                          <TableCell className="text-xs text-right font-bold font-mono text-foreground">
                             {invoice.moneda} {Number(invoice.total || 0).toFixed(2)}
                           </TableCell>
                           <TableCell className="text-center">
-                            <Badge variant="secondary" className="text-[11px] font-medium py-0.5 px-2">
+                            <Badge variant="secondary" className="text-[11px] font-medium py-0.5 px-2 bg-muted dark:bg-zinc-800 text-foreground border border-border">
                               {invoice.estado_label || "Emitido"}
                             </Badge>
                           </TableCell>
@@ -718,10 +736,10 @@ function SummaryKpiCard({
   alert?: boolean;
 }) {
   return (
-    <Card className={`relative overflow-hidden border bg-gradient-to-br ${gradient} shadow-xs`}>
+    <Card className={`relative overflow-hidden border border-border/80 bg-gradient-to-br ${gradient} shadow-xs`}>
       <CardContent className="p-5 space-y-3">
         <div className="flex items-start justify-between gap-2">
-          <span className="text-xs font-medium text-muted-foreground tracking-wide uppercase">{title}</span>
+          <span className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">{title}</span>
           <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${iconBg} ${iconColor}`}>
             <Icon className="h-4 w-4" />
           </div>
@@ -738,7 +756,7 @@ function SummaryKpiCard({
 
         {typeof progress === "number" && (
           <div className="space-y-1 pt-1">
-            <Progress value={progress} className="h-1.5 bg-muted" />
+            <Progress value={progress} className="h-1.5 bg-muted dark:bg-zinc-800" />
           </div>
         )}
       </CardContent>
@@ -756,7 +774,7 @@ function EmptyState({
   description: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed p-10 text-center bg-card/50">
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 p-10 text-center bg-card/50 dark:bg-zinc-900/50">
       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground mb-3">
         <Icon className="h-6 w-6" />
       </div>

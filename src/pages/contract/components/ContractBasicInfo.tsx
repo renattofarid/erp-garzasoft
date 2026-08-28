@@ -153,7 +153,10 @@ export const ContractBasicInfo = ({
                 <RequiredLabel>Numero de Contrato</RequiredLabel>
               </FormLabel>
               <FormControl>
-                <Input placeholder="CT-2025-001" {...field} />
+                <Input
+                  placeholder={`CT-${new Date().getFullYear()}-001`}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

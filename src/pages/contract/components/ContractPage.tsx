@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import TitleComponent from "@/components/TitleComponent";
 import ContractActions from "./ContractActions.tsx";
 import ContractTable from "./ContractTable.tsx";
-import ContractOptions from "./ContractOptions.tsx";
+import ContractOptions, { ContractFiltersState } from "./ContractOptions.tsx";
 import { successToast, errorToast } from "@/lib/core.function";
 import { ContractColumns } from "./ContractColumns.tsx";
 import DataTablePagination from "@/components/DataTablePagination";
@@ -20,9 +20,20 @@ import { ContractResource } from "../lib/contract.interface.ts";
 import { ContractInstallmentsDialog } from "./ContractInstallmentsDialog.tsx";
 import { ContractSignatureDialog } from "./ContractSignatureDialog.tsx";
 
+const initialFilters: ContractFiltersState = {
+  search: "",
+  numero: "",
+  clienteId: "",
+  productoId: "",
+  createdFrom: "",
+  createdTo: "",
+  vigenciaFrom: "",
+  vigenciaTo: "",
+};
+
 export default function ContractPage() {
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<ContractFiltersState>(initialFilters);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [notificationId, setNotificationId] = useState<number | null>(null);
   const [installmentsContract, setInstallmentsContract] =
@@ -33,8 +44,40 @@ export default function ContractPage() {
   const { data, meta, isLoading, refetch } = useContracts();
 
   useEffect(() => {
-    refetch({ page, search });
-  }, [page, search]);
+    refetch({
+      page,
+      search: filters.search || undefined,
+      numero: filters.numero || undefined,
+      cliente_id:
+        filters.clienteId && filters.clienteId !== "all"
+          ? Number(filters.clienteId)
+          : undefined,
+      producto_id:
+        filters.productoId && filters.productoId !== "all"
+          ? Number(filters.productoId)
+          : undefined,
+      created_from: filters.createdFrom || undefined,
+      created_to: filters.createdTo || undefined,
+      vigencia_from: filters.vigenciaFrom || undefined,
+      vigencia_to: filters.vigenciaTo || undefined,
+    });
+  }, [page, filters, refetch]);
+
+  const handleFilterChange = useCallback(
+    <K extends keyof ContractFiltersState>(key: K, value: ContractFiltersState[K]) => {
+      setFilters((prev) => ({
+        ...prev,
+        [key]: value,
+      }));
+      setPage(1);
+    },
+    []
+  );
+
+  const handleResetFilters = useCallback(() => {
+    setFilters(initialFilters);
+    setPage(1);
+  }, []);
 
   const handleDelete = async (payload: {
     motivo_anulacion?: string;
@@ -79,7 +122,11 @@ export default function ContractPage() {
         })}
         data={data || []}
       >
-        <ContractOptions search={search} setSearch={setSearch} />
+        <ContractOptions
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onResetFilters={handleResetFilters}
+        />
       </ContractTable>
       <DataTablePagination
         page={page}

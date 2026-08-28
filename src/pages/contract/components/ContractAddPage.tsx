@@ -1,3 +1,4 @@
+import FormSkeleton from "@/components/FormSkeleton";
 import { errorToast, successToast } from "@/lib/core.function";
 import { useContractStore } from "../lib/contract.store.ts";
 import { useContracts } from "../lib/contract.hook.ts";
@@ -18,18 +19,35 @@ export default function ContractAddPage() {
   const { isSubmitting, createContract } = useContractStore();
   const { refetch } = useContracts();
   const router = useNavigate();
-  const [nextNumber, setNextNumber] = useState("CT-2025-001");
+  const [nextNumber, setNextNumber] = useState<string>("");
+  const [isLoadingNumber, setIsLoadingNumber] = useState<boolean>(true);
   const [createdContract, setCreatedContract] = useState<{
     id: number;
     numero: string;
   } | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
     getNextContractNumber()
-      .then(setNextNumber)
+      .then((num) => {
+        if (isMounted) {
+          setNextNumber(num);
+        }
+      })
       .catch(() => {
-        // fallback silencioso
+        if (isMounted) {
+          setNextNumber(`CT-${new Date().getFullYear()}-001`);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoadingNumber(false);
+        }
       });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleSubmit = async (data: ContractCreate) => {
@@ -50,6 +68,19 @@ export default function ContractAddPage() {
         );
       });
   };
+
+  if (isLoadingNumber) {
+    return (
+      <div className="max-w-(--breakpoint-xl) w-full mx-auto space-y-6">
+        <TitleFormComponent
+          title={ContractTitle}
+          mode="create"
+          icon={ContractIconName}
+        />
+        <FormSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-(--breakpoint-xl) w-full mx-auto space-y-6">

@@ -13,6 +13,7 @@ import {
   contractCreateSchema,
   contractUpdateSchema,
 } from "@/pages/contract/lib/contract.schema";
+import { getNextContractNumber } from "./contract.actions";
 
 type ContractFormValues = z.output<typeof contractCreateSchema>;
 
@@ -303,6 +304,35 @@ export const useContractForm = ({
     if (installmentsTouched) return;
     setNumberOfInstallments(getBillingPeriods());
   }, [getBillingPeriods, installmentsTouched]);
+
+  const previousYearRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (mode !== "create" || !fechaInicio) return;
+
+    try {
+      const startDate = parseISO(`${fechaInicio}T00:00:00`);
+      if (Number.isNaN(startDate.getTime())) return;
+      const year = startDate.getFullYear();
+
+      if (previousYearRef.current !== null && previousYearRef.current !== year) {
+        const currentNumero = form.getValues("numero");
+        if (!currentNumero || /^CT-\d{4}-\d+$/.test(currentNumero)) {
+          getNextContractNumber(year)
+            .then((newNumero) => {
+              setValue("numero", newNumero, {
+                shouldDirty: false,
+                shouldValidate: true,
+              });
+            })
+            .catch(() => {});
+        }
+      }
+      previousYearRef.current = year;
+    } catch {
+      // ignore
+    }
+  }, [fechaInicio, form, mode, setValue]);
 
   return {
     form,

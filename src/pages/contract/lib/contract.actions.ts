@@ -82,9 +82,19 @@ export async function openContractPdf(id: number): Promise<void> {
   );
 }
 
-export async function getNextContractNumber(): Promise<string> {
+export async function getNextContractNumber(
+  yearOrParams?: number | string | { year?: number | string; fecha_inicio?: string }
+): Promise<string> {
+  const params =
+    typeof yearOrParams === "object"
+      ? yearOrParams
+      : yearOrParams
+      ? { year: yearOrParams }
+      : {};
+
   const response = await api.get<{ status: number; data: { numero: string } }>(
-    `${ENDPOINT}/siguiente-numero`
+    `${ENDPOINT}/siguiente-numero`,
+    { params }
   );
 
   return response.data.data.numero;

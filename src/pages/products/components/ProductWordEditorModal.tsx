@@ -726,8 +726,8 @@ export default function ProductWordEditorModal({
                   max-width: 100%;
                   height: auto;
                   border-radius: 4px;
-                  margin: 10px auto;
-                  display: block;
+                  margin: 8px auto;
+                  display: inline-block;
                 }
                 .ProseMirror .imported-word-page-content table {
                   width: 100%;
@@ -738,6 +738,17 @@ export default function ProductWordEditorModal({
                 .ProseMirror .imported-word-page-content th {
                   border: 1px solid #ddd;
                   padding: 6px 10px;
+                }
+                .ProseMirror .docx-wrapper {
+                  background: transparent !important;
+                  padding: 0 !important;
+                }
+                .ProseMirror section.docx,
+                .ProseMirror article.docx {
+                  background-color: #ffffff !important;
+                  color: #1a1a1a !important;
+                  margin-bottom: 24px !important;
+                  box-sizing: border-box !important;
                 }
               `}</style>
               <EditorContent editor={editor} className="w-full flex justify-center" />

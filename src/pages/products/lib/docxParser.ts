@@ -4,52 +4,24 @@ import JSZip from "jszip";
 
 export async function parseDocxFileToHtml(
   file: File,
-  productName: string = "PRODUCTO"
+  _productName: string = "PRODUCTO"
 ): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
 
-  // Extract all media files from the docx ZIP package upfront
-  const imageMap: Record<string, string> = {};
+  // Primary Engine: docx-preview with inWrapper: true (Preserves 100% exact Word geometry, watermarks, shapes, positions)
   try {
-    const zip = await JSZip.loadAsync(arrayBuffer);
-    const mediaFiles = Object.keys(zip.files).filter(
-      (path) => path.startsWith("word/media/") && !zip.files[path].dir
-    );
-
-    for (const path of mediaFiles) {
-      const fileName = path.split("/").pop() || "";
-      const base64 = await zip.files[path].async("base64");
-      const ext = fileName.split(".").pop()?.toLowerCase() || "png";
-      const mime =
-        ext === "jpg" || ext === "jpeg"
-          ? "image/jpeg"
-          : ext === "png"
-          ? "image/png"
-          : ext === "gif"
-          ? "image/gif"
-          : "image/" + ext;
-      imageMap[fileName] = `data:${mime};base64,${base64}`;
-      imageMap[path] = `data:${mime};base64,${base64}`;
-    }
-  } catch (err) {
-    console.warn("Could not read docx zip media:", err);
-  }
-
-  // Method 1: High fidelity render with docx-preview in an attached container
-  try {
-    const tempHost = document.createElement("div");
-    tempHost.id = "docx-temp-host-" + Date.now();
-    tempHost.style.position = "fixed";
-    tempHost.style.left = "-99999px";
-    tempHost.style.top = "0";
-    tempHost.style.width = "794px";
-    tempHost.style.visibility = "hidden";
-    tempHost.style.pointerEvents = "none";
-    document.body.appendChild(tempHost);
+    const tempContainer = document.createElement("div");
+    tempContainer.style.position = "fixed";
+    tempContainer.style.left = "-9999px";
+    tempContainer.style.top = "-9999px";
+    tempContainer.style.width = "850px";
+    tempContainer.style.opacity = "0";
+    tempContainer.style.pointerEvents = "none";
+    document.body.appendChild(tempContainer);
 
     try {
-      await docx.renderAsync(arrayBuffer, tempHost, undefined, {
-        className: "docx-doc-page",
+      await docx.renderAsync(arrayBuffer, tempContainer, undefined, {
+        className: "docx-page-rendered",
         inWrapper: true,
         ignoreWidth: false,
         ignoreHeight: false,
@@ -62,36 +34,57 @@ export async function parseDocxFileToHtml(
         renderEndnotes: true,
       });
 
-      // Fix any images that still have relative URLs
-      const imgs = tempHost.querySelectorAll("img");
-      imgs.forEach((img) => {
-        const src = img.getAttribute("src");
-        if (src && !src.startsWith("data:")) {
-          const matchingKey = Object.keys(imageMap).find((k) =>
-            src.includes(k)
-          );
-          if (matchingKey) {
-            img.setAttribute("src", imageMap[matchingKey]);
-          }
-        }
-        img.style.maxWidth = "100%";
-        img.style.height = "auto";
-      });
+      // Extract all media files from ZIP to guarantee all image src are valid base64
+      try {
+        const zip = await JSZip.loadAsync(arrayBuffer);
+        const mediaFiles = Object.keys(zip.files).filter(
+          (path) => path.startsWith("word/media/") && !zip.files[path].dir
+        );
 
-      // Extract pages from docx-wrapper
-      const sections = tempHost.querySelectorAll(
-        ".docx-wrapper > section, section.docx-doc-page, section"
-      );
+        const imageMap: Record<string, string> = {};
+        for (const path of mediaFiles) {
+          const fileName = path.split("/").pop() || "";
+          const base64 = await zip.files[path].async("base64");
+          const ext = fileName.split(".").pop()?.toLowerCase() || "png";
+          const mime =
+            ext === "jpg" || ext === "jpeg"
+              ? "image/jpeg"
+              : ext === "png"
+              ? "image/png"
+              : "image/" + ext;
+          imageMap[fileName] = `data:${mime};base64,${base64}`;
+        }
+
+        const imgs = tempContainer.querySelectorAll("img");
+        imgs.forEach((img) => {
+          const src = img.getAttribute("src");
+          if (src && !src.startsWith("data:")) {
+            const matchingKey = Object.keys(imageMap).find((k) =>
+              src.includes(k)
+            );
+            if (matchingKey) {
+              img.setAttribute("src", imageMap[matchingKey]);
+            }
+          }
+        });
+      } catch (zipErr) {
+        console.warn("Could not inspect zip media:", zipErr);
+      }
+
+      // Collect all sections / pages rendered by docx-preview
+      const sections = tempContainer.querySelectorAll("section.docx, section.docx-page-rendered, .docx-wrapper > section");
 
       if (sections.length > 0) {
         let resultHtml = "";
         sections.forEach((sec) => {
-          const inner = sec.innerHTML;
-          if (inner && inner.trim().length > 0) {
+          const content = sec.innerHTML;
+          if (content.trim().length > 0) {
+            // Keep inline styles from docx-preview section (padding, margins, backgrounds)
+            const styleAttr = sec.getAttribute("style") || "";
             resultHtml += `
-<div class="a4-page-sheet" style="min-height: 1050px; position: relative; padding: 45px 50px; background: #ffffff; margin: 0 auto 32px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.12); page-break-after: always; box-sizing: border-box;">
-  <div class="imported-word-page-content" style="font-size: 12px; line-height: 1.5; color: #1a1a1a;">
-    ${inner}
+<div class="a4-page-sheet" style="min-height: 1050px; position: relative; padding: 45px 50px; background: #ffffff; margin: 0 auto 30px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.12); page-break-after: always; box-sizing: border-box; ${styleAttr}">
+  <div class="imported-word-page-content">
+    ${content}
   </div>
 </div>
 `;
@@ -102,24 +95,27 @@ export async function parseDocxFileToHtml(
           return resultHtml;
         }
       }
+
+      const wrapper = tempContainer.querySelector(".docx-wrapper");
+      if (wrapper && wrapper.innerHTML.trim().length > 0) {
+        return wrapper.innerHTML;
+      }
     } finally {
-      if (tempHost.parentNode) {
-        tempHost.parentNode.removeChild(tempHost);
+      if (tempContainer.parentNode) {
+        tempContainer.parentNode.removeChild(tempContainer);
       }
     }
   } catch (docxErr) {
-    console.warn("docx-preview failed, using Mammoth in-place image converter:", docxErr);
+    console.warn("docx-preview failed, using Mammoth inline converter:", docxErr);
   }
 
-  // Method 2: Precise in-place extraction using Mammoth
-  // This extracts all images IN-PLACE inside their exact paragraphs and tables
+  // Secondary Engine: Mammoth with strict inline base64 image converter (NO image dumping)
   const mammothOptions = {
     convertImage: mammoth.images.imgElement(function (image: any) {
       return image.read("base64").then(function (imageBuffer: string) {
         return {
           src: `data:${image.contentType};base64,${imageBuffer}`,
-          style:
-            "max-width: 100%; height: auto; display: inline-block; margin: 8px 0; border-radius: 4px;",
+          style: "max-width: 100%; height: auto; display: inline-block; margin: 8px 0;",
         };
       });
     }),
@@ -128,71 +124,55 @@ export async function parseDocxFileToHtml(
       "p[style-name='Heading 1'] => h1:fresh",
       "p[style-name='Heading 2'] => h2:fresh",
       "p[style-name='Heading 3'] => h3:fresh",
+      "p[style-name='Subtitle'] => p.doc-subtitle:fresh",
       "table => table.a4-table:fresh",
       "br[type='page'] => hr.page-break:fresh",
     ],
   };
 
-  const mammothResult = await mammoth.convertToHtml(
-    { arrayBuffer },
-    mammothOptions
-  );
-  let html = mammothResult.value;
+  const mammothResult = await mammoth.convertToHtml({ arrayBuffer }, mammothOptions);
+  const html = mammothResult.value;
 
   if (!html || html.trim() === "") {
-    throw new Error("No se pudo extraer contenido del archivo Word.");
+    throw new Error("El archivo Word está vacío o no se pudo extraer contenido.");
   }
 
-  // Split into page sheets if page breaks or major headings exist
-  let pages: string[] = [];
+  // Split into pages by page-break tags or headings
+  let pageBlocks: string[] = [];
   if (
     html.includes('<hr class="page-break" />') ||
     html.includes("<hr />") ||
     html.includes("<hr>")
   ) {
-    pages = html
+    pageBlocks = html
       .split(/<hr(?:\s+class="page-break")?\s*\/?>/i)
-      .filter((p) => p.trim().length > 0);
+      .filter((b) => b.trim().length > 0);
   } else {
-    // Split by headings or group paragraphs
     const parts = html
       .split(/(?=<h[1-2][^>]*>)/i)
-      .filter((p) => p.trim().length > 0);
+      .filter((b) => b.trim().length > 0);
     if (parts.length > 1) {
-      pages = parts;
+      pageBlocks = parts;
     } else {
       const blockRegex = /(<(?:p|table|ul|ol|div)[^>]*>[\s\S]*?<\/(?:p|table|ul|ol|div)>)/gi;
-      const allBlocks = html.match(blockRegex) || [html];
-      const chunkSize = 5;
-      for (let i = 0; i < allBlocks.length; i += chunkSize) {
-        pages.push(allBlocks.slice(i, i + chunkSize).join(""));
+      const allElements = html.match(blockRegex) || [html];
+      const chunkSize = 6;
+      for (let i = 0; i < allElements.length; i += chunkSize) {
+        pageBlocks.push(allElements.slice(i, i + chunkSize).join(""));
       }
     }
   }
 
-  if (pages.length === 0) {
-    pages = [html];
+  if (pageBlocks.length === 0) {
+    pageBlocks = [html];
   }
 
-  const totalPages = pages.length;
-  return pages
-    .map((pageContent, idx) => {
-      const pageNum = idx + 1;
+  return pageBlocks
+    .map((content) => {
       return `
-<div class="a4-page-sheet" style="min-height: 1050px; position: relative; padding: 50px; background: #ffffff; margin: 0 auto 32px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.12); page-break-after: always; box-sizing: border-box;">
-  <div style="text-align: right; margin-bottom: 22px;">
-    <span style="font-size: 16px; font-weight: 700; color: #eb5454;">${productName}</span><br>
-    <span style="font-size: 10px; color: #888;">Tu restaurante digital</span>
-  </div>
-
+<div class="a4-page-sheet" style="min-height: 1050px; position: relative; padding: 50px; background: #ffffff; margin: 0 auto 30px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.12); page-break-after: always; box-sizing: border-box;">
   <div class="imported-word-page-content" style="font-size: 12px; line-height: 1.5; color: #1a1a1a;">
-    ${pageContent}
-  </div>
-
-  <div style="position: absolute; bottom: 35px; left: 50px; right: 50px; border-top: 1px solid #ddd; padding-top: 6px; font-size: 10px; color: #777;">
-    <span style="float: left;">Un producto de Mr. Soft</span>
-    <span style="float: right;">${pageNum} / ${totalPages}</span>
-    <div style="clear: both;"></div>
+    ${content}
   </div>
 </div>
 `;

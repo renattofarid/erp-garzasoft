@@ -87,10 +87,11 @@ interface ContratoProductoModulo {
   created_at: string;
   updated_at: string;
   deleted_at?: string;
-  producto: {
-    name: string;
+  producto?: {
+    name?: string;
+    nombre?: string;
     id: number;
-  };
+  } | null;
   modulo: Modulo;
 }
 

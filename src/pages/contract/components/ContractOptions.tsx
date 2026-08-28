@@ -106,11 +106,11 @@ export default function ContractOptions({
 
         {/* Filtro por Número de Contrato específico */}
         <div className="w-full sm:w-[170px]">
-          <Input
+          <SearchInput
             value={filters.numero}
-            onChange={(e) => onFilterChange("numero", e.target.value)}
+            onChange={(val) => onFilterChange("numero", val)}
             placeholder="N° contrato (ej. CT-...)"
-            className="h-9 text-xs sm:text-sm"
+            className="w-full h-9 text-xs sm:text-sm"
           />
         </div>
 

@@ -3,12 +3,17 @@ import { useEffect } from "react";
 import { useContractStore } from "@/pages/contract/lib/contract.store.ts";
 
 export function useContracts(params?: Record<string, any>) {
-  const { Contracts, meta, isLoading, error, fetchContracts } =
-    useContractStore();
+  const Contracts = useContractStore((state) => state.Contracts);
+  const meta = useContractStore((state) => state.meta);
+  const isLoading = useContractStore((state) => state.isLoading);
+  const error = useContractStore((state) => state.error);
+  const fetchContracts = useContractStore((state) => state.fetchContracts);
 
   useEffect(() => {
-    if (!Contracts) fetchContracts(params);
-  }, [Contracts, fetchContracts]);
+    if (!Contracts && params) {
+      fetchContracts(params);
+    }
+  }, []);
 
   return {
     data: Contracts,

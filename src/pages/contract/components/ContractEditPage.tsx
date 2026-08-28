@@ -69,13 +69,17 @@ export default function ContractEditPage() {
     total: Number(data.total),
     forma_pago: data.forma_pago,
     periodicidad_cuota: data.periodicidad_cuota ?? "mensual",
-    productos_modulos: data.contrato_producto_modulos.map((item) => ({
+    productos_modulos: (
+      data.contrato_producto_modulos ||
+      (data as any).contratoProductoModulos ||
+      []
+    ).map((item: any) => ({
       id: item.id,
       modulo_id: item.modulo_id,
       producto_id: item.producto_id,
       precio: Number(item.precio),
     })),
-    cuotas: data.cuotas.map((item) => ({
+    cuotas: (data.cuotas || []).map((item: any) => ({
       id: item.id,
       monto: Number(item.monto),
       fecha_vencimiento: format(

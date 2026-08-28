@@ -97,15 +97,17 @@ export default function ContractOptions({
     <div className="flex flex-col gap-3 w-full">
       <div className="flex items-center gap-2 flex-wrap">
         {/* Búsqueda general */}
-        <SearchInput
-          value={filters.search}
-          onChange={(val) => onFilterChange("search", val)}
-          placeholder="Buscar contratos..."
-          className="w-full sm:w-[190px]"
-        />
+        <div className="w-full sm:w-[180px]">
+          <SearchInput
+            value={filters.search}
+            onChange={(val) => onFilterChange("search", val)}
+            placeholder="Buscar contratos..."
+            className="w-full h-9 text-xs sm:text-sm"
+          />
+        </div>
 
         {/* Filtro por Número de Contrato específico */}
-        <div className="w-full sm:w-[150px]">
+        <div className="w-full sm:w-[140px]">
           <SearchInput
             value={filters.numero}
             onChange={(val) => onFilterChange("numero", val)}

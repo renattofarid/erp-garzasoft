@@ -61,7 +61,17 @@ export default function ContractPage() {
       vigencia_from: filters.vigenciaFrom || undefined,
       vigencia_to: filters.vigenciaTo || undefined,
     });
-  }, [page, filters, refetch]);
+  }, [
+    page,
+    filters.search,
+    filters.numero,
+    filters.clienteId,
+    filters.productoId,
+    filters.createdFrom,
+    filters.createdTo,
+    filters.vigenciaFrom,
+    filters.vigenciaTo,
+  ]);
 
   const handleFilterChange = useCallback(
     <K extends keyof ContractFiltersState>(key: K, value: ContractFiltersState[K]) => {

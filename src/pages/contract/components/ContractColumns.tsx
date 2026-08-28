@@ -89,6 +89,31 @@ export const ContractColumns = ({
     ),
   },
   {
+    accessorKey: "created_at",
+    header: "Fecha Creación",
+    cell: ({ row }) => {
+      const raw = row.original.created_at;
+      if (!raw) return <span className="text-muted-foreground text-xs">-</span>;
+
+      const dateObj = new Date(raw);
+      if (isNaN(dateObj.getTime())) {
+        return <span className="text-xs">{String(raw)}</span>;
+      }
+
+      const datePart = format(dateObj, "yyyy-MM-dd");
+      const timePart = format(dateObj, "hh:mm:ss a");
+
+      return (
+        <div className="flex flex-col text-xs leading-tight font-medium">
+          <span>{datePart}</span>
+          <span className="text-muted-foreground text-[11px] font-normal">
+            {timePart}
+          </span>
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: "vigencia",
     header: "Fecha Vigencia",
     cell: ({ row }) => {

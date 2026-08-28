@@ -50,6 +50,8 @@ export interface ContractResource {
   fecha_anulacion?: string | null;
   firma_arrendador?: string | null;
   firma_cliente?: string | null;
+  created_at?: string;
+  updated_at?: string;
   cliente: Cliente;
   cuotas: Cuota[];
   contrato_producto_modulos: ContratoProductoModulo[];

@@ -200,8 +200,8 @@ export const ContractColumns = ({
     id: "actions",
     header: "Acciones",
     cell: ({ row }) => {
-      const overduePaymentCount = row.original.cuotas.filter(
-        (cuota) => cuota.situacion === "vencido"
+      const overduePaymentCount = (row.original.cuotas || []).filter(
+        (cuota) => cuota?.situacion === "vencido"
       ).length;
 
       return (

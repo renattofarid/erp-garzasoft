@@ -557,73 +557,119 @@ export default function ProductWordEditorModal({
               >
                 <RemoveFormatting className="h-4 w-4" />
               </Button>
+
+              <div className="h-4 w-px bg-border mx-1" />
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 px-2.5 text-xs font-semibold gap-1.5 bg-background shadow-2xs hover:bg-primary/10 hover:text-primary"
+                onClick={() => {
+                  editor.chain().focus().insertContent(`
+                    <div class="a4-page-sheet" style="min-height: 1050px; position: relative; padding: 50px; background: #ffffff; margin: 0 auto 30px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.12); page-break-after: always;">
+                      <div style="text-align: right; margin-bottom: 25px;">
+                        <span style="font-size: 16px; font-weight: 700; color: #eb5454;">${product?.nombre || "PRODUCTO"}</span><br>
+                        <span style="font-size: 10px; color: #888;">Tu restaurante digital</span>
+                      </div>
+                      <h2 style="color: #eb5454; font-size: 15px; font-weight: 700; text-transform: uppercase; margin-bottom: 16px;">NUEVA SECCIÓN</h2>
+                      <p style="font-size: 12px; line-height: 1.6;">Escribe el contenido de esta nueva página aquí...</p>
+                      <div style="position: absolute; bottom: 35px; left: 50px; right: 50px; border-top: 1px solid #ddd; padding-top: 6px; font-size: 10px; color: #777;">
+                        <span style="float: left;">Un producto de Mr. Soft</span>
+                        <span style="float: right;">Página</span>
+                        <div style="clear: both;"></div>
+                      </div>
+                    </div>
+                  `).run();
+                  successToast("Nueva hoja A4 insertada.");
+                }}
+              >
+                <FileSpreadsheet className="h-3.5 w-3.5 text-primary" />
+                <span>+ Nueva Hoja A4</span>
+              </Button>
             </div>
           </div>
         )}
 
-        {/* Word Document Canvas (Hoja A4) */}
-        <div className="flex-1 overflow-y-auto bg-muted/40 dark:bg-zinc-950 p-4 sm:p-8 flex justify-center">
+        {/* Word Document Canvas (Fondo de Escritorio con Hojas A4 Paginadas) */}
+        <div className="flex-1 overflow-y-auto bg-zinc-200/90 dark:bg-zinc-950 p-4 sm:p-8 flex flex-col items-center">
           {loading ? (
             <div className="flex min-h-[400px] flex-col items-center justify-center gap-2 text-muted-foreground">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="text-sm font-medium">Cargando documento en el editor...</span>
+              <span className="text-sm font-medium">Cargando documento paginado en el editor...</span>
             </div>
           ) : (
-            <div className="w-full max-w-[850px] min-h-[1100px] bg-card dark:bg-zinc-900 border border-border/80 shadow-lg rounded-xl p-8 sm:p-14 text-foreground prose dark:prose-invert max-w-none focus:outline-none focus:ring-0">
+            <div className="w-full max-w-[860px] flex flex-col items-center focus:outline-none">
               <style>{`
                 .ProseMirror {
                   outline: none;
-                  min-height: 900px;
+                  width: 100%;
                   font-family: Arial, Helvetica, sans-serif;
-                  font-size: 14px;
-                  line-height: 1.6;
+                  font-size: 13.5px;
+                  line-height: 1.5;
+                  color: #1a1a1a;
+                }
+                .ProseMirror .a4-page-sheet {
+                  width: 794px;
+                  max-width: 100%;
+                  min-height: 1123px;
+                  background-color: #ffffff !important;
+                  color: #1a1a1a !important;
+                  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.18), 0 2px 6px -1px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.06);
+                  border-radius: 3px;
+                  padding: 50px 55px;
+                  margin-bottom: 32px;
+                  position: relative;
+                  box-sizing: border-box;
+                  page-break-after: always;
+                  transition: all 0.15s ease-in-out;
+                }
+                .ProseMirror .a4-page-sheet:hover,
+                .ProseMirror .a4-page-sheet:focus-within {
+                  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.26), 0 4px 10px -2px rgba(0, 0, 0, 0.12), 0 0 0 1.5px #eb5454;
                 }
                 .ProseMirror table {
                   border-collapse: collapse;
                   table-layout: fixed;
                   width: 100%;
-                  margin: 16px 0;
+                  margin: 14px 0;
                   overflow: hidden;
                 }
                 .ProseMirror td, .ProseMirror th {
                   min-width: 1em;
                   border: 1px solid #d1d5db;
-                  padding: 8px 12px;
+                  padding: 7px 10px;
                   vertical-align: top;
                   box-sizing: border-box;
                   position: relative;
                 }
-                .dark .ProseMirror td, .dark .ProseMirror th {
-                  border-color: #3f3f46;
-                }
                 .ProseMirror th {
                   font-weight: bold;
                   text-align: center;
-                  background-color: #eb5454;
-                  color: #ffffff;
+                  background-color: #eb5454 !important;
+                  color: #ffffff !important;
                 }
                 .ProseMirror .selectedCell:after {
                   z-index: 2;
                   position: absolute;
                   content: "";
                   left: 0; right: 0; top: 0; bottom: 0;
-                  background: rgba(200, 200, 255, 0.4);
+                  background: rgba(235, 84, 84, 0.15);
                   pointer-events: none;
                 }
                 .ProseMirror a {
                   color: #eb5454;
                   text-decoration: underline;
                 }
-                .ProseMirror hr {
-                  border: none;
-                  border-top: 2px dashed #e4e4e7;
-                  margin: 32px 0;
+                .ProseMirror h1, .ProseMirror h2, .ProseMirror h3 {
+                  color: #eb5454;
+                  margin-top: 0;
                 }
-                .dark .ProseMirror hr {
-                  border-top-color: #27272a;
+                .ProseMirror p {
+                  margin: 0 0 8px 0;
                 }
               `}</style>
-              <EditorContent editor={editor} />
+              <EditorContent editor={editor} className="w-full flex justify-center" />
             </div>
           )}
         </div>

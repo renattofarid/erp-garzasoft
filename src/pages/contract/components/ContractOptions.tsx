@@ -101,21 +101,21 @@ export default function ContractOptions({
           value={filters.search}
           onChange={(val) => onFilterChange("search", val)}
           placeholder="Buscar contratos..."
-          className="w-full sm:w-[220px]"
+          className="w-full sm:w-[190px]"
         />
 
         {/* Filtro por Número de Contrato específico */}
-        <div className="w-full sm:w-[170px]">
+        <div className="w-full sm:w-[150px]">
           <SearchInput
             value={filters.numero}
             onChange={(val) => onFilterChange("numero", val)}
-            placeholder="N° contrato (ej. CT-...)"
+            placeholder="N° contrato"
             className="w-full h-9 text-xs sm:text-sm"
           />
         </div>
 
         {/* Filtro por Cliente */}
-        <div className="w-full sm:w-[220px]">
+        <div className="w-full sm:w-[200px]">
           <SearchableSelect
             options={clientOptions}
             value={filters.clienteId || "all"}
@@ -126,7 +126,7 @@ export default function ContractOptions({
         </div>
 
         {/* Filtro por Producto */}
-        <div className="w-full sm:w-[190px]">
+        <div className="w-full sm:w-[170px]">
           <SearchableSelect
             options={productOptions}
             value={filters.productoId || "all"}

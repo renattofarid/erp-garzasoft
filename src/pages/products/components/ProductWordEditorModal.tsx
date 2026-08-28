@@ -1,6 +1,4 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -46,6 +44,7 @@ import {
   Trash2,
   Underline as UnderlineIcon,
   Undo,
+  UploadCloud,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -64,6 +63,7 @@ import {
 } from "../lib/product.actions";
 import { ProductResource } from "../lib/product.interface";
 import { generateDefaultGesrestHtml } from "../lib/defaultGesrestHtml";
+import { parseDocxFileToHtml } from "../lib/docxParser";
 
 interface Props {
   open: boolean;
@@ -78,6 +78,8 @@ export default function ProductWordEditorModal({
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [importingDocx, setImportingDocx] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -147,6 +149,30 @@ export default function ProductWordEditorModal({
     }
   };
 
+  const handleDocxUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !editor || !product) return;
+
+    if (!file.name.endsWith(".docx")) {
+      errorToast("Por favor selecciona un archivo de Microsoft Word válido (.docx)");
+      return;
+    }
+
+    setImportingDocx(true);
+    try {
+      const html = await parseDocxFileToHtml(file, product.nombre);
+      editor.commands.setContent(html);
+      successToast("Documento Word (.docx) importado con éxito. Todo el contenido es editable.");
+    } catch (err: any) {
+      errorToast(err.message || "Error al procesar el archivo Word.");
+    } finally {
+      setImportingDocx(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   const handlePreviewPdf = async () => {
     if (!product) return;
     try {
@@ -188,6 +214,15 @@ export default function ProductWordEditorModal({
       <DialogContent
         className="w-[96vw] max-w-7xl h-[92vh] max-h-[92vh] p-0 gap-0 overflow-hidden rounded-2xl border shadow-2xl bg-background text-foreground flex flex-col sm:max-w-7xl"
       >
+        {/* Input oculto para carga de archivos Word (.docx) */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept=".docx"
+          className="hidden"
+          onChange={handleDocxUpload}
+        />
+
         {/* Cabecera Principal */}
         <DialogHeader className="px-5 py-3 border-b bg-card flex flex-row items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
@@ -205,6 +240,22 @@ export default function ProductWordEditorModal({
           </div>
 
           <div className="flex items-center gap-2 pr-6">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importingDocx || loading}
+              className="text-xs gap-1.5 h-8 font-semibold text-primary border-primary/40 hover:bg-primary/10"
+            >
+              {importingDocx ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <UploadCloud className="h-3.5 w-3.5" />
+              )}
+              <span>Cargar Word (.docx)</span>
+            </Button>
+
             <Button
               type="button"
               variant="outline"
@@ -231,7 +282,7 @@ export default function ProductWordEditorModal({
               type="button"
               size="sm"
               onClick={handleSave}
-              disabled={saving || loading}
+              disabled={saving || loading || importingDocx}
               className="text-xs gap-1.5 h-8 font-bold shadow-xs"
             >
               {saving ? (

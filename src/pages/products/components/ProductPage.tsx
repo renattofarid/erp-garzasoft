@@ -15,7 +15,7 @@ import {
 } from "../lib/product.interface";
 import ProductEditPage from "./ProductEditPage";
 import DataTablePagination from "@/components/DataTablePagination";
-import ProductFormatoAltaModal from "./ProductFormatoAltaModal";
+import ProductWordEditorModal from "./ProductWordEditorModal";
 import { openPdfFromFetcher } from "@/lib/pdf";
 import { getFormatoAltaPdfBlob } from "../lib/product.actions";
 import { ProductResource } from "../lib/product.interface";
@@ -98,9 +98,9 @@ export default function ProductPage() {
         />
       )}
 
-      {/* Modal Formato de Alta */}
+      {/* Modal Editor Word Formato de Alta */}
       {formatoAltaProduct !== null && (
-        <ProductFormatoAltaModal
+        <ProductWordEditorModal
           open={true}
           onOpenChange={(open) => !open && setFormatoAltaProduct(null)}
           product={formatoAltaProduct}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { MessageSquare, Phone, Send, User, FileText } from "lucide-react";
+import { MessageSquare, Phone, Send } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -35,13 +35,13 @@ export function WhatsAppComprobanteModal({
 
   useEffect(() => {
     if (open && comprobante) {
-      // Intentar obtener número de teléfono del cliente o contacto
-      const contacto = comprobante.cliente?.contactos_clientes?.[0];
+      // Intentar obtener número de teléfono del comprobante o del cliente
       const phone =
         comprobante.celular_envio_cliente ||
-        contacto?.telefono ||
-        contacto?.celular ||
-        comprobante.cliente?.telefono ||
+        comprobante.cliente?.dueno_celular ||
+        comprobante.cliente?.representante_celular ||
+        comprobante.cliente?.responsable_celular ||
+        comprobante.cliente?.contacto_principal?.celular ||
         "";
       setCelular(phone);
     }

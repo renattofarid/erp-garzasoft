@@ -289,7 +289,6 @@ export function ContractSignatureDialog({
   const [saveAsDefaultArrendador, setSaveAsDefaultArrendador] = useState(false);
 
   const [loading, setLoading] = useState(false);
-  const [fetchingDefault, setFetchingDefault] = useState(false);
 
   // Inicializar firmas cuando se abre el diálogo con un contrato
   useEffect(() => {
@@ -299,7 +298,6 @@ export function ContractSignatureDialog({
       setSaveAsDefaultArrendador(false);
 
       // Cargar firma por defecto del emisor si no tiene firma individual
-      setFetchingDefault(true);
       getFacturadorActivo()
         .then((facturador) => {
           if (facturador?.firma_arrendador_default) {
@@ -309,8 +307,7 @@ export function ContractSignatureDialog({
             }
           }
         })
-        .catch(() => {})
-        .finally(() => setFetchingDefault(false));
+        .catch(() => {});
     }
   }, [open, contract]);
 

@@ -104,7 +104,10 @@ export default function ProductWordEditorModal({
       Link.configure({
         openOnClick: false,
       }),
-      Image,
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+      }),
     ],
     content: "",
   });
@@ -718,6 +721,23 @@ export default function ProductWordEditorModal({
                 }
                 .ProseMirror p {
                   margin: 0 0 8px 0;
+                }
+                .ProseMirror img {
+                  max-width: 100%;
+                  height: auto;
+                  border-radius: 4px;
+                  margin: 10px auto;
+                  display: block;
+                }
+                .ProseMirror .imported-word-page-content table {
+                  width: 100%;
+                  border-collapse: collapse;
+                  margin: 12px 0;
+                }
+                .ProseMirror .imported-word-page-content td,
+                .ProseMirror .imported-word-page-content th {
+                  border: 1px solid #ddd;
+                  padding: 6px 10px;
                 }
               `}</style>
               <EditorContent editor={editor} className="w-full flex justify-center" />

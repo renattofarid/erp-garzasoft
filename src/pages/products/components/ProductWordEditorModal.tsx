@@ -34,8 +34,6 @@ import {
   List,
   ListOrdered,
   Loader2,
-  Maximize2,
-  Minimize2,
   Minus,
   Palette,
   Redo,
@@ -80,7 +78,6 @@ export default function ProductWordEditorModal({
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [fullscreen, setFullscreen] = useState(true);
 
   const editor = useEditor({
     extensions: [
@@ -189,11 +186,7 @@ export default function ProductWordEditorModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`flex flex-col p-0 gap-0 overflow-hidden bg-background text-foreground transition-all ${
-          fullscreen
-            ? "fixed inset-0 w-screen h-screen max-w-none max-h-none rounded-none z-50"
-            : "max-w-6xl h-[90vh] rounded-2xl"
-        }`}
+        className="w-[96vw] max-w-7xl h-[92vh] max-h-[92vh] p-0 gap-0 overflow-hidden rounded-2xl border shadow-2xl bg-background text-foreground flex flex-col sm:max-w-7xl"
       >
         {/* Cabecera Principal */}
         <DialogHeader className="px-5 py-3 border-b bg-card flex flex-row items-center justify-between shrink-0">
@@ -211,7 +204,7 @@ export default function ProductWordEditorModal({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pr-6">
             <Button
               type="button"
               variant="outline"
@@ -247,20 +240,6 @@ export default function ProductWordEditorModal({
                 <Save className="h-3.5 w-3.5" />
               )}
               <span>Guardar</span>
-            </Button>
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground"
-              onClick={() => setFullscreen(!fullscreen)}
-            >
-              {fullscreen ? (
-                <Minimize2 className="h-4 w-4" />
-              ) : (
-                <Maximize2 className="h-4 w-4" />
-              )}
             </Button>
           </div>
         </DialogHeader>

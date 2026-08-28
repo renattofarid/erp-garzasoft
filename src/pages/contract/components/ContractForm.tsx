@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Loader } from "lucide-react";
@@ -70,56 +69,12 @@ export const ContractForm = ({
     contractType,
     vigenciaContrato,
     duracionAnios,
-    paymentPeriodicity,
     total,
     fechaInicio,
     fechaFin,
   } = useContractForm({ defaultValues, mode });
 
-  const selectedModules = form.watch("productos_modulos");
-
-  useEffect(() => {
-    if (contractType !== "saas" || !productData || selectedModules.length === 0) {
-      return;
-    }
-
-    const nextModules = selectedModules.map((item) => {
-      const product = productData.find((entry) => entry.id === item.producto_id);
-      const module = product?.modulos.find((entry) => entry.id === item.modulo_id);
-
-      if (!module) {
-        return item;
-      }
-
-      const nextPrice =
-        paymentPeriodicity === "anual"
-          ? module.precio_anual ?? module.precio_unitario
-          : module.precio_mensual ?? module.precio_unitario;
-
-      return {
-        ...item,
-        precio: Number(nextPrice.toFixed(2)),
-      };
-    });
-
-    const hasChanges = nextModules.some(
-      (item, index) => item.precio !== selectedModules[index]?.precio
-    );
-
-    if (hasChanges) {
-      form.setValue("productos_modulos", nextModules, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-    }
-  }, [
-    contractType,
-    form,
-    paymentPeriodicity,
-    productData,
-    selectedModules,
-  ]);
-
+  // Eliminamos la sobreescritura forzada de precios para respetar los montos personalizados y los guardados en el contrato
   if (isLoading || !clients) return <FormSkeleton />;
 
   console.log(currentInstallmentsSum);

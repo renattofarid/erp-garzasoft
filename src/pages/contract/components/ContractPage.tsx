@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import TitleComponent from "@/components/TitleComponent";
 import ContractActions from "./ContractActions.tsx";
 import ContractTable from "./ContractTable.tsx";
@@ -105,6 +105,22 @@ export default function ContractPage() {
     }
   };
 
+  const columns = useMemo(
+    () =>
+      ContractColumns({
+        onDelete: setDeleteId,
+        onNotification: setNotificationId,
+        onPreview: (id) => {
+          openContractPdf(id).catch(() =>
+            errorToast("No se pudo abrir el PDF del contrato.")
+          );
+        },
+        onViewInstallments: setInstallmentsContract,
+        onSignature: setSignatureContract,
+      }),
+    []
+  );
+
   return (
     <div className="space-y-4">
       {/* Encabezado */}
@@ -119,17 +135,7 @@ export default function ContractPage() {
       {/* Tabla */}
       <ContractTable
         isLoading={isLoading}
-        columns={ContractColumns({
-          onDelete: setDeleteId,
-          onNotification: setNotificationId,
-          onPreview: (id) => {
-            openContractPdf(id).catch(() =>
-              errorToast("No se pudo abrir el PDF del contrato.")
-            );
-          },
-          onViewInstallments: setInstallmentsContract,
-          onSignature: setSignatureContract,
-        })}
+        columns={columns}
         data={data || []}
       >
         <ContractOptions

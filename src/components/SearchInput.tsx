@@ -32,7 +32,7 @@ export default function SearchInput({
 
   return (
     <Input
-      className={cn("w-full md:w-64 h-9 text-sm md:text-sm", className)}
+      className={cn("w-full h-9 text-sm", className)}
       variant="default"
       placeholder={placeholder}
       value={inputValue}

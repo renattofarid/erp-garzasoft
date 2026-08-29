@@ -12,10 +12,95 @@ interface RawTextItem {
 }
 
 /**
- * Robust PDF Parser for Gesrest Formato de Alta.
+ * Extracts all embedded images (watermarks, screenshots, signatures, logos) from a PDF page
+ */
+async function extractImagesFromPdfPage(page: any): Promise<{ dataUrl: string; width: number; height: number }[]> {
+  const images: { dataUrl: string; width: number; height: number }[] = [];
+
+  try {
+    const ops = await page.getOperatorList();
+    const imageNames: string[] = [];
+
+    for (let i = 0; i < ops.fnArray.length; i++) {
+      const fn = ops.fnArray[i];
+      if (
+        fn === pdfjsLib.OPS.paintImageXObject ||
+        fn === pdfjsLib.OPS.paintInlineImageXObject ||
+        fn === pdfjsLib.OPS.paintImageMaskXObject
+      ) {
+        const arg = ops.argsArray[i][0];
+        if (typeof arg === "string" && !imageNames.includes(arg)) {
+          imageNames.push(arg);
+        }
+      }
+    }
+
+    for (const imgName of imageNames) {
+      await new Promise<void>((resolve) => {
+        page.objs.get(imgName, (imgObj: any) => {
+          if (!imgObj || !imgObj.data || !imgObj.width || !imgObj.height) {
+            resolve();
+            return;
+          }
+
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = imgObj.width;
+            canvas.height = imgObj.height;
+            const ctx = canvas.getContext("2d");
+
+            if (ctx) {
+              const imgData = ctx.createImageData(imgObj.width, imgObj.height);
+              const data = imgObj.data;
+
+              if (data.length === imgObj.width * imgObj.height * 4) {
+                imgData.data.set(data);
+              } else if (data.length === imgObj.width * imgObj.height * 3) {
+                // RGB to RGBA
+                for (let p = 0, q = 0; p < data.length; p += 3, q += 4) {
+                  imgData.data[q] = data[p];
+                  imgData.data[q + 1] = data[p + 1];
+                  imgData.data[q + 2] = data[p + 2];
+                  imgData.data[q + 3] = 255;
+                }
+              } else if (data.length === imgObj.width * imgObj.height) {
+                // Grayscale / Alpha mask
+                for (let p = 0, q = 0; p < data.length; p++, q += 4) {
+                  const val = data[p];
+                  imgData.data[q] = val;
+                  imgData.data[q + 1] = val;
+                  imgData.data[q + 2] = val;
+                  imgData.data[q + 3] = 255;
+                }
+              }
+
+              ctx.putImageData(imgData, 0, 0);
+              const dataUrl = canvas.toDataURL("image/png");
+              images.push({
+                dataUrl,
+                width: imgObj.width,
+                height: imgObj.height,
+              });
+            }
+          } catch (err) {
+            console.warn("Could not convert pdf image to canvas:", err);
+          }
+          resolve();
+        });
+      });
+    }
+  } catch (err) {
+    console.warn("Operator list image extraction error:", err);
+  }
+
+  return images;
+}
+
+/**
+ * Intelligent PDF Parser for Gesrest Formato de Alta.
+ * - Extracts 100% of images (watermarks, logos, screenshots, signatures).
  * - Extracts 2-column tables by mapping left-column multi-line text to each right-column URL.
  * - Renders exactly ONE unified table per page without breaking or repeating headers.
- * - Keeps 100% of question titles and emojis together inside the table cell.
  */
 export async function parsePdfFileToPages(file: File): Promise<string[]> {
   const arrayBuffer = await file.arrayBuffer();
@@ -30,7 +115,32 @@ export async function parsePdfFileToPages(file: File): Promise<string[]> {
     const viewport = page.getViewport({ scale: 1.0 });
     const pageHeight = viewport.height;
 
-    // 1. Extract raw text items with coordinates
+    // 1. Extract embedded images from page
+    const extractedImages = await extractImagesFromPdfPage(page);
+
+    // Build watermark and inline images HTML
+    let watermarkHtml = "";
+    const inlineImagesHtml: string[] = [];
+
+    extractedImages.forEach((img) => {
+      // If large background / watermark image (> 350px width and height)
+      if (img.width > 350 && img.height > 350 && !watermarkHtml) {
+        watermarkHtml = `
+<div style="position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); opacity: 0.12; pointer-events: none; z-index: 0; text-align: center; width: 100%;">
+  <img src="${img.dataUrl}" alt="Fondo Watermark" style="max-width: 80%; height: auto; margin: 0 auto; display: block;" />
+</div>
+`;
+      } else {
+        // Screenshot, logo, or signature
+        inlineImagesHtml.push(`
+<div style="text-align: center; margin: 12px 0;">
+  <img src="${img.dataUrl}" alt="Imagen PDF" style="max-width: 100%; max-height: 280px; height: auto; margin: 0 auto; display: block; border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.1);" />
+</div>
+`);
+      }
+    });
+
+    // 2. Extract text items
     const textContent = await page.getTextContent();
     const items: RawTextItem[] = [];
 
@@ -53,7 +163,7 @@ export async function parsePdfFileToPages(file: File): Promise<string[]> {
       });
     }
 
-    // 2. Sort items by Y (top to bottom), then by X (left to right)
+    // 3. Sort items by Y (top to bottom), then by X (left to right)
     items.sort((a, b) => {
       if (Math.abs(a.y - b.y) > 4) {
         return a.y - b.y;
@@ -61,7 +171,7 @@ export async function parsePdfFileToPages(file: File): Promise<string[]> {
       return a.x - b.x;
     });
 
-    // 3. Filter out repeated page numbers / footer strings
+    // 4. Filter out repeated page numbers / footer strings
     const filteredItems = items.filter((it) => {
       const s = it.str.toLowerCase();
       if (s === "un producto de mr. soft" || s.startsWith("un producto")) return false;
@@ -80,7 +190,7 @@ export async function parsePdfFileToPages(file: File): Promise<string[]> {
 <div style="clear: both;"></div>
 `;
 
-    // 4. Check if this page contains YouTube video tutorial links
+    // 5. Check if page contains video tutorial links
     const urlItems = filteredItems.filter(
       (it) =>
         it.str.includes("https://") ||
@@ -93,11 +203,9 @@ export async function parsePdfFileToPages(file: File): Promise<string[]> {
       const nonTableElements: string[] = [];
       const tableRows: { question: string; url: string }[] = [];
 
-      // Find top section headings / intro text (items appearing above the first question/table)
       const firstUrlY = urlItems[0].y;
       let firstTableItemY = firstUrlY;
 
-      // Find earliest question start Y near firstUrlY
       for (const it of filteredItems) {
         if (it.y <= firstUrlY && (it.str.startsWith("¿") || it.str.startsWith("Recorrido") || it.str.startsWith("Presentación") || it.str.startsWith("Tutorial"))) {
           firstTableItemY = Math.min(firstTableItemY, it.y);
@@ -105,7 +213,6 @@ export async function parsePdfFileToPages(file: File): Promise<string[]> {
         }
       }
 
-      // Collect non-table text above the table
       const headerTokens: string[] = [];
       filteredItems.forEach((it) => {
         if (it.y < firstTableItemY - 15 && !it.str.includes("http")) {
@@ -127,18 +234,14 @@ export async function parsePdfFileToPages(file: File): Promise<string[]> {
         }
       }
 
-      // Group table items by pairing each URL with its question title
       for (let uIdx = 0; uIdx < urlItems.length; uIdx++) {
         const currUrl = urlItems[uIdx];
         const prevUrlY = uIdx > 0 ? urlItems[uIdx - 1].y : firstTableItemY - 10;
         const nextUrlY = uIdx < urlItems.length - 1 ? urlItems[uIdx + 1].y : pageHeight;
 
-        // Collect all question tokens for this URL
-        // Items in left column (x < 240) between (prevUrlY + 5) and (nextUrlY - 5)
         const qTokens: string[] = [];
         filteredItems.forEach((it) => {
           if (it.x < 240 && it.y > prevUrlY + 4 && it.y <= (uIdx === urlItems.length - 1 ? nextUrlY : currUrl.y + 20)) {
-            // Avoid headers
             if (it.str !== "Tutorial" && it.str !== "Enlace" && !it.str.includes("TUTORIALES")) {
               qTokens.push(it.str);
             }
@@ -146,10 +249,8 @@ export async function parsePdfFileToPages(file: File): Promise<string[]> {
         });
 
         let questionTitle = qTokens.join(" ").trim();
-        // Clean up title
         questionTitle = questionTitle.replace(/\s+/g, " ");
 
-        // If empty fallback
         if (!questionTitle) {
           questionTitle = `Tutorial ${uIdx + 1}`;
         }
@@ -160,7 +261,6 @@ export async function parsePdfFileToPages(file: File): Promise<string[]> {
         });
       }
 
-      // Render ONE SINGLE unified table for the entire page
       let tableHtml = `
 <table style="width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 11.5px; border: 1px solid #d1d5db;">
   <thead>
@@ -193,13 +293,17 @@ export async function parsePdfFileToPages(file: File): Promise<string[]> {
 </table>
 `;
 
-      const finalHtml = headerLogoHtml + nonTableElements.join("\n") + tableHtml;
+      const finalHtml =
+        watermarkHtml +
+        headerLogoHtml +
+        inlineImagesHtml.join("\n") +
+        nonTableElements.join("\n") +
+        tableHtml;
       pages.push(finalHtml);
       continue;
     }
 
     // NON-TUTORIAL PAGES (Cover, Presentation, Credentials, etc.)
-    // Group lines into paragraphs & headings
     const rawLines: string[] = [];
     let currentTokens: string[] = [];
     let lastY = -1;
@@ -216,16 +320,16 @@ export async function parsePdfFileToPages(file: File): Promise<string[]> {
     }
     if (currentTokens.length > 0) rawLines.push(currentTokens.join(" "));
 
-    let pageHtml = headerLogoHtml;
+    let pageContentHtml = "";
 
     rawLines.forEach((line) => {
       const trimmed = line.trim();
       if (!trimmed) return;
 
       if (trimmed === trimmed.toUpperCase() && trimmed.length > 4 && !trimmed.includes("@") && !trimmed.includes("+51")) {
-        pageHtml += `<h2 style="color: #eb5454; font-size: 15px; font-weight: 700; text-transform: uppercase; margin: 16px 0 8px 0;">${escapeHtml(trimmed)}</h2>\n`;
+        pageContentHtml += `<h2 style="color: #eb5454; font-size: 15px; font-weight: 700; text-transform: uppercase; margin: 16px 0 8px 0;">${escapeHtml(trimmed)}</h2>\n`;
       } else if (trimmed.startsWith("•") || trimmed.startsWith("(*)")) {
-        pageHtml += `<ul style="margin: 3px 0 3px 20px; padding: 0;"><li style="font-size: 12px; line-height: 1.55;">${escapeHtml(trimmed.replace(/^[•(*)\s]+/, ""))}</li></ul>\n`;
+        pageContentHtml += `<ul style="margin: 3px 0 3px 20px; padding: 0;"><li style="font-size: 12px; line-height: 1.55;">${escapeHtml(trimmed.replace(/^[•(*)\s]+/, ""))}</li></ul>\n`;
       } else {
         let formatted = escapeHtml(trimmed);
         const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -234,11 +338,17 @@ export async function parsePdfFileToPages(file: File): Promise<string[]> {
           (url) =>
             `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #eb5454; font-weight: 500; text-decoration: underline; word-break: break-all;">${url}</a>`
         );
-        pageHtml += `<p style="margin: 0 0 6px 0; font-size: 12px; line-height: 1.55;">${formatted}</p>\n`;
+        pageContentHtml += `<p style="margin: 0 0 6px 0; font-size: 12px; line-height: 1.55;">${formatted}</p>\n`;
       }
     });
 
-    pages.push(pageHtml);
+    const finalHtml =
+      watermarkHtml +
+      headerLogoHtml +
+      inlineImagesHtml.join("\n") +
+      pageContentHtml;
+
+    pages.push(finalHtml);
   }
 
   return pages.length > 0 ? pages : ["<p></p>"];

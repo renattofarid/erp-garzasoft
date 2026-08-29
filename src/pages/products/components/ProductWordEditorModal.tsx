@@ -257,9 +257,7 @@ export default function ProductWordEditorModal({
           const pagePadding = isCover ? "padding: 0;" : "padding: 45px 50px 65px 50px;";
 
           return `
-<div class="a4-page-sheet" style="width: 100%; height: 100%; position: relative; ${pagePadding} background: #ffffff; box-sizing: border-box; overflow: hidden; page-break-after: ${
-            idx === total - 1 ? "avoid" : "always"
-          };">
+<div class="a4-page-sheet" style="position: relative; ${pagePadding} background: #ffffff; box-sizing: border-box;">
   <div class="page-content" style="font-size: 12px; line-height: 1.55; color: #111827; position: relative; z-index: 1;">
     ${content}
   </div>

@@ -243,20 +243,27 @@ export default function ProductWordEditorModal({
 
       // Wrap all pages into .a4-page-sheet containers for DomPDF backend
       const combinedHtml = pages
-        .map(
-          (content, idx) => `
-<div class="a4-page-sheet" style="min-height: 1050px; position: relative; padding: 50px; background: #ffffff; margin: 0 auto 30px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.12); page-break-after: always; box-sizing: border-box;">
-  <div class="page-content" style="font-size: 12px; line-height: 1.5; color: #1a1a1a;">
+        .map((content, idx) => {
+          const isCover = idx === 0;
+          const footerHtml = isCover
+            ? ""
+            : `
+  <div style="position: absolute; bottom: 25px; left: 60px; right: 60px; border-top: 1px solid #e5e7eb; padding-top: 6px; font-size: 10.5px; color: #9ca3af; font-family: Arial, sans-serif;">
+    <span style="float: left;">Un producto de Mr. Soft</span>
+    <span style="float: right;">Página ${idx} de ${total - 1}</span>
+    <div style="clear: both;"></div>
+  </div>`;
+
+          return `
+<div class="a4-page-sheet" style="width: 794px; height: 1123px; position: relative; padding: 50px 60px 75px 60px; background: #ffffff; box-sizing: border-box; overflow: hidden; page-break-after: ${
+            idx === total - 1 ? "avoid" : "always"
+          };">
+  <div class="page-content" style="font-size: 12px; line-height: 1.55; color: #111827; position: relative; z-index: 1;">
     ${content}
   </div>
-  <div style="position: absolute; bottom: 35px; left: 50px; right: 50px; border-top: 1px solid #ddd; padding-top: 6px; font-size: 10px; color: #777;">
-    <span style="float: left;">Un producto de Mr. Soft</span>
-    <span style="float: right;">${idx + 1} / ${total}</span>
-    <div style="clear: both;"></div>
-  </div>
-</div>
-`
-        )
+  ${footerHtml}
+</div>`;
+        })
         .join("\n");
 
       await updateProductFormatoAlta(product.id, {

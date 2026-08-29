@@ -3,11 +3,15 @@ import {
   AlignCenter,
   AlignLeft,
   AlignRight,
+  ArrowDown,
   ArrowLeftRight,
+  ArrowUp,
   Copy,
   Maximize2,
   Minimize2,
   Plus,
+  Sun,
+  SunDim,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -75,7 +79,7 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
       };
 
       img.ondragend = () => {
-        img.style.opacity = "1";
+        img.style.opacity = img.getAttribute("data-opacity") || "1";
         (window as any).__draggedDocxImg = null;
       };
 
@@ -127,8 +131,8 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
     const imgRect = img.getBoundingClientRect();
 
     setImgToolbarPos({
-      top: imgRect.top - sheetRect.top - 42,
-      left: Math.max(10, imgRect.left - sheetRect.left + imgRect.width / 2 - 140),
+      top: Math.max(10, imgRect.top - sheetRect.top - 46),
+      left: Math.max(10, Math.min(sheetRect.width - 320, imgRect.left - sheetRect.left + imgRect.width / 2 - 160)),
     });
   };
 
@@ -160,15 +164,49 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
     updateToolbarPos(selectedImg);
   };
 
+  // Symmetrical proportional resizing (width + height maintained)
   const handleResize = (multiplier: number) => {
     if (!selectedImg) return;
     const currentWidth = selectedImg.clientWidth || 200;
-    const newWidth = Math.max(60, Math.min(700, Math.round(currentWidth * multiplier)));
+    const newWidth = Math.max(50, Math.min(750, Math.round(currentWidth * multiplier)));
     selectedImg.style.width = `${newWidth}px`;
     selectedImg.style.maxWidth = "100%";
     selectedImg.style.height = "auto";
+    selectedImg.style.objectFit = "contain";
     handleInput();
     updateToolbarPos(selectedImg);
+  };
+
+  // Opacity control (e.g. for watermarks or subtle backgrounds)
+  const handleOpacity = (delta: number) => {
+    if (!selectedImg) return;
+    const currentOpacity = parseFloat(selectedImg.style.opacity || selectedImg.getAttribute("data-opacity") || "1.0");
+    const newOpacity = Math.max(0.08, Math.min(1.0, Math.round((currentOpacity + delta) * 100) / 100));
+    selectedImg.style.opacity = `${newOpacity}`;
+    selectedImg.setAttribute("data-opacity", `${newOpacity}`);
+    handleInput();
+    updateToolbarPos(selectedImg);
+  };
+
+  const handleMoveNode = (direction: "up" | "down") => {
+    if (!selectedImg) return;
+    const parent = selectedImg.parentElement;
+    if (!parent) return;
+    if (direction === "up") {
+      const prev = parent.previousElementSibling;
+      if (prev) {
+        parent.parentElement?.insertBefore(parent, prev);
+        handleInput();
+        updateToolbarPos(selectedImg);
+      }
+    } else {
+      const next = parent.nextElementSibling;
+      if (next) {
+        parent.parentElement?.insertBefore(next, parent);
+        handleInput();
+        updateToolbarPos(selectedImg);
+      }
+    }
   };
 
   const handleDeleteImage = () => {
@@ -229,6 +267,7 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
             <ArrowLeftRight className="h-3 w-3" /> Arrastra p/ Intercambiar
           </span>
           <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
+          {/* Alignment */}
           <Button
             type="button"
             variant="ghost"
@@ -260,12 +299,35 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
             <AlignRight className="h-3.5 w-3.5" />
           </Button>
           <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
+          {/* Move Up / Down */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => handleMoveNode("up")}
+            title="Mover arriba en el documento"
+            className="h-6 w-6 text-zinc-300 hover:text-white hover:bg-zinc-800"
+          >
+            <ArrowUp className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => handleMoveNode("down")}
+            title="Mover abajo en el documento"
+            className="h-6 w-6 text-zinc-300 hover:text-white hover:bg-zinc-800"
+          >
+            <ArrowDown className="h-3.5 w-3.5" />
+          </Button>
+          <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
+          {/* Symmetrical Resizing */}
           <Button
             type="button"
             variant="ghost"
             size="icon"
             onClick={() => handleResize(0.85)}
-            title="Reducir tamaño"
+            title="Reducir tamaño proporcionalmente"
             className="h-6 w-6 text-zinc-300 hover:text-white hover:bg-zinc-800"
           >
             <Minimize2 className="h-3.5 w-3.5" />
@@ -275,12 +337,35 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
             variant="ghost"
             size="icon"
             onClick={() => handleResize(1.15)}
-            title="Aumentar tamaño"
+            title="Aumentar tamaño proporcionalmente"
             className="h-6 w-6 text-zinc-300 hover:text-white hover:bg-zinc-800"
           >
             <Maximize2 className="h-3.5 w-3.5" />
           </Button>
           <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
+          {/* Opacity Control */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => handleOpacity(-0.15)}
+            title="Bajar opacidad (más transparente)"
+            className="h-6 w-6 text-amber-300 hover:text-white hover:bg-zinc-800"
+          >
+            <SunDim className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => handleOpacity(0.15)}
+            title="Subir opacidad (más sólido)"
+            className="h-6 w-6 text-amber-400 hover:text-white hover:bg-zinc-800"
+          >
+            <Sun className="h-3.5 w-3.5" />
+          </Button>
+          <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
+          {/* Replace / Delete */}
           <Button
             type="button"
             variant="ghost"

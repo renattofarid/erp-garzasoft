@@ -145,7 +145,7 @@ function trimImageWhiteBorders(src: string): Promise<string> {
 /**
  * High-Fidelity DOCX Parser for Gesrest Documents.
  * - Auto-crops logos to tight rectangular bounding boxes.
- * - Background: G watermark taking full page height (object-fit: contain, left bleed).
+ * - Background: G watermark scaled to full sheet height reaching top-left corner (top: -420px, left: -520px, 1750px width).
  * - Top Right: Gesrest Logo (rectangular, width: 280px) + Phone & Email.
  * - Bottom Left: Mr. Soft Logo (rectangular, width: 220px).
  * - Bottom Right: www.gesrest.net.
@@ -347,10 +347,10 @@ export async function parseDocxFileToHtml(
     rawMrSoftLogoSrc ? trimImageWhiteBorders(rawMrSoftLogoSrc) : Promise.resolve(""),
   ]);
 
-  // 5. Build Page 1 (Cover Page) with tight rectangular logos matching Word
+  // 5. Build Page 1 (Cover Page) with 2x enlarged G watermark positioned to top-left
   const page1Html = `
 <div style="position: absolute; top: -50px; left: -60px; right: -60px; bottom: -75px; width: 800px; height: 1080px; pointer-events: auto; z-index: 0; overflow: hidden; margin: 0; padding: 0;">
-  <img src="${watermarkImgSrc}" alt="Fondo Gesrest" style="position: absolute; top: -30px; left: -310px; width: 920px; height: 1140px; max-width: none; max-height: none; object-fit: contain;" />
+  <img src="${watermarkImgSrc}" alt="Fondo Gesrest" style="position: absolute; top: -420px; left: -520px; width: 1750px; height: 2200px; max-width: none; max-height: none; object-fit: contain;" />
 </div>
 
 <div style="position: relative; z-index: 1; padding: 10px; min-height: 960px;">

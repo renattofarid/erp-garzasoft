@@ -3,20 +3,26 @@ import JSZip from "jszip";
 import { paginateHtmlByA4Height } from "./a4Paginator";
 
 /**
+ * Gets image natural dimensions asynchronously
+ */
+function getImageDimensions(src: string): Promise<{ src: string; width: number; height: number }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ src, width: img.naturalWidth || 100, height: img.naturalHeight || 100 });
+    img.onerror = () => resolve({ src, width: 100, height: 100 });
+    img.src = src;
+  });
+}
+
+/**
  * High-Fidelity DOCX Parser for Gesrest Documents.
- * - Extracts all images from the Word archive.
- * - Accurately constructs Page 1 (Cover) with:
- *   - Background: G watermark (68% width from left)
- *   - Top Right: Gesrest Logo (Image 2 from Word, 64px) + Phone & Email
- *   - Bottom Left: Mr. Soft Logo (Image 1 from Word, 48px)
+ * - Extracts 100% of images directly from the Word file.
+ * - Inspects cover images before "PRESENTACIÓN" to accurately assign:
+ *   - Background: G watermark (2/3 width)
+ *   - Top Right: Gesrest Logo (64px) + Phone & Email
+ *   - Bottom Left: Mr. Soft Logo (48px)
  *   - Bottom Right: www.gesrest.net
- * - Strips out any unformatted cover artifacts from the document body so they never appear on subsequent pages.
- * - Automatically splits sections cleanly:
- *   - Page 2: PRESENTACIÓN + CEO Signature
- *   - Page 3: CREDENCIALES DE ACCESO + Screenshots
- *   - Page 4: PERFILES DE USUARIO (Admin, Cajero, Meseros)
- *   - Page 5: PORTAL DE CONTADOR (Series y Credenciales)
- *   - Pages 6, 7, 8: TUTORIALES DE YOUTUBE (Unified 2-column tables)
+ * - Keeps Pages 2 to 8 clean starting right from "PRESENTACIÓN" with institutional headers.
  */
 export async function parseDocxFileToHtml(
   file: File,
@@ -24,8 +30,8 @@ export async function parseDocxFileToHtml(
 ): Promise<string[]> {
   const arrayBuffer = await file.arrayBuffer();
 
-  // 1. Extract all images from the Word ZIP in order
-  const zipImages: { name: string; src: string }[] = [];
+  // 1. Extract all images from ZIP
+  const zipImages: string[] = [];
   try {
     const zip = await JSZip.loadAsync(arrayBuffer);
     const mediaFiles = Object.keys(zip.files)
@@ -44,10 +50,7 @@ export async function parseDocxFileToHtml(
           : ext === "svg"
           ? "image/svg+xml"
           : "image/" + ext;
-      zipImages.push({
-        name: fileName,
-        src: `data:${mime};base64,${base64}`,
-      });
+      zipImages.push(`data:${mime};base64,${base64}`);
     }
   } catch (zipErr) {
     console.warn("Zip media extraction error:", zipErr);
@@ -85,14 +88,6 @@ export async function parseDocxFileToHtml(
   // 3. Post-process HTML in DOM
   const container = document.createElement("div");
   container.innerHTML = rawHtml;
-
-  // Identify cover images from Word:
-  // Image 1: Mr. Soft Logo
-  // Image 2: Gesrest Logo
-  // Image 3: G Watermark
-  const mrSoftLogoSrc = zipImages.length > 0 ? zipImages[0].src : "";
-  const gesrestLogoSrc = zipImages.length > 1 ? zipImages[1].src : (zipImages[0]?.src || "");
-  const watermarkImgSrc = zipImages.length > 2 ? zipImages[2].src : "/fondo_gesrest.png";
 
   // Format all tables with the exact "Insert Table" style
   const tables = container.querySelectorAll("table");
@@ -172,19 +167,70 @@ export async function parseDocxFileToHtml(
     p.setAttribute("style", "margin: 0 0 6px 0; line-height: 1.55; font-size: 12.5px;");
   });
 
-  // 4. Build Page 1 (Cover Page) with 2/3 width G watermark, Gesrest logo (top right), and Mr. Soft (bottom left)
+  // 4. Split content between Cover and Body at "PRESENTACIÓN"
+  const fullHtml = container.innerHTML;
+  let coverHtml = "";
+  let fullBodyHtml = fullHtml;
+
+  const presIndex = fullHtml.search(/PRESENTACI[OÓ]N/i);
+  if (presIndex !== -1) {
+    const beforeText = fullHtml.slice(0, presIndex);
+    const tagOpen = beforeText.lastIndexOf("<h");
+    const splitPoint = tagOpen !== -1 ? tagOpen : presIndex;
+    coverHtml = fullHtml.slice(0, splitPoint);
+    fullBodyHtml = fullHtml.slice(splitPoint);
+  }
+
+  // Extract cover image sources from coverHtml or zipImages
+  const tempCoverDiv = document.createElement("div");
+  tempCoverDiv.innerHTML = coverHtml;
+  const coverImgs = Array.from(tempCoverDiv.querySelectorAll("img")).map((img) => img.src);
+  const candidateImages = coverImgs.length > 0 ? coverImgs : zipImages;
+
+  // Inspect image dimensions to accurately determine roles
+  const imageDims = await Promise.all(candidateImages.map(getImageDimensions));
+  // Sort by area descending
+  imageDims.sort((a, b) => b.width * b.height - a.width * a.height);
+
+  let watermarkImgSrc = "/fondo_gesrest.png";
+  let gesrestLogoSrc = "";
+  let mrSoftLogoSrc = "";
+
+  if (imageDims.length > 0) {
+    // If largest image is > 250px width or height, it's the G watermark
+    if (imageDims[0].width >= 250 || imageDims[0].height >= 250) {
+      watermarkImgSrc = imageDims[0].src;
+    }
+  }
+
+  // The remaining images are the logos
+  const logoCandidates = candidateImages.filter((src) => src !== watermarkImgSrc);
+  if (logoCandidates.length >= 2) {
+    // In Word cover: Gesrest logo and Mr. Soft logo
+    // Typically in cover: top is Gesrest logo, bottom is Mr. Soft
+    gesrestLogoSrc = logoCandidates[0];
+    mrSoftLogoSrc = logoCandidates[1];
+  } else if (logoCandidates.length === 1) {
+    gesrestLogoSrc = logoCandidates[0];
+    mrSoftLogoSrc = "";
+  } else if (zipImages.length >= 2) {
+    gesrestLogoSrc = zipImages[1];
+    mrSoftLogoSrc = zipImages[0];
+  }
+
+  // 5. Build Page 1 (Cover Page) with 100% exact layout
   const page1Html = `
 <div style="position: absolute; top: 0; left: 0; bottom: 0; width: 68%; height: 100%; pointer-events: auto; z-index: 0;">
-  <img src="${watermarkImgSrc || '/fondo_gesrest.png'}" alt="Fondo Gesrest" style="width: 100%; height: 100%; object-fit: contain; object-position: left center;" />
+  <img src="${watermarkImgSrc}" alt="Fondo Gesrest" style="width: 100%; height: 100%; object-fit: contain; object-position: left center;" />
 </div>
 
 <div style="position: relative; z-index: 1; padding: 20px; min-height: 980px;">
-  <!-- Logo de Gesrest (Imagen 2 del Word) y Contacto Superior Derecho -->
+  <!-- Logo de Gesrest (Superior Derecho) y Contacto -->
   <div style="text-align: right; margin-top: 50px; margin-right: 15px;">
     ${
       gesrestLogoSrc
         ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="max-height: 64px; width: auto; margin-left: auto; margin-bottom: 8px; display: inline-block;" />`
-        : `<h1 style="font-size: 28px; font-weight: bold; color: #eb5454; margin: 0;">GESREST</h1><div style="font-size: 12px; color: #eb5454; font-weight: 600;">Tu restaurante digital</div>`
+        : `<h1 style="font-size: 28px; font-weight: bold; color: #eb5454; margin: 0;">${productName}</h1><div style="font-size: 12px; color: #eb5454; font-weight: 600;">Tu restaurante digital</div>`
     }
     <div style="font-size: 12px; color: #444; line-height: 1.8; margin-top: 8px;">
       <div>+51 979 293 176</div>
@@ -192,7 +238,7 @@ export async function parseDocxFileToHtml(
     </div>
   </div>
 
-  <!-- Logo Mr. Soft (Imagen 1 del Word: celeste) en Esquina Inferior Izquierda encima de la G -->
+  <!-- Logo Mr. Soft (Inferior Izquierdo) -->
   <div style="position: absolute; bottom: 45px; left: 30px; z-index: 1;">
     ${
       mrSoftLogoSrc
@@ -210,7 +256,7 @@ export async function parseDocxFileToHtml(
 </div>
 `;
 
-  // 5. Header logo template for every subsequent page (Pages 2 to N) using Image 2 (Gesrest Logo)
+  // 6. Header logo template for every subsequent page (Pages 2 to N)
   const headerLogoHtml = `
 <div style="float: right; text-align: right; margin-bottom: 20px; clear: right;">
   ${
@@ -221,24 +267,6 @@ export async function parseDocxFileToHtml(
 </div>
 <div style="clear: both;"></div>
 `;
-
-  // 6. Extract ONLY the body content starting from PRESENTACIÓN (discarding raw cover paragraphs)
-  let fullBodyHtml = container.innerHTML;
-
-  // Find where PRESENTACIÓN starts and slice from there
-  const presMatch = fullBodyHtml.search(/<h[123][^>]*>\s*PRESENTACI[OÓ]N/i);
-  if (presMatch !== -1) {
-    fullBodyHtml = fullBodyHtml.slice(presMatch);
-  } else {
-    // Fallback: search by text PRESENTACIÓN
-    const textMatch = fullBodyHtml.search(/PRESENTACI[OÓ]N/i);
-    if (textMatch !== -1) {
-      // Find opening tag before this text
-      const before = fullBodyHtml.slice(0, textMatch);
-      const tagOpen = before.lastIndexOf("<");
-      fullBodyHtml = fullBodyHtml.slice(tagOpen !== -1 ? tagOpen : textMatch);
-    }
-  }
 
   // 7. Check explicit page breaks or paginate body content into A4 sheets
   let otherPages: string[] = [];

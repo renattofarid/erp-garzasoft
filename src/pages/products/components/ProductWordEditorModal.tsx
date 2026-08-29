@@ -67,6 +67,7 @@ import {
 import { ProductResource } from "../lib/product.interface";
 import { getDefaultGesrestPages } from "../lib/defaultGesrestHtml";
 import { parseDocxFileToHtml } from "../lib/docxParser";
+import { paginateHtmlByA4Height } from "../lib/a4Paginator";
 
 interface Props {
   open: boolean;
@@ -125,30 +126,8 @@ export default function ProductWordEditorModal({
       return getDefaultGesrestPages(product?.nombre || "GESREST");
     }
 
-    // Check if contains .a4-page-sheet divs
-    const temp = document.createElement("div");
-    temp.innerHTML = htmlContent;
-    const sheets = temp.querySelectorAll(".a4-page-sheet");
-
-    if (sheets.length > 0) {
-      const extracted: string[] = [];
-      sheets.forEach((sheet) => {
-        // Look for page-content or imported-word-page-content or innerHTML
-        const inner =
-          sheet.querySelector(".page-content")?.innerHTML ||
-          sheet.querySelector(".imported-word-page-content")?.innerHTML ||
-          sheet.innerHTML;
-        extracted.push(inner);
-      });
-      return extracted.length > 0 ? extracted : [htmlContent];
-    }
-
-    // If split by page breaks
-    if (htmlContent.includes('<hr class="page-break" />') || htmlContent.includes("<hr>")) {
-      return htmlContent.split(/<hr(?:\s+class="page-break")?\s*\/?>/i).filter((s) => s.trim().length > 0);
-    }
-
-    return [htmlContent];
+    // Measure and slice accurately by real A4 height
+    return paginateHtmlByA4Height(htmlContent, 860);
   };
 
   useEffect(() => {

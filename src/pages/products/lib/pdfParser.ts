@@ -12,15 +12,19 @@ interface RawTextItem {
 }
 
 /**
- * Extracts all embedded images (watermarks, screenshots, signatures, logos) from a PDF page
+ * Safely extracts embedded images with timeouts to prevent hanging
  */
 async function extractImagesFromPdfPage(page: any): Promise<{ dataUrl: string; width: number; height: number }[]> {
   const images: { dataUrl: string; width: number; height: number }[] = [];
 
   try {
-    const ops = await page.getOperatorList();
-    const imageNames: string[] = [];
+    const ops = await Promise.race([
+      page.getOperatorList(),
+      new Promise<null>((r) => setTimeout(() => r(null), 1000)),
+    ]);
+    if (!ops) return images;
 
+    const imageNames: string[] = [];
     for (let i = 0; i < ops.fnArray.length; i++) {
       const fn = ops.fnArray[i];
       if (
@@ -37,56 +41,63 @@ async function extractImagesFromPdfPage(page: any): Promise<{ dataUrl: string; w
 
     for (const imgName of imageNames) {
       await new Promise<void>((resolve) => {
-        page.objs.get(imgName, (imgObj: any) => {
-          if (!imgObj || !imgObj.data || !imgObj.width || !imgObj.height) {
-            resolve();
-            return;
-          }
+        const timer = setTimeout(() => resolve(), 300); // 300ms safety timeout to prevent hanging
 
-          try {
-            const canvas = document.createElement("canvas");
-            canvas.width = imgObj.width;
-            canvas.height = imgObj.height;
-            const ctx = canvas.getContext("2d");
+        try {
+          if (page.objs && page.objs.has && page.objs.has(imgName)) {
+            page.objs.get(imgName, (imgObj: any) => {
+              clearTimeout(timer);
+              if (imgObj && imgObj.data && imgObj.width && imgObj.height) {
+                try {
+                  const canvas = document.createElement("canvas");
+                  canvas.width = imgObj.width;
+                  canvas.height = imgObj.height;
+                  const ctx = canvas.getContext("2d");
 
-            if (ctx) {
-              const imgData = ctx.createImageData(imgObj.width, imgObj.height);
-              const data = imgObj.data;
+                  if (ctx) {
+                    const imgData = ctx.createImageData(imgObj.width, imgObj.height);
+                    const data = imgObj.data;
 
-              if (data.length === imgObj.width * imgObj.height * 4) {
-                imgData.data.set(data);
-              } else if (data.length === imgObj.width * imgObj.height * 3) {
-                // RGB to RGBA
-                for (let p = 0, q = 0; p < data.length; p += 3, q += 4) {
-                  imgData.data[q] = data[p];
-                  imgData.data[q + 1] = data[p + 1];
-                  imgData.data[q + 2] = data[p + 2];
-                  imgData.data[q + 3] = 255;
-                }
-              } else if (data.length === imgObj.width * imgObj.height) {
-                // Grayscale / Alpha mask
-                for (let p = 0, q = 0; p < data.length; p++, q += 4) {
-                  const val = data[p];
-                  imgData.data[q] = val;
-                  imgData.data[q + 1] = val;
-                  imgData.data[q + 2] = val;
-                  imgData.data[q + 3] = 255;
+                    if (data.length === imgObj.width * imgObj.height * 4) {
+                      imgData.data.set(data);
+                    } else if (data.length === imgObj.width * imgObj.height * 3) {
+                      for (let p = 0, q = 0; p < data.length; p += 3, q += 4) {
+                        imgData.data[q] = data[p];
+                        imgData.data[q + 1] = data[p + 1];
+                        imgData.data[q + 2] = data[p + 2];
+                        imgData.data[q + 3] = 255;
+                      }
+                    } else if (data.length === imgObj.width * imgObj.height) {
+                      for (let p = 0, q = 0; p < data.length; p++, q += 4) {
+                        const val = data[p];
+                        imgData.data[q] = val;
+                        imgData.data[q + 1] = val;
+                        imgData.data[q + 2] = val;
+                        imgData.data[q + 3] = 255;
+                      }
+                    }
+
+                    ctx.putImageData(imgData, 0, 0);
+                    images.push({
+                      dataUrl: canvas.toDataURL("image/png"),
+                      width: imgObj.width,
+                      height: imgObj.height,
+                    });
+                  }
+                } catch (e) {
+                  console.warn("Canvas image render error:", e);
                 }
               }
-
-              ctx.putImageData(imgData, 0, 0);
-              const dataUrl = canvas.toDataURL("image/png");
-              images.push({
-                dataUrl,
-                width: imgObj.width,
-                height: imgObj.height,
-              });
-            }
-          } catch (err) {
-            console.warn("Could not convert pdf image to canvas:", err);
+              resolve();
+            });
+          } else {
+            clearTimeout(timer);
+            resolve();
           }
+        } catch {
+          clearTimeout(timer);
           resolve();
-        });
+        }
       });
     }
   } catch (err) {
@@ -98,9 +109,9 @@ async function extractImagesFromPdfPage(page: any): Promise<{ dataUrl: string; w
 
 /**
  * Intelligent PDF Parser for Gesrest Formato de Alta.
- * - Extracts 100% of images (watermarks, logos, screenshots, signatures).
- * - Extracts 2-column tables by mapping left-column multi-line text to each right-column URL.
- * - Renders exactly ONE unified table per page without breaking or repeating headers.
+ * - Extracts images (watermarks, logos, screenshots, signatures) safely without hanging.
+ * - Extracts unified 2-column tables with full question titles inside table cells.
+ * - Generates 100% editable HTML pages.
  */
 export async function parsePdfFileToPages(file: File): Promise<string[]> {
   const arrayBuffer = await file.arrayBuffer();
@@ -115,15 +126,13 @@ export async function parsePdfFileToPages(file: File): Promise<string[]> {
     const viewport = page.getViewport({ scale: 1.0 });
     const pageHeight = viewport.height;
 
-    // 1. Extract embedded images from page
+    // 1. Extract embedded images safely
     const extractedImages = await extractImagesFromPdfPage(page);
 
-    // Build watermark and inline images HTML
     let watermarkHtml = "";
     const inlineImagesHtml: string[] = [];
 
     extractedImages.forEach((img) => {
-      // If large background / watermark image (> 350px width and height)
       if (img.width > 350 && img.height > 350 && !watermarkHtml) {
         watermarkHtml = `
 <div style="position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); opacity: 0.12; pointer-events: none; z-index: 0; text-align: center; width: 100%;">
@@ -131,7 +140,6 @@ export async function parsePdfFileToPages(file: File): Promise<string[]> {
 </div>
 `;
       } else {
-        // Screenshot, logo, or signature
         inlineImagesHtml.push(`
 <div style="text-align: center; margin: 12px 0;">
   <img src="${img.dataUrl}" alt="Imagen PDF" style="max-width: 100%; max-height: 280px; height: auto; margin: 0 auto; display: block; border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.1);" />

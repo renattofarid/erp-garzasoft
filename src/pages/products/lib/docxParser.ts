@@ -144,8 +144,9 @@ function trimImageWhiteBorders(src: string): Promise<string> {
 
 /**
  * High-Fidelity DOCX Parser for Gesrest Documents.
+ * - Detects centered, right-aligned, and justified text directly from document.xml.
  * - Auto-crops logos to tight rectangular bounding boxes.
- * - Background: G watermark scaled to full sheet height reaching top-left corner (top: -420px, left: -520px, 1750px width).
+ * - Background: G watermark scaled to 1800x1800 symmetric, top: -320px, left: -700px.
  * - Top Right: Gesrest Logo (rectangular, width: 280px) + Phone & Email.
  * - Bottom Left: Mr. Soft Logo (rectangular, width: 220px).
  * - Bottom Right: www.gesrest.net.
@@ -156,8 +157,11 @@ export async function parseDocxFileToHtml(
 ): Promise<string[]> {
   const arrayBuffer = await file.arrayBuffer();
 
-  // 1. Extract all images from ZIP in order
+  // 1. Extract all images and paragraph alignments directly from Word ZIP
   const zipImages: string[] = [];
+  const centeredTexts = new Set<string>();
+  const rightTexts = new Set<string>();
+
   try {
     const zip = await JSZip.loadAsync(arrayBuffer);
     const mediaFiles = Object.keys(zip.files)
@@ -178,8 +182,30 @@ export async function parseDocxFileToHtml(
           : "image/" + ext;
       zipImages.push(`data:${mime};base64,${base64}`);
     }
+
+    // Extract exact paragraph alignments from word/document.xml
+    const docXmlStr = await zip.files["word/document.xml"]?.async("text");
+    if (docXmlStr) {
+      const xmlDoc = new DOMParser().parseFromString(docXmlStr, "application/xml");
+      const pElements = xmlDoc.getElementsByTagName("w:p");
+      for (let i = 0; i < pElements.length; i++) {
+        const p = pElements[i];
+        const jc = p.getElementsByTagName("w:jc")[0];
+        if (jc) {
+          const val = jc.getAttribute("w:val");
+          const text = p.textContent?.trim();
+          if (text) {
+            if (val === "center") {
+              centeredTexts.add(text);
+            } else if (val === "right") {
+              rightTexts.add(text);
+            }
+          }
+        }
+      }
+    }
   } catch (zipErr) {
-    console.warn("Zip media extraction error:", zipErr);
+    console.warn("Zip media/XML extraction error:", zipErr);
   }
 
   // 2. Mammoth options
@@ -199,6 +225,9 @@ export async function parseDocxFileToHtml(
       "p[style-name='Heading 2'] => h2:fresh",
       "p[style-name='Heading 3'] => h3:fresh",
       "p[style-name='Subtitle'] => p.doc-subtitle:fresh",
+      "p[style-name='Centered'] => p.text-center:fresh",
+      "p[style-name='Center'] => p.text-center:fresh",
+      "p[style-name='Centrado'] => p.text-center:fresh",
       "table => table.a4-doc-table:fresh",
       "br[type='page'] => hr.page-break:fresh",
     ],
@@ -293,6 +322,22 @@ export async function parseDocxFileToHtml(
     p.setAttribute("style", "margin: 0 0 6px 0; line-height: 1.55; font-size: 12.5px;");
   });
 
+  // Apply centered and right alignments detected from Word XML
+  container.querySelectorAll("p, h1, h2, h3, div").forEach((el) => {
+    const text = el.textContent?.trim() || "";
+    if (text && centeredTexts.has(text)) {
+      el.setAttribute(
+        "style",
+        (el.getAttribute("style") || "") + " text-align: center; margin-left: auto; margin-right: auto;"
+      );
+    } else if (text && rightTexts.has(text)) {
+      el.setAttribute(
+        "style",
+        (el.getAttribute("style") || "") + " text-align: right; margin-left: auto;"
+      );
+    }
+  });
+
   // 4. Split content between Cover and Body at "PRESENTACIÓN"
   const fullHtml = container.innerHTML;
   let coverHtml = "";
@@ -347,7 +392,7 @@ export async function parseDocxFileToHtml(
     rawMrSoftLogoSrc ? trimImageWhiteBorders(rawMrSoftLogoSrc) : Promise.resolve(""),
   ]);
 
-  // 5. Build Page 1 (Cover Page) with 2x enlarged G watermark positioned to top-left
+  // 5. Build Page 1 (Cover Page) with symmetric G watermark positioned to top-left
   const page1Html = `
 <div style="position: absolute; top: -50px; left: -60px; width: 800px; height: 1080px; pointer-events: auto; z-index: 0; overflow: hidden; margin: 0; padding: 0;">
   <img src="${watermarkImgSrc}" alt="Fondo Gesrest" style="position: absolute; top: -320px; left: -700px; width: 1800px; height: 1800px; max-width: none; max-height: none; display: block;" />

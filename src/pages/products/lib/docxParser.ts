@@ -356,6 +356,12 @@ export async function parseDocxFileToHtml(
           "style",
           `background-color: ${bg}; color: ${textColor}; font-weight: ${fontWeight}; text-align: ${textAlign}; font-size: 11.5px; ${padding} ${borderStyle} ${widthStyle}`
         );
+
+        if (isColoredBg) {
+          cell.querySelectorAll("p, span, strong, b, div").forEach((child) => {
+            (child as HTMLElement).style.color = "#ffffff";
+          });
+        }
       });
     });
   });
@@ -393,7 +399,11 @@ export async function parseDocxFileToHtml(
 
   // Enhance paragraphs
   container.querySelectorAll("p").forEach((p) => {
-    p.setAttribute("style", "margin: 0 0 8px 0; line-height: 1.6; font-size: 12.5px; color: #111827;");
+    if (!p.closest("td, th")) {
+      p.setAttribute("style", "margin: 0 0 8px 0; line-height: 1.6; font-size: 12.5px; color: #111827;");
+    } else {
+      p.setAttribute("style", "margin: 0; line-height: 1.4;");
+    }
   });
 
   // Convert bullet items to real <ul> <li> lists if they weren't wrapped

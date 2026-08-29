@@ -486,6 +486,16 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
           outline: 2px solid #eb5454;
           outline-offset: 2px;
         }
+        #page-sheet-${pageIndex} .word-page-editable td[style*="#eb5454"],
+        #page-sheet-${pageIndex} .word-page-editable td[style*="235, 84, 84"],
+        #page-sheet-${pageIndex} .word-page-editable th {
+          color: #ffffff !important;
+        }
+        #page-sheet-${pageIndex} .word-page-editable td[style*="#eb5454"] *,
+        #page-sheet-${pageIndex} .word-page-editable td[style*="235, 84, 84"] *,
+        #page-sheet-${pageIndex} .word-page-editable th * {
+          color: #ffffff !important;
+        }
         #page-sheet-${pageIndex} .word-page-editable ul {
           margin: 10px 0 16px 28px !important;
           padding-left: 10px !important;

@@ -218,9 +218,11 @@ export async function parseDocxFileToHtml(
   if (fullContentHtml.includes('<hr class="page-break"') || fullContentHtml.includes("<hr")) {
     const explicitPages = fullContentHtml
       .split(/<hr(?:\s+class="page-break")?\s*\/?>/i)
-      .filter((p) => p.trim().length > 0);
-    if (explicitPages.length > 1) {
-      otherPages = explicitPages.slice(1).map((p) => headerLogoHtml + p);
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0);
+
+    if (explicitPages.length > 0) {
+      otherPages = explicitPages.map((p) => headerLogoHtml + p);
     }
   }
 

@@ -350,7 +350,7 @@ export async function parseDocxFileToHtml(
   // 5. Build Page 1 (Cover Page) with 2x enlarged G watermark positioned to top-left
   const page1Html = `
 <div style="position: absolute; top: -50px; left: -60px; right: -60px; bottom: -75px; width: 800px; height: 1080px; pointer-events: auto; z-index: 0; overflow: hidden; margin: 0; padding: 0;">
-  <img src="${watermarkImgSrc}" alt="Fondo Gesrest" style="position: absolute; top: -420px; left: -520px; width: 1750px; height: 2200px; max-width: none; max-height: none; object-fit: contain;" />
+  <img src="${watermarkImgSrc}" alt="Fondo Gesrest" style="position: absolute; top: -720px; left: -980px; width: 2500px; height: 3100px; max-width: none; max-height: none; object-fit: contain;" />
 </div>
 
 <div style="position: relative; z-index: 1; padding: 10px; min-height: 960px;">

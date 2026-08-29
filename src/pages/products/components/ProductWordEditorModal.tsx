@@ -169,8 +169,7 @@ export default function ProductWordEditorModal({
 
     setImportingDocx(true);
     try {
-      const fullHtml = await parseDocxFileToHtml(file, product.nombre);
-      const parsedPages = extractPagesFromHtml(fullHtml);
+      const parsedPages = await parseDocxFileToHtml(file, product.nombre);
 
       setPages(parsedPages);
       setActivePageIndex(0);

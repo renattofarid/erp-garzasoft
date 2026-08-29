@@ -392,7 +392,7 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
       {/* Floating Header Actions on Page Sheet */}
       <div className="absolute -top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-800 text-white rounded-md shadow-lg px-2 py-1 flex items-center gap-1 z-10 select-none">
         <span className="text-[11px] font-bold px-1.5 text-zinc-300">
-          Pág. {pageIndex + 1} de {totalPages}
+          {pageIndex === 0 ? "Portada" : `Pág. ${pageIndex} de ${totalPages - 1}`}
         </span>
         <div className="h-3 w-px bg-zinc-600 mx-0.5" />
         <Button
@@ -502,13 +502,15 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
         onInput={handleInput}
       />
 
-      {/* Institutional Printable Footer */}
-      <div className="absolute bottom-6 left-12 right-12 flex items-center justify-between text-[11px] text-zinc-400 border-t border-zinc-200/80 pt-2 select-none pointer-events-none">
-        <span>Un producto de Mr. Soft</span>
-        <span>
-          Página {pageIndex + 1} de {totalPages}
-        </span>
-      </div>
+      {/* Institutional Printable Footer (Only on body pages, NOT on cover) */}
+      {pageIndex > 0 && (
+        <div className="absolute bottom-6 left-12 right-12 flex items-center justify-between text-[11px] text-zinc-400 border-t border-zinc-200/80 pt-2 select-none pointer-events-none">
+          <span>Un producto de Mr. Soft</span>
+          <span>
+            Página {pageIndex} de {totalPages - 1}
+          </span>
+        </div>
+      )}
     </div>
   );
 };

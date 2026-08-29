@@ -597,14 +597,17 @@ export async function parseDocxFileToHtml(
 
   // 6. Header logo template for every subsequent page (Pages 2 to N) - ONLY Logo, no contact text!
   const headerLogoHtml = `
-<div style="float: right; text-align: right; margin-bottom: 24px; clear: right;">
-  ${
-    gesrestLogoSrc
-      ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="width: 140px; max-width: 100%; height: auto; display: inline-block;" />`
-      : `<span style="font-size: 20px; font-weight: 700; color: #eb5454;">${productName}</span><br><span style="font-size: 10px; color: #888;">Tu restaurante digital</span>`
-  }
-</div>
-<div style="clear: both;"></div>
+<table style="width: 100%; border: none; border-collapse: collapse; margin-bottom: 12px;">
+  <tr>
+    <td style="border: none; text-align: right; padding: 0;">
+      ${
+        gesrestLogoSrc
+          ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="width: 130px; max-width: 100%; height: auto; display: inline-block;" />`
+          : `<span style="font-size: 18px; font-weight: 700; color: #eb5454;">${productName}</span><br><span style="font-size: 9px; color: #888;">Tu restaurante digital</span>`
+      }
+    </td>
+  </tr>
+</table>
 `;
 
   // 7. Check explicit page breaks or paginate body content into A4 sheets
@@ -622,7 +625,7 @@ export async function parseDocxFileToHtml(
   }
 
   if (otherPages.length === 0) {
-    const paginated = paginateHtmlByA4Height(fullBodyHtml, 860);
+    const paginated = paginateHtmlByA4Height(fullBodyHtml, 700);
     otherPages = paginated.map((p) => headerLogoHtml + p);
   }
 

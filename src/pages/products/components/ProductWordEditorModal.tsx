@@ -248,17 +248,18 @@ export default function ProductWordEditorModal({
           const footerHtml = isCover
             ? ""
             : `
-  <div style="position: absolute; bottom: 25px; left: 50px; right: 50px; border-top: 1px solid #e5e7eb; padding-top: 6px; font-size: 10px; color: #9ca3af; font-family: Arial, sans-serif;">
-    <span style="float: left;">Un producto de Mr. Soft</span>
-    <span style="float: right;">Página ${idx} de ${total - 1}</span>
-    <div style="clear: both;"></div>
-  </div>`;
+  <table style="width: 100%; border: none; border-collapse: collapse; border-top: 1px solid #e5e7eb; margin-top: 15px; font-size: 9.5px; color: #9ca3af; font-family: Arial, sans-serif;">
+    <tr>
+      <td style="border: none; text-align: left; padding: 4px 0; color: #9ca3af; font-size: 9.5px;">Un producto de Mr. Soft</td>
+      <td style="border: none; text-align: right; padding: 4px 0; color: #9ca3af; font-size: 9.5px;">Página ${idx} de ${total - 1}</td>
+    </tr>
+  </table>`;
 
-          const pagePadding = isCover ? "padding: 0;" : "padding: 45px 50px 65px 50px;";
+          const pagePadding = isCover ? "padding: 0;" : "padding: 30px 38px 30px 38px;";
 
           return `
 <div class="a4-page-sheet" style="position: relative; ${pagePadding} background: #ffffff; box-sizing: border-box;">
-  <div class="page-content" style="font-size: 12px; line-height: 1.55; color: #111827; position: relative; z-index: 1;">
+  <div class="page-content" style="font-size: 11.5px; line-height: 1.5; color: #111827; position: relative; z-index: 1;">
     ${content}
   </div>
   ${footerHtml}

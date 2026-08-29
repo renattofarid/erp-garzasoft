@@ -53,7 +53,6 @@ function trimImageWhiteBorders(src: string): Promise<string> {
         let left = 0;
         let right = width;
 
-        // Find top non-white boundary
         for (let y = 0; y < height; y++) {
           let hasColor = false;
           for (let x = 0; x < width; x++) {
@@ -70,7 +69,6 @@ function trimImageWhiteBorders(src: string): Promise<string> {
           }
         }
 
-        // Find bottom non-white boundary
         for (let y = height - 1; y >= 0; y--) {
           let hasColor = false;
           for (let x = 0; x < width; x++) {
@@ -87,7 +85,6 @@ function trimImageWhiteBorders(src: string): Promise<string> {
           }
         }
 
-        // Find left non-white boundary
         for (let x = 0; x < width; x++) {
           let hasColor = false;
           for (let y = top; y < bottom; y++) {
@@ -104,7 +101,6 @@ function trimImageWhiteBorders(src: string): Promise<string> {
           }
         }
 
-        // Find right non-white boundary
         for (let x = width - 1; x >= 0; x--) {
           let hasColor = false;
           for (let y = top; y < bottom; y++) {
@@ -150,9 +146,51 @@ function trimImageWhiteBorders(src: string): Promise<string> {
 }
 
 /**
+ * Pre-renders the G watermark into an exact A4 canvas (794x1123)
+ * so that it never exceeds the page boundaries or triggers DomPDF page breaks.
+ */
+function createA4CoverBackground(watermarkSrc: string): Promise<string> {
+  return new Promise((resolve) => {
+    if (!watermarkSrc) {
+      resolve("");
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 794;
+        canvas.height = 1123;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(watermarkSrc);
+          return;
+        }
+
+        // Exact positioning of the G watermark spanning from top-left
+        const drawWidth = 1750;
+        const drawHeight = 1750;
+        const drawX = -650;
+        const drawY = -270;
+
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+        resolve(canvas.toDataURL("image/png"));
+      } catch (err) {
+        console.warn("Canvas cover background error:", err);
+        resolve(watermarkSrc);
+      }
+    };
+    img.onerror = () => resolve(watermarkSrc);
+    img.src = watermarkSrc;
+  });
+}
+
+/**
  * High-Fidelity DOCX Parser for Gesrest Documents.
  * - Extracts individual cell shading, borders, and alignments from Word XML for perfect table rendering.
  * - Auto-crops logos to tight rectangular bounding boxes.
+ * - Pre-renders G watermark onto a 0-overflow A4 background.
  * - Preserves coral heading colors (#eb5454) and bullet lists.
  * - Keeps header clean on Pages 2 to 8 (logo only, without contact text).
  */
@@ -341,7 +379,6 @@ export async function parseDocxFileToHtml(
         const fontWeight = (cellMeta?.bold || isColoredBg) ? "600" : "normal";
         const textAlign = cellMeta?.align || (isColoredBg ? "center" : (isExtensive && cIdx > 0 ? "left" : "center"));
 
-        // If extensive table, add light borders
         let borderStyle = "border: none;";
         if (isExtensive) {
           borderStyle = "border: 1px solid #d1d5db;";
@@ -513,44 +550,45 @@ export async function parseDocxFileToHtml(
     rawGesrestLogoSrc = zipImages[1];
   }
 
-  // Auto-crop white borders so bounding boxes are tightly rectangular
-  const [gesrestLogoSrc, mrSoftLogoSrc] = await Promise.all([
+  // Auto-crop white borders and pre-render exact A4 cover background
+  const [gesrestLogoSrc, mrSoftLogoSrc, coverBgSrc] = await Promise.all([
     rawGesrestLogoSrc ? trimImageWhiteBorders(rawGesrestLogoSrc) : Promise.resolve(""),
     rawMrSoftLogoSrc ? trimImageWhiteBorders(rawMrSoftLogoSrc) : Promise.resolve(""),
+    createA4CoverBackground(watermarkImgSrc),
   ]);
 
-  // 5. Build Page 1 (Cover Page) with symmetric G watermark positioned in points (pt) for perfect PDF and screen parity
+  // 5. Build Page 1 (Cover Page) with 0-overflow exact A4 background
   const page1Html = `
-<div style="position: absolute; top: -38pt; left: -45pt; width: 595pt; height: 810pt; pointer-events: auto; z-index: 0; overflow: hidden; margin: 0; padding: 0;">
-  <img src="${watermarkImgSrc}" alt="Fondo Gesrest" style="position: absolute; top: -240pt; left: -525pt; width: 1350pt; height: 1350pt; max-width: none; max-height: none; display: block;" />
+<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; margin: 0; padding: 0;">
+  <img src="${coverBgSrc || watermarkImgSrc}" alt="Fondo Gesrest" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: block;" />
 </div>
 
-<div style="position: relative; z-index: 1; padding: 8pt; min-height: 720pt;">
+<div style="position: relative; z-index: 1; padding: 25px 30px; min-height: 980px;">
   <!-- Logo de Gesrest (Superior Derecho - Rectangular Ajustado) y Contacto -->
-  <div style="text-align: right; margin-top: 20pt; margin-right: 5pt;">
+  <div style="text-align: right; margin-top: 15px; margin-right: 0;">
     ${
       gesrestLogoSrc
-        ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="width: 210pt; max-width: 100%; height: auto; margin-left: auto; margin-bottom: 5pt; display: inline-block;" />`
-        : `<h1 style="font-size: 28pt; font-weight: bold; color: #eb5454; margin: 0;">${productName}</h1><div style="font-size: 11pt; color: #eb5454; font-weight: 600;">Tu restaurante digital</div>`
+        ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="width: 280px; max-width: 100%; height: auto; margin-left: auto; margin-bottom: 6px; display: inline-block;" />`
+        : `<h1 style="font-size: 38px; font-weight: bold; color: #eb5454; margin: 0;">${productName}</h1><div style="font-size: 15px; color: #eb5454; font-weight: 600;">Tu restaurante digital</div>`
     }
-    <div style="font-size: 10pt; font-weight: 500; color: #333; line-height: 1.8;">
+    <div style="font-size: 13px; font-weight: 500; color: #333; line-height: 1.8;">
       <div>+51 979 293 176</div>
       <div><a href="mailto:martin.ampuero@garzasoft.com" style="color: #0b4e8c; text-decoration: underline;">martin.ampuero@garzasoft.com</a></div>
     </div>
   </div>
 
   <!-- Logo Mr. Soft (Inferior Izquierdo - Rectangular Ajustado) -->
-  <div style="position: absolute; bottom: 25pt; left: 25pt; z-index: 1;">
+  <div style="position: absolute; bottom: 35px; left: 30px; z-index: 1;">
     ${
       mrSoftLogoSrc
-        ? `<img src="${mrSoftLogoSrc}" alt="Mr. Soft Development" style="width: 165pt; max-width: 100%; height: auto;" />`
-        : `<div style="font-size: 21pt; font-weight: bold; color: #1a1a1a;">Mr. Soft</div><div style="font-size: 9pt; color: #0088cc; letter-spacing: 2px;">DEVELOPMENT</div>`
+        ? `<img src="${mrSoftLogoSrc}" alt="Mr. Soft Development" style="width: 220px; max-width: 100%; height: auto;" />`
+        : `<div style="font-size: 28px; font-weight: bold; color: #1a1a1a;">Mr. Soft</div><div style="font-size: 12px; color: #0088cc; letter-spacing: 2px;">DEVELOPMENT</div>`
     }
   </div>
 
   <!-- Enlace Inferior Derecho -->
-  <div style="position: absolute; bottom: 25pt; right: 25pt; z-index: 1;">
-    <a href="https://www.gesrest.net" target="_blank" rel="noopener noreferrer" style="color: #eb5454; font-weight: 700; font-size: 12pt; text-decoration: none;">
+  <div style="position: absolute; bottom: 35px; right: 30px; z-index: 1;">
+    <a href="https://www.gesrest.net" target="_blank" rel="noopener noreferrer" style="color: #eb5454; font-weight: 700; font-size: 16px; text-decoration: none;">
       www.gesrest.net
     </a>
   </div>

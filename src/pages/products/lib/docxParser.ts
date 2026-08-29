@@ -15,13 +15,140 @@ function getImageDimensions(src: string): Promise<{ src: string; width: number; 
 }
 
 /**
+ * Automatically trims white and transparent borders around logos
+ * so they have a clean, tight rectangular bounding box identical to Word.
+ */
+function trimImageWhiteBorders(src: string): Promise<string> {
+  return new Promise((resolve) => {
+    if (!src || !src.startsWith("data:image")) {
+      resolve(src);
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) {
+          resolve(src);
+          return;
+        }
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        ctx.drawImage(img, 0, 0);
+
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const { data, width, height } = imgData;
+
+        let top = 0;
+        let bottom = height;
+        let left = 0;
+        let right = width;
+
+        // Find top non-white boundary
+        for (let y = 0; y < height; y++) {
+          let hasColor = false;
+          for (let x = 0; x < width; x++) {
+            const i = (y * width + x) * 4;
+            const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+            if (a > 20 && (r < 245 || g < 245 || b < 245)) {
+              hasColor = true;
+              break;
+            }
+          }
+          if (hasColor) {
+            top = y;
+            break;
+          }
+        }
+
+        // Find bottom non-white boundary
+        for (let y = height - 1; y >= 0; y--) {
+          let hasColor = false;
+          for (let x = 0; x < width; x++) {
+            const i = (y * width + x) * 4;
+            const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+            if (a > 20 && (r < 245 || g < 245 || b < 245)) {
+              hasColor = true;
+              break;
+            }
+          }
+          if (hasColor) {
+            bottom = y + 1;
+            break;
+          }
+        }
+
+        // Find left non-white boundary
+        for (let x = 0; x < width; x++) {
+          let hasColor = false;
+          for (let y = top; y < bottom; y++) {
+            const i = (y * width + x) * 4;
+            const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+            if (a > 20 && (r < 245 || g < 245 || b < 245)) {
+              hasColor = true;
+              break;
+            }
+          }
+          if (hasColor) {
+            left = x;
+            break;
+          }
+        }
+
+        // Find right non-white boundary
+        for (let x = width - 1; x >= 0; x--) {
+          let hasColor = false;
+          for (let y = top; y < bottom; y++) {
+            const i = (y * width + x) * 4;
+            const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+            if (a > 20 && (r < 245 || g < 245 || b < 245)) {
+              hasColor = true;
+              break;
+            }
+          }
+          if (hasColor) {
+            right = x + 1;
+            break;
+          }
+        }
+
+        const cropWidth = Math.max(1, right - left);
+        const cropHeight = Math.max(1, bottom - top);
+
+        if (cropWidth >= width - 4 && cropHeight >= height - 4) {
+          resolve(src);
+          return;
+        }
+
+        const trimmedCanvas = document.createElement("canvas");
+        trimmedCanvas.width = cropWidth;
+        trimmedCanvas.height = cropHeight;
+        const trimmedCtx = trimmedCanvas.getContext("2d");
+        if (!trimmedCtx) {
+          resolve(src);
+          return;
+        }
+        trimmedCtx.drawImage(canvas, left, top, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+        resolve(trimmedCanvas.toDataURL("image/png"));
+      } catch (err) {
+        console.warn("Auto-trim error:", err);
+        resolve(src);
+      }
+    };
+    img.onerror = () => resolve(src);
+    img.src = src;
+  });
+}
+
+/**
  * High-Fidelity DOCX Parser for Gesrest Documents.
- * - Cover Page:
- *   - Background: G watermark expanded to 900px width shifted left (-320px) to fill full sheet height and bleed to left edge
- *   - Top Right: Gesrest Logo (width: 310px) + Phone & Email
- *   - Bottom Left: Mr. Soft Logo (width: 250px)
- *   - Bottom Right: www.gesrest.net
- * - Headers Pages 2 to 8: Gesrest Logo (width: 170px)
+ * - Auto-crops logos to tight rectangular bounding boxes.
+ * - Background: G watermark taking full page height (object-fit: contain, left bleed).
+ * - Top Right: Gesrest Logo (rectangular, width: 280px) + Phone & Email.
+ * - Bottom Left: Mr. Soft Logo (rectangular, width: 220px).
+ * - Bottom Right: www.gesrest.net.
  */
 export async function parseDocxFileToHtml(
   file: File,
@@ -200,46 +327,52 @@ export async function parseDocxFileToHtml(
   // candidateImages[0] = Mr. Soft Logo
   // candidateImages[1] = Gesrest Logo
   const logoCandidates = candidateImages.filter((src) => src !== watermarkImgSrc);
-  let mrSoftLogoSrc = "";
-  let gesrestLogoSrc = "";
+  let rawMrSoftLogoSrc = "";
+  let rawGesrestLogoSrc = "";
 
   if (logoCandidates.length >= 2) {
-    mrSoftLogoSrc = logoCandidates[0];
-    gesrestLogoSrc = logoCandidates[1];
+    rawMrSoftLogoSrc = logoCandidates[0];
+    rawGesrestLogoSrc = logoCandidates[1];
   } else if (logoCandidates.length === 1) {
-    gesrestLogoSrc = logoCandidates[0];
-    mrSoftLogoSrc = "";
+    rawGesrestLogoSrc = logoCandidates[0];
+    rawMrSoftLogoSrc = "";
   } else if (zipImages.length >= 2) {
-    mrSoftLogoSrc = zipImages[0];
-    gesrestLogoSrc = zipImages[1];
+    rawMrSoftLogoSrc = zipImages[0];
+    rawGesrestLogoSrc = zipImages[1];
   }
 
-  // 5. Build Page 1 (Cover Page) with 100% faithful enlarged layout
+  // Auto-crop white borders so bounding boxes are tightly rectangular
+  const [gesrestLogoSrc, mrSoftLogoSrc] = await Promise.all([
+    rawGesrestLogoSrc ? trimImageWhiteBorders(rawGesrestLogoSrc) : Promise.resolve(""),
+    rawMrSoftLogoSrc ? trimImageWhiteBorders(rawMrSoftLogoSrc) : Promise.resolve(""),
+  ]);
+
+  // 5. Build Page 1 (Cover Page) with tight rectangular logos matching Word
   const page1Html = `
 <div style="position: absolute; top: -50px; left: -60px; right: -60px; bottom: -75px; width: 800px; height: 1080px; pointer-events: auto; z-index: 0; overflow: hidden; margin: 0; padding: 0;">
   <img src="${watermarkImgSrc}" alt="Fondo Gesrest" style="position: absolute; top: -30px; left: -310px; width: 920px; height: 1140px; max-width: none; max-height: none; object-fit: contain;" />
 </div>
 
 <div style="position: relative; z-index: 1; padding: 10px; min-height: 960px;">
-  <!-- Logo de Gesrest (Superior Derecho - MUY GRANDE) y Contacto -->
+  <!-- Logo de Gesrest (Superior Derecho - Rectangular Ajustado) y Contacto -->
   <div style="text-align: right; margin-top: 25px; margin-right: 5px;">
     ${
       gesrestLogoSrc
-        ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="width: 310px; max-width: 100%; height: auto; margin-left: auto; margin-bottom: 8px; display: inline-block;" />`
-        : `<h1 style="font-size: 42px; font-weight: bold; color: #eb5454; margin: 0;">${productName}</h1><div style="font-size: 16px; color: #eb5454; font-weight: 600;">Tu restaurante digital</div>`
+        ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="width: 280px; max-width: 100%; height: auto; margin-left: auto; margin-bottom: 6px; display: inline-block;" />`
+        : `<h1 style="font-size: 38px; font-weight: bold; color: #eb5454; margin: 0;">${productName}</h1><div style="font-size: 15px; color: #eb5454; font-weight: 600;">Tu restaurante digital</div>`
     }
-    <div style="font-size: 13.5px; font-weight: 500; color: #333; line-height: 1.8;">
+    <div style="font-size: 13px; font-weight: 500; color: #333; line-height: 1.8;">
       <div>+51 979 293 176</div>
       <div><a href="mailto:martin.ampuero@garzasoft.com" style="color: #0b4e8c; text-decoration: underline;">martin.ampuero@garzasoft.com</a></div>
     </div>
   </div>
 
-  <!-- Logo Mr. Soft (Inferior Izquierdo - MUY GRANDE) -->
+  <!-- Logo Mr. Soft (Inferior Izquierdo - Rectangular Ajustado) -->
   <div style="position: absolute; bottom: 35px; left: 35px; z-index: 1;">
     ${
       mrSoftLogoSrc
-        ? `<img src="${mrSoftLogoSrc}" alt="Mr. Soft Development" style="width: 250px; max-width: 100%; height: auto;" />`
-        : `<div style="font-size: 32px; font-weight: bold; color: #1a1a1a;">Mr. Soft</div><div style="font-size: 14px; color: #0088cc; letter-spacing: 2px;">DEVELOPMENT</div>`
+        ? `<img src="${mrSoftLogoSrc}" alt="Mr. Soft Development" style="width: 220px; max-width: 100%; height: auto;" />`
+        : `<div style="font-size: 28px; font-weight: bold; color: #1a1a1a;">Mr. Soft</div><div style="font-size: 12px; color: #0088cc; letter-spacing: 2px;">DEVELOPMENT</div>`
     }
   </div>
 
@@ -257,7 +390,7 @@ export async function parseDocxFileToHtml(
 <div style="float: right; text-align: right; margin-bottom: 20px; clear: right;">
   ${
     gesrestLogoSrc
-      ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="width: 170px; max-width: 100%; height: auto; display: inline-block;" />`
+      ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="width: 150px; max-width: 100%; height: auto; display: inline-block;" />`
       : `<span style="font-size: 22px; font-weight: 700; color: #eb5454;">${productName}</span><br><span style="font-size: 11px; color: #888;">Tu restaurante digital</span>`
   }
 </div>

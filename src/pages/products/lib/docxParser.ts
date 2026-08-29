@@ -610,8 +610,8 @@ export async function parseDocxFileToHtml(
 </table>
 `;
 
-  // 7. Check explicit page breaks or paginate body content into A4 sheets
-  let otherPages: string[] = [];
+  // 7. Split by explicit <hr class="page-break">, and for ANY section that is taller than A4 height, paginate it into subsequent A4 sheets!
+  let rawSections: string[] = [fullBodyHtml];
 
   if (fullBodyHtml.includes('<hr class="page-break"') || fullBodyHtml.includes("<hr")) {
     const explicitPages = fullBodyHtml
@@ -620,14 +620,17 @@ export async function parseDocxFileToHtml(
       .filter((p) => p.length > 0);
 
     if (explicitPages.length > 0) {
-      otherPages = explicitPages.map((p) => headerLogoHtml + p);
+      rawSections = explicitPages;
     }
   }
 
-  if (otherPages.length === 0) {
-    const paginated = paginateHtmlByA4Height(fullBodyHtml, 700);
-    otherPages = paginated.map((p) => headerLogoHtml + p);
+  const finalBodyPages: string[] = [];
+  for (const sec of rawSections) {
+    const subPages = paginateHtmlByA4Height(sec, 680);
+    for (const subPage of subPages) {
+      finalBodyPages.push(headerLogoHtml + subPage);
+    }
   }
 
-  return [page1Html, ...otherPages];
+  return [page1Html, ...finalBodyPages];
 }

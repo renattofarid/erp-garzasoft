@@ -1,38 +1,22 @@
 /**
  * Slices arbitrary HTML into individual A4 pages based on real rendered DOM height.
- * Inner printable A4 height is ~860px (1123px - top/bottom margins).
+ * Inner printable A4 height is ~680px (1123px - top/bottom margins - header/footer).
  */
 export function paginateHtmlByA4Height(
   htmlContent: string,
-  maxPageHeight: number = 860
+  maxPageHeight: number = 680
 ): string[] {
   if (!htmlContent || htmlContent.trim() === "") {
     return ["<p></p>"];
   }
 
-  // 1. Check if already explicitly divided by .a4-page-sheet
-  const tempDiv = document.createElement("div");
-  tempDiv.innerHTML = htmlContent;
-  const existingSheets = tempDiv.querySelectorAll(".a4-page-sheet");
-  if (existingSheets.length > 1) {
-    const pages: string[] = [];
-    existingSheets.forEach((sheet) => {
-      const inner =
-        sheet.querySelector(".page-content")?.innerHTML ||
-        sheet.querySelector(".imported-word-page-content")?.innerHTML ||
-        sheet.innerHTML;
-      pages.push(inner);
-    });
-    return pages;
-  }
-
-  // 2. Create in-DOM measurement sandbox with exact A4 sheet printable width
+  // 1. Create in-DOM measurement sandbox with exact A4 sheet printable width
   const measureContainer = document.createElement("div");
   measureContainer.style.position = "fixed";
   measureContainer.style.left = "-9999px";
   measureContainer.style.top = "-9999px";
-  measureContainer.style.width = "680px"; // Inner printable width of A4
-  measureContainer.style.fontSize = "13px";
+  measureContainer.style.width = "690px"; // Inner printable width of A4
+  measureContainer.style.fontSize = "12.5px";
   measureContainer.style.lineHeight = "1.55";
   measureContainer.style.fontFamily = "Arial, Helvetica, sans-serif";
   measureContainer.style.boxSizing = "border-box";
@@ -43,7 +27,7 @@ export function paginateHtmlByA4Height(
   let currentPageElements: string[] = [];
   let currentAccumulatedHeight = 0;
 
-  // Flatten containers if single root wrapper
+  // Flatten container children
   let childNodes = Array.from(measureContainer.children) as HTMLElement[];
   if (childNodes.length === 1 && childNodes[0].children.length > 1) {
     childNodes = Array.from(childNodes[0].children) as HTMLElement[];
@@ -62,23 +46,38 @@ export function paginateHtmlByA4Height(
 
     // Split large tables across pages if table is taller than maxPageHeight
     if (el.tagName.toLowerCase() === "table") {
-      const rows = Array.from(el.querySelectorAll("tbody tr, tr"));
-      const thead = el.querySelector("thead")?.outerHTML || "";
+      let theadHtml = el.querySelector("thead")?.outerHTML || "";
+      let tbodyRows = Array.from(el.querySelectorAll("tbody tr"));
+      if (tbodyRows.length === 0) {
+        const allRows = Array.from(el.querySelectorAll("tr"));
+        if (allRows.length > 1) {
+          const firstRow = allRows[0];
+          if (firstRow.querySelector("th") || firstRow.innerHTML.includes("#eb5454")) {
+            theadHtml = `<thead>${firstRow.outerHTML}</thead>`;
+            tbodyRows = allRows.slice(1);
+          } else {
+            tbodyRows = allRows;
+          }
+        } else {
+          tbodyRows = allRows;
+        }
+      }
+
       const tableStyle = el.getAttribute("style") || "width: 100%; border-collapse: collapse;";
 
-      if (rows.length > 4 && (el.offsetHeight || 0) > 300) {
+      if (tbodyRows.length > 2) {
         let chunkRows: string[] = [];
         let chunkHeight = 0;
 
-        rows.forEach((row) => {
-          const rowHeight = (row as HTMLElement).offsetHeight || 32;
+        tbodyRows.forEach((row) => {
+          const rowHeight = (row as HTMLElement).offsetHeight || 36;
           if (
             currentAccumulatedHeight + chunkHeight + rowHeight > maxPageHeight &&
             (chunkRows.length > 0 || currentPageElements.length > 0)
           ) {
             if (chunkRows.length > 0) {
               currentPageElements.push(
-                `<table style="${tableStyle}">${thead}<tbody>${chunkRows.join("")}</tbody></table>`
+                `<table style="${tableStyle}">${theadHtml}<tbody>${chunkRows.join("")}</tbody></table>`
               );
             }
             if (currentPageElements.length > 0) {
@@ -96,7 +95,7 @@ export function paginateHtmlByA4Height(
 
         if (chunkRows.length > 0) {
           currentPageElements.push(
-            `<table style="${tableStyle}">${thead}<tbody>${chunkRows.join("")}</tbody></table>`
+            `<table style="${tableStyle}">${theadHtml}<tbody>${chunkRows.join("")}</tbody></table>`
           );
           currentAccumulatedHeight += chunkHeight;
         }

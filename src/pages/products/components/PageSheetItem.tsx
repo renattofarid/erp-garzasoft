@@ -234,12 +234,12 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
   return (
     <div
       id={`page-sheet-${pageIndex}`}
-      className={`w-full max-w-[800px] min-h-[1080px] bg-white text-zinc-900 rounded-sm shadow-2xl relative mb-10 transition-all group ${
+      className={`w-[794px] h-[1123px] min-w-[794px] max-w-[794px] min-h-[1123px] max-h-[1123px] bg-white text-zinc-900 rounded-none shadow-2xl relative mb-10 transition-all group overflow-hidden ${
         isActive ? "ring-2 ring-primary/70" : "hover:shadow-3xl"
       }`}
       style={{
         boxShadow: "0 12px 36px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.2)",
-        padding: "50px 60px 75px 60px",
+        padding: pageIndex === 0 ? "0" : "35px 45px 50px 45px",
         boxSizing: "border-box",
       }}
       onClick={() => {
@@ -524,7 +524,7 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
 
       {/* Institutional Printable Footer (Only on body pages, NOT on cover) */}
       {pageIndex > 0 && (
-        <div className="absolute bottom-6 left-12 right-12 flex items-center justify-between text-[11px] text-zinc-400 border-t border-zinc-200/80 pt-2 select-none pointer-events-none">
+        <div className="absolute bottom-6 left-11 right-11 flex items-center justify-between text-[11px] text-zinc-400 border-t border-zinc-200/80 pt-2 select-none pointer-events-none">
           <span>Un producto de Mr. Soft</span>
           <span>
             Página {pageIndex} de {totalPages - 1}

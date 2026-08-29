@@ -223,13 +223,13 @@ export async function parseDocxFileToHtml(
 
 <div style="position: relative; z-index: 1; padding: 20px; min-height: 980px;">
   <!-- Logo de Gesrest (Superior Derecho - GRANDE) y Contacto -->
-  <div style="text-align: right; margin-top: 45px; margin-right: 15px;">
+  <div style="text-align: right; margin-top: 40px; margin-right: 15px;">
     ${
       gesrestLogoSrc
-        ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="max-height: 80px; max-width: 260px; width: auto; height: auto; margin-left: auto; margin-bottom: 10px; display: inline-block;" />`
-        : `<h1 style="font-size: 32px; font-weight: bold; color: #eb5454; margin: 0;">${productName}</h1><div style="font-size: 13px; color: #eb5454; font-weight: 600;">Tu restaurante digital</div>`
+        ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="max-height: 120px; max-width: 360px; width: auto; height: auto; margin-left: auto; margin-bottom: 12px; display: inline-block;" />`
+        : `<h1 style="font-size: 36px; font-weight: bold; color: #eb5454; margin: 0;">${productName}</h1><div style="font-size: 14px; color: #eb5454; font-weight: 600;">Tu restaurante digital</div>`
     }
-    <div style="font-size: 12.5px; color: #444; line-height: 1.8; margin-top: 6px;">
+    <div style="font-size: 13px; color: #444; line-height: 1.8; margin-top: 8px;">
       <div>+51 979 293 176</div>
       <div><a href="mailto:martin.ampuero@garzasoft.com" style="color: #0b4e8c; text-decoration: underline;">martin.ampuero@garzasoft.com</a></div>
     </div>
@@ -239,14 +239,14 @@ export async function parseDocxFileToHtml(
   <div style="position: absolute; bottom: 45px; left: 35px; z-index: 1;">
     ${
       mrSoftLogoSrc
-        ? `<img src="${mrSoftLogoSrc}" alt="Mr. Soft Development" style="max-height: 60px; max-width: 220px; width: auto; height: auto;" />`
-        : `<div style="font-size: 24px; font-weight: bold; color: #1a1a1a;">Mr. Soft</div><div style="font-size: 11px; color: #0088cc; letter-spacing: 1.5px;">DEVELOPMENT</div>`
+        ? `<img src="${mrSoftLogoSrc}" alt="Mr. Soft Development" style="max-height: 95px; max-width: 320px; width: auto; height: auto;" />`
+        : `<div style="font-size: 26px; font-weight: bold; color: #1a1a1a;">Mr. Soft</div><div style="font-size: 12px; color: #0088cc; letter-spacing: 1.5px;">DEVELOPMENT</div>`
     }
   </div>
 
   <!-- Enlace Inferior Derecho -->
   <div style="position: absolute; bottom: 45px; right: 30px; z-index: 1;">
-    <a href="https://www.gesrest.net" target="_blank" rel="noopener noreferrer" style="color: #eb5454; font-weight: bold; font-size: 14px; text-decoration: none;">
+    <a href="https://www.gesrest.net" target="_blank" rel="noopener noreferrer" style="color: #eb5454; font-weight: bold; font-size: 15px; text-decoration: none;">
       www.gesrest.net
     </a>
   </div>
@@ -258,8 +258,8 @@ export async function parseDocxFileToHtml(
 <div style="float: right; text-align: right; margin-bottom: 20px; clear: right;">
   ${
     gesrestLogoSrc
-      ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="max-height: 48px; max-width: 200px; width: auto; height: auto; display: inline-block;" />`
-      : `<span style="font-size: 18px; font-weight: 700; color: #eb5454;">${productName}</span><br><span style="font-size: 10px; color: #888;">Tu restaurante digital</span>`
+      ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="max-height: 55px; max-width: 240px; width: auto; height: auto; display: inline-block;" />`
+      : `<span style="font-size: 20px; font-weight: 700; color: #eb5454;">${productName}</span><br><span style="font-size: 11px; color: #888;">Tu restaurante digital</span>`
   }
 </div>
 <div style="clear: both;"></div>

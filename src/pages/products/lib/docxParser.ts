@@ -4,11 +4,11 @@ import { paginateHtmlByA4Height } from "./a4Paginator";
 
 /**
  * High-Fidelity DOCX Parser.
- * - Extracts 100% of images directly from the Word document.
- * - Accurately uses the 2nd image (Gesrest Logo) for the top-right header across all pages.
- * - Positions the 1st image (Mr. Soft) at the bottom-left and 3rd image (G Watermark) as 2/3 cover background.
- * - Preserves all body images (CEO signature, screenshots, diagrams) in their exact locations.
- * - Formats all tables into clean 2-column tables with coral headers (#eb5454).
+ * Accurately maps the 3 Word images to their real positions:
+ * - Image 2: Gesrest Logo (Top-Right of Cover with 64px height, and Top-Right of all other pages with 40px height).
+ * - Image 1: Mr. Soft Logo (Bottom-Left of Cover with 48px height, on top of the G watermark).
+ * - Image 3: G Watermark (Left 68% width background of Cover).
+ * - Removes all 3 cover images from the subsequent pages body so they never spill into Page 2.
  */
 export async function parseDocxFileToHtml(
   file: File,
@@ -78,15 +78,15 @@ export async function parseDocxFileToHtml(
   const container = document.createElement("div");
   container.innerHTML = rawHtml;
 
-  // Identify images from Word:
-  // Image 1: Mr. Soft Development
-  // Image 2: Gesrest - Tu restaurante digital (The official Gesrest logo!)
-  // Image 3: G watermark
-  const mrSoftLogoSrc = zipImages.length > 0 ? zipImages[0].src : "";
-  const gesrestLogoSrc = zipImages.length > 1 ? zipImages[1].src : (zipImages[0]?.src || "");
-  const watermarkImgSrc = zipImages.length > 2 ? zipImages[2].src : "/fondo_gesrest.png";
+  // Exact image mapping from Word:
+  // Image 1 = Mr. Soft Logo (celeste)
+  // Image 2 = Gesrest Logo (red/coral)
+  // Image 3 = G Watermark
+  const mrSoftLogoSrc = zipImages[0]?.src || "";
+  const gesrestLogoSrc = zipImages[1]?.src || zipImages[0]?.src || "";
+  const watermarkImgSrc = zipImages[2]?.src || zipImages[0]?.src || "";
 
-  // Remove the cover logos (first 3 images) from content body so they don't appear in the middle of page 2
+  // Completely remove all 3 cover images from the content body so they never spill into Page 2
   const coverSrcs = [mrSoftLogoSrc, gesrestLogoSrc, watermarkImgSrc].filter(Boolean);
   container.querySelectorAll("img").forEach((img) => {
     if (coverSrcs.includes(img.src)) {
@@ -99,7 +99,7 @@ export async function parseDocxFileToHtml(
     }
   });
 
-  // Style all remaining body images (CEO signature, screenshots, diagrams)
+  // Style all body images (CEO signature, screenshots, diagrams)
   container.querySelectorAll("img").forEach((img) => {
     img.setAttribute(
       "style",
@@ -198,14 +198,14 @@ export async function parseDocxFileToHtml(
     p.setAttribute("style", "margin: 0 0 6px 0; line-height: 1.55; font-size: 12.5px;");
   });
 
-  // 4. Build Page 1 (Cover Page) with 2/3 width background and positioned logos from Word
+  // 4. Build Page 1 (Cover Page) with 2/3 width G watermark, Gesrest logo (top right), and Mr. Soft (bottom left)
   const page1Html = `
 <div style="position: absolute; top: 0; left: 0; bottom: 0; width: 68%; height: 100%; pointer-events: none; z-index: 0;">
   <img src="${watermarkImgSrc || '/fondo_gesrest.png'}" alt="Fondo Gesrest" style="width: 100%; height: 100%; object-fit: contain; object-position: left center;" />
 </div>
 
 <div style="position: relative; z-index: 1; padding: 20px; min-height: 980px;">
-  <!-- Logo de Gesrest (Grande del Word: Imagen 2) y Contacto Superior Derecho -->
+  <!-- Logo de Gesrest (Imagen 2 del Word) y Contacto Superior Derecho -->
   <div style="text-align: right; margin-top: 50px; margin-right: 15px;">
     ${
       gesrestLogoSrc
@@ -218,7 +218,7 @@ export async function parseDocxFileToHtml(
     </div>
   </div>
 
-  <!-- Logo Mr. Soft (Imagen 1 del Word) en Esquina Inferior Izquierda -->
+  <!-- Logo Mr. Soft (Imagen 1 del Word: celeste) en Esquina Inferior Izquierda encima de la G -->
   <div style="position: absolute; bottom: 45px; left: 30px; z-index: 1;">
     ${
       mrSoftLogoSrc
@@ -241,7 +241,7 @@ export async function parseDocxFileToHtml(
 <div style="float: right; text-align: right; margin-bottom: 20px; clear: right;">
   ${
     gesrestLogoSrc
-      ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="max-height: 42px; width: auto; display: inline-block;" />`
+      ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="max-height: 40px; width: auto; display: inline-block;" />`
       : `<span style="font-size: 16px; font-weight: 700; color: #eb5454;">GESREST</span><br><span style="font-size: 9.5px; color: #888;">Tu restaurante digital</span>`
   }
 </div>

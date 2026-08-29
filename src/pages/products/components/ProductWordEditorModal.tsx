@@ -19,7 +19,10 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  ChevronLeft,
+  ChevronRight,
   Columns,
+  Copy,
   Eye,
   FileSpreadsheet,
   Heading1,
@@ -32,8 +35,8 @@ import {
   List,
   ListOrdered,
   Loader2,
-  Minus,
   Palette,
+  Plus,
   Redo,
   RefreshCw,
   RemoveFormatting,
@@ -62,7 +65,7 @@ import {
   updateProductFormatoAlta,
 } from "../lib/product.actions";
 import { ProductResource } from "../lib/product.interface";
-import { generateDefaultGesrestHtml } from "../lib/defaultGesrestHtml";
+import { getDefaultGesrestPages } from "../lib/defaultGesrestHtml";
 import { parseDocxFileToHtml } from "../lib/docxParser";
 
 interface Props {
@@ -80,6 +83,10 @@ export default function ProductWordEditorModal({
   const [saving, setSaving] = useState(false);
   const [importingDocx, setImportingDocx] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Array of individual A4 pages
+  const [pages, setPages] = useState<string[]>([]);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
 
   const editor = useEditor({
     extensions: [
@@ -112,44 +119,124 @@ export default function ProductWordEditorModal({
     content: "",
   });
 
+  // Extract pages from raw saved html or use defaults
+  const extractPagesFromHtml = (htmlContent?: string): string[] => {
+    if (!htmlContent || htmlContent.trim() === "") {
+      return getDefaultGesrestPages(product?.nombre || "GESREST");
+    }
+
+    // Check if contains .a4-page-sheet divs
+    const temp = document.createElement("div");
+    temp.innerHTML = htmlContent;
+    const sheets = temp.querySelectorAll(".a4-page-sheet");
+
+    if (sheets.length > 0) {
+      const extracted: string[] = [];
+      sheets.forEach((sheet) => {
+        // Look for page-content or imported-word-page-content or innerHTML
+        const inner =
+          sheet.querySelector(".page-content")?.innerHTML ||
+          sheet.querySelector(".imported-word-page-content")?.innerHTML ||
+          sheet.innerHTML;
+        extracted.push(inner);
+      });
+      return extracted.length > 0 ? extracted : [htmlContent];
+    }
+
+    // If split by page breaks
+    if (htmlContent.includes('<hr class="page-break" />') || htmlContent.includes("<hr>")) {
+      return htmlContent.split(/<hr(?:\s+class="page-break")?\s*\/?>/i).filter((s) => s.trim().length > 0);
+    }
+
+    return [htmlContent];
+  };
+
   useEffect(() => {
     if (open && product && editor) {
       setLoading(true);
       getProductFormatoAlta(product.id)
         .then((res) => {
           const rawFormato = res?.data?.formato_alta;
-          const html = rawFormato?.html_content || generateDefaultGesrestHtml(product.nombre);
-          editor.commands.setContent(html);
+          const initialPages = extractPagesFromHtml(rawFormato?.html_content);
+          setPages(initialPages);
+          setCurrentPageIndex(0);
+          editor.commands.setContent(initialPages[0] || "<p></p>");
         })
         .catch(() => {
-          editor.commands.setContent(generateDefaultGesrestHtml(product.nombre));
+          const defaultPages = getDefaultGesrestPages(product.nombre);
+          setPages(defaultPages);
+          setCurrentPageIndex(0);
+          editor.commands.setContent(defaultPages[0]);
         })
         .finally(() => setLoading(false));
     }
   }, [open, product, editor]);
 
-  const handleSave = async () => {
-    if (!product || !editor) return;
-    setSaving(true);
-    try {
-      const htmlContent = editor.getHTML();
-      await updateProductFormatoAlta(product.id, {
-        html_content: htmlContent,
-      });
-      successToast("Formato de alta guardado exitosamente.");
-    } catch {
-      errorToast("Error al guardar el formato de alta.");
-    } finally {
-      setSaving(false);
-    }
+  // Sync current editor changes into pages state before changing page or saving
+  const syncCurrentPage = (): string[] => {
+    if (!editor) return pages;
+    const currentHtml = editor.getHTML();
+    const updated = [...pages];
+    updated[currentPageIndex] = currentHtml;
+    setPages(updated);
+    return updated;
   };
 
-  const handleResetTemplate = () => {
-    if (!product || !editor) return;
-    if (confirm("¿Deseas restablecer la plantilla con el diseño base de Gesrest? Los cambios actuales no guardados se reemplazarán.")) {
-      editor.commands.setContent(generateDefaultGesrestHtml(product.nombre));
-      successToast("Plantilla base restablecida.");
+  const handleSelectPage = (targetIdx: number) => {
+    if (!editor || targetIdx === currentPageIndex || targetIdx < 0 || targetIdx >= pages.length) return;
+    const updatedPages = syncCurrentPage();
+    setCurrentPageIndex(targetIdx);
+    editor.commands.setContent(updatedPages[targetIdx] || "<p></p>");
+  };
+
+  const handleAddPage = () => {
+    if (!editor) return;
+    const updated = syncCurrentPage();
+    const newPageContent = `
+<div style="text-align: right; margin-bottom: 25px;">
+  <span style="font-size: 16px; font-weight: 700; color: #eb5454;">${product?.nombre || "PRODUCTO"}</span><br>
+  <span style="font-size: 10px; color: #888;">Tu restaurante digital</span>
+</div>
+<h2 style="color: #eb5454; font-size: 16px; font-weight: 700; text-transform: uppercase; margin-bottom: 16px;">NUEVA SECCIÓN</h2>
+<p style="font-size: 12px; line-height: 1.6;">Escribe aquí el contenido de esta nueva página...</p>
+`;
+    const newPagesList = [...updated, newPageContent];
+    const newIdx = newPagesList.length - 1;
+    setPages(newPagesList);
+    setCurrentPageIndex(newIdx);
+    editor.commands.setContent(newPageContent);
+    successToast(`Página ${newPagesList.length} agregada.`);
+  };
+
+  const handleDuplicatePage = () => {
+    if (!editor) return;
+    const updated = syncCurrentPage();
+    const currentContent = updated[currentPageIndex];
+    const newPagesList = [
+      ...updated.slice(0, currentPageIndex + 1),
+      currentContent,
+      ...updated.slice(currentPageIndex + 1),
+    ];
+    setPages(newPagesList);
+    setCurrentPageIndex(currentPageIndex + 1);
+    editor.commands.setContent(currentContent);
+    successToast(`Página duplicada exitosamente.`);
+  };
+
+  const handleDeletePage = () => {
+    if (pages.length <= 1) {
+      errorToast("El documento debe tener al menos una página.");
+      return;
     }
+    if (!confirm(`¿Eliminar la Página ${currentPageIndex + 1}?`)) return;
+
+    const updated = [...pages];
+    updated.splice(currentPageIndex, 1);
+    const newIdx = Math.max(0, currentPageIndex - 1);
+    setPages(updated);
+    setCurrentPageIndex(newIdx);
+    editor?.commands.setContent(updated[newIdx] || "<p></p>");
+    successToast(`Página eliminada.`);
   };
 
   const handleDocxUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,9 +250,15 @@ export default function ProductWordEditorModal({
 
     setImportingDocx(true);
     try {
-      const html = await parseDocxFileToHtml(file, product.nombre);
-      editor.commands.setContent(html);
-      successToast("Documento Word (.docx) importado con éxito. Todo el contenido es editable.");
+      const fullHtml = await parseDocxFileToHtml(file, product.nombre);
+      const parsedPages = extractPagesFromHtml(fullHtml);
+
+      setPages(parsedPages);
+      setCurrentPageIndex(0);
+      editor.commands.setContent(parsedPages[0] || "<p></p>");
+      successToast(
+        `Documento Word importado con éxito: ${parsedPages.length} página(s) generadas con todas las imágenes y tablas.`
+      );
     } catch (err: any) {
       errorToast(err.message || "Error al procesar el archivo Word.");
     } finally {
@@ -173,6 +266,53 @@ export default function ProductWordEditorModal({
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+    }
+  };
+
+  const handleResetTemplate = () => {
+    if (!product || !editor) return;
+    if (confirm("¿Deseas restablecer la plantilla con las 8 páginas originales de Gesrest?")) {
+      const defaultPages = getDefaultGesrestPages(product.nombre);
+      setPages(defaultPages);
+      setCurrentPageIndex(0);
+      editor.commands.setContent(defaultPages[0]);
+      successToast("Plantilla base de 8 páginas restablecida.");
+    }
+  };
+
+  const handleSave = async () => {
+    if (!product || !editor) return;
+    setSaving(true);
+    try {
+      const updatedPages = syncCurrentPage();
+      const total = updatedPages.length;
+
+      // Wrap all pages into .a4-page-sheet containers
+      const combinedHtml = updatedPages
+        .map(
+          (content, idx) => `
+<div class="a4-page-sheet" style="min-height: 1050px; position: relative; padding: 50px; background: #ffffff; margin: 0 auto 30px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.12); page-break-after: always; box-sizing: border-box;">
+  <div class="page-content" style="font-size: 12px; line-height: 1.5; color: #1a1a1a;">
+    ${content}
+  </div>
+  <div style="position: absolute; bottom: 35px; left: 50px; right: 50px; border-top: 1px solid #ddd; padding-top: 6px; font-size: 10px; color: #777;">
+    <span style="float: left;">Un producto de Mr. Soft</span>
+    <span style="float: right;">${idx + 1} / ${total}</span>
+    <div style="clear: both;"></div>
+  </div>
+</div>
+`
+        )
+        .join("\n");
+
+      await updateProductFormatoAlta(product.id, {
+        html_content: combinedHtml,
+      });
+      successToast("Formato de alta guardado exitosamente.");
+    } catch {
+      errorToast("Error al guardar el formato de alta.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -214,9 +354,7 @@ export default function ProductWordEditorModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="w-[96vw] max-w-7xl h-[92vh] max-h-[92vh] p-0 gap-0 overflow-hidden rounded-2xl border shadow-2xl bg-background text-foreground flex flex-col sm:max-w-7xl"
-      >
+      <DialogContent className="w-[96vw] max-w-7xl h-[94vh] max-h-[94vh] p-0 gap-0 overflow-hidden rounded-2xl border shadow-2xl bg-background text-foreground flex flex-col sm:max-w-7xl">
         {/* Input oculto para carga de archivos Word (.docx) */}
         <input
           type="file"
@@ -237,7 +375,7 @@ export default function ProductWordEditorModal({
                 <span>Editor de Formato de Alta: {product?.nombre}</span>
               </DialogTitle>
               <p className="text-xs text-muted-foreground">
-                Editor enriquecido tipo Word con herramientas avanzadas, membretes, tablas y enlaces.
+                Documento paginado en hojas físicas A4 con herramientas de Microsoft Word.
               </p>
             </div>
           </div>
@@ -249,7 +387,7 @@ export default function ProductWordEditorModal({
               size="sm"
               onClick={() => fileInputRef.current?.click()}
               disabled={importingDocx || loading}
-              className="text-xs gap-1.5 h-8 font-semibold text-primary border-primary/40 hover:bg-primary/10"
+              className="text-xs gap-1.5 h-8 font-semibold text-primary border-primary/40 hover:bg-primary/10 shadow-2xs"
             >
               {importingDocx ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -264,10 +402,10 @@ export default function ProductWordEditorModal({
               variant="outline"
               size="sm"
               onClick={handleResetTemplate}
-              className="text-xs gap-1.5 h-8 font-medium"
+              className="text-xs gap-1.5 h-8 font-medium shadow-2xs"
             >
               <RefreshCw className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Restablecer Plantilla</span>
+              <span className="hidden sm:inline">Plantilla Gesrest</span>
             </Button>
 
             <Button
@@ -275,7 +413,7 @@ export default function ProductWordEditorModal({
               variant="outline"
               size="sm"
               onClick={handlePreviewPdf}
-              className="text-xs gap-1.5 h-8 font-semibold hover:bg-primary hover:text-primary-foreground"
+              className="text-xs gap-1.5 h-8 font-semibold hover:bg-primary hover:text-primary-foreground shadow-2xs"
             >
               <Eye className="h-3.5 w-3.5" />
               <span>Ver PDF</span>
@@ -300,28 +438,28 @@ export default function ProductWordEditorModal({
 
         {/* Word Ribbon Toolbar */}
         {editor && (
-          <div className="px-4 py-2 border-b bg-muted/50 dark:bg-zinc-900 flex flex-wrap items-center gap-1.5 shrink-0 select-none">
+          <div className="px-4 py-1.5 border-b bg-muted/60 dark:bg-zinc-900 flex flex-wrap items-center gap-1 shrink-0 select-none">
             {/* Deshacer / Rehacer */}
             <div className="flex items-center gap-0.5 pr-2 border-r border-border">
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={() => editor.chain().focus().undo().run()}
                 disabled={!editor.can().undo()}
               >
-                <Undo className="h-4 w-4" />
+                <Undo className="h-3.5 w-3.5" />
               </Button>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={() => editor.chain().focus().redo().run()}
                 disabled={!editor.can().redo()}
               >
-                <Redo className="h-4 w-4" />
+                <Redo className="h-3.5 w-3.5" />
               </Button>
             </div>
 
@@ -331,7 +469,7 @@ export default function ProductWordEditorModal({
                 type="button"
                 variant={editor.isActive("paragraph") ? "secondary" : "ghost"}
                 size="sm"
-                className="h-8 px-2 text-xs font-semibold"
+                className="h-7 px-2 text-xs font-semibold"
                 onClick={() => editor.chain().focus().setParagraph().run()}
               >
                 Párrafo
@@ -340,28 +478,28 @@ export default function ProductWordEditorModal({
                 type="button"
                 variant={editor.isActive("heading", { level: 1 }) ? "secondary" : "ghost"}
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
               >
-                <Heading1 className="h-4 w-4" />
+                <Heading1 className="h-3.5 w-3.5" />
               </Button>
               <Button
                 type="button"
                 variant={editor.isActive("heading", { level: 2 }) ? "secondary" : "ghost"}
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
               >
-                <Heading2 className="h-4 w-4" />
+                <Heading2 className="h-3.5 w-3.5" />
               </Button>
               <Button
                 type="button"
                 variant={editor.isActive("heading", { level: 3 }) ? "secondary" : "ghost"}
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
               >
-                <Heading3 className="h-4 w-4" />
+                <Heading3 className="h-3.5 w-3.5" />
               </Button>
             </div>
 
@@ -371,37 +509,37 @@ export default function ProductWordEditorModal({
                 type="button"
                 variant={editor.isActive("bold") ? "secondary" : "ghost"}
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={() => editor.chain().focus().toggleBold().run()}
               >
-                <Bold className="h-4 w-4" />
+                <Bold className="h-3.5 w-3.5" />
               </Button>
               <Button
                 type="button"
                 variant={editor.isActive("italic") ? "secondary" : "ghost"}
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={() => editor.chain().focus().toggleItalic().run()}
               >
-                <Italic className="h-4 w-4" />
+                <Italic className="h-3.5 w-3.5" />
               </Button>
               <Button
                 type="button"
                 variant={editor.isActive("underline") ? "secondary" : "ghost"}
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={() => editor.chain().focus().toggleUnderline().run()}
               >
-                <UnderlineIcon className="h-4 w-4" />
+                <UnderlineIcon className="h-3.5 w-3.5" />
               </Button>
               <Button
                 type="button"
                 variant={editor.isActive("strike") ? "secondary" : "ghost"}
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={() => editor.chain().focus().toggleStrike().run()}
               >
-                <Strikethrough className="h-4 w-4" />
+                <Strikethrough className="h-3.5 w-3.5" />
               </Button>
             </div>
 
@@ -409,7 +547,7 @@ export default function ProductWordEditorModal({
             <div className="flex items-center gap-1 pr-2 border-r border-border">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs gap-1">
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1">
                     <Palette className="h-3.5 w-3.5 text-primary" />
                     <span>Color</span>
                   </Button>
@@ -439,7 +577,7 @@ export default function ProductWordEditorModal({
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs gap-1">
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1">
                     <Highlighter className="h-3.5 w-3.5 text-amber-500" />
                     <span>Resaltar</span>
                   </Button>
@@ -479,37 +617,37 @@ export default function ProductWordEditorModal({
                 type="button"
                 variant={editor.isActive({ textAlign: "left" }) ? "secondary" : "ghost"}
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={() => editor.chain().focus().setTextAlign("left").run()}
               >
-                <AlignLeft className="h-4 w-4" />
+                <AlignLeft className="h-3.5 w-3.5" />
               </Button>
               <Button
                 type="button"
                 variant={editor.isActive({ textAlign: "center" }) ? "secondary" : "ghost"}
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={() => editor.chain().focus().setTextAlign("center").run()}
               >
-                <AlignCenter className="h-4 w-4" />
+                <AlignCenter className="h-3.5 w-3.5" />
               </Button>
               <Button
                 type="button"
                 variant={editor.isActive({ textAlign: "right" }) ? "secondary" : "ghost"}
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={() => editor.chain().focus().setTextAlign("right").run()}
               >
-                <AlignRight className="h-4 w-4" />
+                <AlignRight className="h-3.5 w-3.5" />
               </Button>
               <Button
                 type="button"
                 variant={editor.isActive({ textAlign: "justify" }) ? "secondary" : "ghost"}
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={() => editor.chain().focus().setTextAlign("justify").run()}
               >
-                <AlignJustify className="h-4 w-4" />
+                <AlignJustify className="h-3.5 w-3.5" />
               </Button>
             </div>
 
@@ -519,19 +657,19 @@ export default function ProductWordEditorModal({
                 type="button"
                 variant={editor.isActive("bulletList") ? "secondary" : "ghost"}
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={() => editor.chain().focus().toggleBulletList().run()}
               >
-                <List className="h-4 w-4" />
+                <List className="h-3.5 w-3.5" />
               </Button>
               <Button
                 type="button"
                 variant={editor.isActive("orderedList") ? "secondary" : "ghost"}
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={() => editor.chain().focus().toggleOrderedList().run()}
               >
-                <ListOrdered className="h-4 w-4" />
+                <ListOrdered className="h-3.5 w-3.5" />
               </Button>
             </div>
 
@@ -539,7 +677,7 @@ export default function ProductWordEditorModal({
             <div className="flex items-center gap-1 pr-2 border-r border-border">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs gap-1 font-medium">
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 font-medium">
                     <TableIcon className="h-3.5 w-3.5 text-primary" />
                     <span>Tabla</span>
                   </Button>
@@ -577,181 +715,210 @@ export default function ProductWordEditorModal({
                 type="button"
                 variant={editor.isActive("link") ? "secondary" : "ghost"}
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={setLink}
               >
-                <LinkIcon className="h-4 w-4" />
+                <LinkIcon className="h-3.5 w-3.5" />
               </Button>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={addImage}
               >
-                <ImageIcon className="h-4 w-4" />
+                <ImageIcon className="h-3.5 w-3.5" />
               </Button>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
-                onClick={() => editor.chain().focus().setHorizontalRule().run()}
-                title="Salto de página / Línea"
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground"
+                className="h-7 w-7 text-muted-foreground"
                 onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()}
                 title="Limpiar Formato"
               >
-                <RemoveFormatting className="h-4 w-4" />
-              </Button>
-
-              <div className="h-4 w-px bg-border mx-1" />
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 px-2.5 text-xs font-semibold gap-1.5 bg-background shadow-2xs hover:bg-primary/10 hover:text-primary"
-                onClick={() => {
-                  editor.chain().focus().insertContent(`
-                    <div class="a4-page-sheet" style="min-height: 1050px; position: relative; padding: 50px; background: #ffffff; margin: 0 auto 30px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.12); page-break-after: always;">
-                      <div style="text-align: right; margin-bottom: 25px;">
-                        <span style="font-size: 16px; font-weight: 700; color: #eb5454;">${product?.nombre || "PRODUCTO"}</span><br>
-                        <span style="font-size: 10px; color: #888;">Tu restaurante digital</span>
-                      </div>
-                      <h2 style="color: #eb5454; font-size: 15px; font-weight: 700; text-transform: uppercase; margin-bottom: 16px;">NUEVA SECCIÓN</h2>
-                      <p style="font-size: 12px; line-height: 1.6;">Escribe el contenido de esta nueva página aquí...</p>
-                      <div style="position: absolute; bottom: 35px; left: 50px; right: 50px; border-top: 1px solid #ddd; padding-top: 6px; font-size: 10px; color: #777;">
-                        <span style="float: left;">Un producto de Mr. Soft</span>
-                        <span style="float: right;">Página</span>
-                        <div style="clear: both;"></div>
-                      </div>
-                    </div>
-                  `).run();
-                  successToast("Nueva hoja A4 insertada.");
-                }}
-              >
-                <FileSpreadsheet className="h-3.5 w-3.5 text-primary" />
-                <span>+ Nueva Hoja A4</span>
+                <RemoveFormatting className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>
         )}
 
-        {/* Word Document Canvas (Fondo de Escritorio con Hojas A4 Paginadas) */}
-        <div className="flex-1 overflow-y-auto bg-zinc-200/90 dark:bg-zinc-950 p-4 sm:p-8 flex flex-col items-center">
-          {loading ? (
-            <div className="flex min-h-[400px] flex-col items-center justify-center gap-2 text-muted-foreground">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="text-sm font-medium">Cargando documento paginado en el editor...</span>
+        {/* Page Navigator Strip (Selector de Páginas A4) */}
+        <div className="px-4 py-2 border-b bg-muted/80 dark:bg-zinc-900/90 flex items-center justify-between gap-2 overflow-x-auto shrink-0 select-none">
+          <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 pr-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-7 w-7 shrink-0"
+              disabled={currentPageIndex === 0}
+              onClick={() => handleSelectPage(currentPageIndex - 1)}
+              title="Página Anterior"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+
+            {pages.map((_, idx) => (
+              <Button
+                key={idx}
+                type="button"
+                variant={idx === currentPageIndex ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleSelectPage(idx)}
+                className={`h-7 px-3 text-xs font-semibold shrink-0 transition-all ${
+                  idx === currentPageIndex
+                    ? "bg-primary text-primary-foreground shadow-xs ring-2 ring-primary/30"
+                    : "bg-background hover:bg-muted text-muted-foreground"
+                }`}
+              >
+                <span>Pág. {idx + 1}</span>
+              </Button>
+            ))}
+
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-7 w-7 shrink-0"
+              disabled={currentPageIndex === pages.length - 1}
+              onClick={() => handleSelectPage(currentPageIndex + 1)}
+              title="Página Siguiente"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0 pl-2 border-l border-border">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAddPage}
+              className="h-7 px-2.5 text-xs font-medium gap-1 text-primary hover:bg-primary/10 shadow-2xs"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>+ Agregar Página</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={handleDuplicatePage}
+              title="Duplicar esta página"
+              className="h-7 w-7 text-muted-foreground"
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={handleDeletePage}
+              title="Eliminar esta página"
+              className="h-7 w-7 text-destructive hover:bg-destructive/10"
+              disabled={pages.length <= 1}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Word Document Canvas (Mesa de Trabajo Gris de Oficina con Hoja A4 Centrada) */}
+        <div
+          className="flex-1 overflow-y-auto p-4 sm:p-10 flex flex-col items-center justify-start"
+          style={{ backgroundColor: "#525659" }}
+        >
+          {loading || importingDocx ? (
+            <div className="flex min-h-[450px] flex-col items-center justify-center gap-3 text-white">
+              <Loader2 className="h-10 w-10 animate-spin text-white" />
+              <span className="text-sm font-semibold tracking-wide">
+                {importingDocx
+                  ? "Procesando documento Word, extrayendo imágenes y paginando..."
+                  : "Cargando página A4 en el editor..."}
+              </span>
             </div>
           ) : (
-            <div className="w-full max-w-[860px] flex flex-col items-center focus:outline-none">
-              <style>{`
-                .ProseMirror {
-                  outline: none;
-                  width: 100%;
-                  font-family: Arial, Helvetica, sans-serif;
-                  font-size: 13.5px;
-                  line-height: 1.5;
-                  color: #1a1a1a;
-                }
-                .ProseMirror .a4-page-sheet {
-                  width: 794px;
-                  max-width: 100%;
-                  min-height: 1123px;
-                  background-color: #ffffff !important;
-                  color: #1a1a1a !important;
-                  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.18), 0 2px 6px -1px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.06);
-                  border-radius: 3px;
-                  padding: 50px 55px;
-                  margin-bottom: 32px;
-                  position: relative;
-                  box-sizing: border-box;
-                  page-break-after: always;
-                  transition: all 0.15s ease-in-out;
-                }
-                .ProseMirror .a4-page-sheet:hover,
-                .ProseMirror .a4-page-sheet:focus-within {
-                  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.26), 0 4px 10px -2px rgba(0, 0, 0, 0.12), 0 0 0 1.5px #eb5454;
-                }
-                .ProseMirror table {
-                  border-collapse: collapse;
-                  table-layout: fixed;
-                  width: 100%;
-                  margin: 14px 0;
-                  overflow: hidden;
-                }
-                .ProseMirror td, .ProseMirror th {
-                  min-width: 1em;
-                  border: 1px solid #d1d5db;
-                  padding: 7px 10px;
-                  vertical-align: top;
-                  box-sizing: border-box;
-                  position: relative;
-                }
-                .ProseMirror th {
-                  font-weight: bold;
-                  text-align: center;
-                  background-color: #eb5454 !important;
-                  color: #ffffff !important;
-                }
-                .ProseMirror .selectedCell:after {
-                  z-index: 2;
-                  position: absolute;
-                  content: "";
-                  left: 0; right: 0; top: 0; bottom: 0;
-                  background: rgba(235, 84, 84, 0.15);
-                  pointer-events: none;
-                }
-                .ProseMirror a {
-                  color: #eb5454;
-                  text-decoration: underline;
-                }
-                .ProseMirror h1, .ProseMirror h2, .ProseMirror h3 {
-                  color: #eb5454;
-                  margin-top: 0;
-                }
-                .ProseMirror p {
-                  margin: 0 0 8px 0;
-                }
-                .ProseMirror img {
-                  max-width: 100%;
-                  height: auto;
-                  border-radius: 4px;
-                  margin: 8px auto;
-                  display: inline-block;
-                }
-                .ProseMirror .imported-word-page-content table {
-                  width: 100%;
-                  border-collapse: collapse;
-                  margin: 12px 0;
-                }
-                .ProseMirror .imported-word-page-content td,
-                .ProseMirror .imported-word-page-content th {
-                  border: 1px solid #ddd;
-                  padding: 6px 10px;
-                }
-                .ProseMirror .docx-wrapper {
-                  background: transparent !important;
-                  padding: 0 !important;
-                }
-                .ProseMirror section.docx,
-                .ProseMirror article.docx {
-                  background-color: #ffffff !important;
-                  color: #1a1a1a !important;
-                  margin-bottom: 24px !important;
-                  box-sizing: border-box !important;
-                }
-              `}</style>
-              <EditorContent editor={editor} className="w-full flex justify-center" />
+            <div className="w-full flex flex-col items-center focus:outline-none">
+              {/* Hoja Física A4 con Dimensiones y Sombra Realista */}
+              <div
+                className="w-full max-w-[800px] min-h-[1060px] bg-white text-zinc-900 rounded-sm shadow-2xl relative transition-all"
+                style={{
+                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.2)",
+                  padding: "50px 60px 65px 60px",
+                  boxSizing: "border-box",
+                }}
+              >
+                <style>{`
+                  .ProseMirror {
+                    outline: none;
+                    min-height: 900px;
+                    font-family: Arial, Helvetica, sans-serif;
+                    font-size: 13px;
+                    line-height: 1.55;
+                    color: #111827 !important;
+                  }
+                  .ProseMirror table {
+                    border-collapse: collapse;
+                    table-layout: fixed;
+                    width: 100%;
+                    margin: 14px 0;
+                  }
+                  .ProseMirror td, .ProseMirror th {
+                    min-width: 1em;
+                    border: 1px solid #d1d5db;
+                    padding: 7px 10px;
+                    vertical-align: top;
+                    box-sizing: border-box;
+                    color: #111827 !important;
+                  }
+                  .ProseMirror th {
+                    font-weight: bold;
+                    text-align: center;
+                    background-color: #eb5454 !important;
+                    color: #ffffff !important;
+                  }
+                  .ProseMirror .selectedCell:after {
+                    z-index: 2;
+                    position: absolute;
+                    content: "";
+                    left: 0; right: 0; top: 0; bottom: 0;
+                    background: rgba(235, 84, 84, 0.15);
+                    pointer-events: none;
+                  }
+                  .ProseMirror a {
+                    color: #eb5454;
+                    text-decoration: underline;
+                  }
+                  .ProseMirror h1, .ProseMirror h2, .ProseMirror h3 {
+                    color: #eb5454;
+                    margin-top: 0;
+                  }
+                  .ProseMirror img {
+                    max-width: 100%;
+                    height: auto;
+                    border-radius: 4px;
+                    margin: 12px auto;
+                    display: block;
+                  }
+                  .ProseMirror p {
+                    margin: 0 0 8px 0;
+                    color: #111827 !important;
+                  }
+                `}</style>
+                <EditorContent editor={editor} />
+
+                {/* Pie de Página Fijo en la Hoja A4 */}
+                <div
+                  className="absolute bottom-6 left-14 right-14 border-t border-zinc-200 pt-2 text-[10px] text-zinc-500 flex items-center justify-between select-none pointer-events-none"
+                >
+                  <span>Un producto de Mr. Soft</span>
+                  <span className="font-semibold">
+                    Página {currentPageIndex + 1} de {pages.length}
+                  </span>
+                </div>
+              </div>
             </div>
           )}
         </div>

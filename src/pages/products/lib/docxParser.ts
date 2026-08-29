@@ -4,25 +4,25 @@ import JSZip from "jszip";
 
 export async function parseDocxFileToHtml(
   file: File,
-  _productName: string = "PRODUCTO"
+  productName: string = "PRODUCTO"
 ): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
 
-  // Primary Engine: docx-preview with inWrapper: true (Preserves 100% exact Word geometry, watermarks, shapes, positions)
+  // Try high-fidelity rendering with docx-preview in an attached DOM element
   try {
-    const tempContainer = document.createElement("div");
-    tempContainer.style.position = "fixed";
-    tempContainer.style.left = "-9999px";
-    tempContainer.style.top = "-9999px";
-    tempContainer.style.width = "850px";
-    tempContainer.style.opacity = "0";
-    tempContainer.style.pointerEvents = "none";
-    document.body.appendChild(tempContainer);
+    const tempWrapper = document.createElement("div");
+    tempWrapper.style.position = "fixed";
+    tempWrapper.style.left = "-9999px";
+    tempWrapper.style.top = "-9999px";
+    tempWrapper.style.width = "800px";
+    tempWrapper.style.opacity = "0";
+    tempWrapper.style.pointerEvents = "none";
+    document.body.appendChild(tempWrapper);
 
     try {
-      await docx.renderAsync(arrayBuffer, tempContainer, undefined, {
-        className: "docx-page-rendered",
-        inWrapper: true,
+      await docx.renderAsync(arrayBuffer, tempWrapper, undefined, {
+        className: "docx-doc-page",
+        inWrapper: false,
         ignoreWidth: false,
         ignoreHeight: false,
         ignoreFonts: false,
@@ -34,7 +34,7 @@ export async function parseDocxFileToHtml(
         renderEndnotes: true,
       });
 
-      // Extract all media files from ZIP to guarantee all image src are valid base64
+      // Extract all media files from ZIP to ensure no image is left as relative URL
       try {
         const zip = await JSZip.loadAsync(arrayBuffer);
         const mediaFiles = Object.keys(zip.files).filter(
@@ -55,7 +55,7 @@ export async function parseDocxFileToHtml(
           imageMap[fileName] = `data:${mime};base64,${base64}`;
         }
 
-        const imgs = tempContainer.querySelectorAll("img");
+        const imgs = tempWrapper.querySelectorAll("img");
         imgs.forEach((img) => {
           const src = img.getAttribute("src");
           if (src && !src.startsWith("data:")) {
@@ -66,25 +66,37 @@ export async function parseDocxFileToHtml(
               img.setAttribute("src", imageMap[matchingKey]);
             }
           }
+          img.style.maxWidth = "100%";
+          img.style.height = "auto";
+          img.style.display = "block";
+          img.style.margin = "10px auto";
         });
       } catch (zipErr) {
         console.warn("Could not inspect zip media:", zipErr);
       }
 
-      // Collect all sections / pages rendered by docx-preview
-      const sections = tempContainer.querySelectorAll("section.docx, section.docx-page-rendered, .docx-wrapper > section");
+      const sections = tempWrapper.querySelectorAll(
+        "section, article, .docx-wrapper > section"
+      );
 
       if (sections.length > 0) {
         let resultHtml = "";
-        sections.forEach((sec) => {
+        sections.forEach((sec, idx) => {
           const content = sec.innerHTML;
           if (content.trim().length > 0) {
-            // Keep inline styles from docx-preview section (padding, margins, backgrounds)
-            const styleAttr = sec.getAttribute("style") || "";
             resultHtml += `
-<div class="a4-page-sheet" style="min-height: 1050px; position: relative; padding: 45px 50px; background: #ffffff; margin: 0 auto 30px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.12); page-break-after: always; box-sizing: border-box; ${styleAttr}">
-  <div class="imported-word-page-content">
+<div class="a4-page-sheet" style="min-height: 1050px; position: relative; padding: 50px; background: #ffffff; margin: 0 auto 30px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.12); page-break-after: always; box-sizing: border-box;">
+  <div style="text-align: right; margin-bottom: 20px;">
+    <span style="font-size: 15px; font-weight: 700; color: #eb5454;">${productName}</span><br>
+    <span style="font-size: 10px; color: #888;">Formato de Alta de Servicio</span>
+  </div>
+  <div class="imported-word-page-content" style="font-size: 12px; line-height: 1.5; color: #1a1a1a;">
     ${content}
+  </div>
+  <div style="position: absolute; bottom: 35px; left: 50px; right: 50px; border-top: 1px solid #ddd; padding-top: 6px; font-size: 10px; color: #777;">
+    <span style="float: left;">Un producto de Mr. Soft</span>
+    <span style="float: right;">${idx + 1} / ${sections.length}</span>
+    <div style="clear: both;"></div>
   </div>
 </div>
 `;
@@ -95,27 +107,23 @@ export async function parseDocxFileToHtml(
           return resultHtml;
         }
       }
-
-      const wrapper = tempContainer.querySelector(".docx-wrapper");
-      if (wrapper && wrapper.innerHTML.trim().length > 0) {
-        return wrapper.innerHTML;
-      }
     } finally {
-      if (tempContainer.parentNode) {
-        tempContainer.parentNode.removeChild(tempContainer);
+      if (tempWrapper.parentNode) {
+        tempWrapper.parentNode.removeChild(tempWrapper);
       }
     }
   } catch (docxErr) {
-    console.warn("docx-preview failed, using Mammoth inline converter:", docxErr);
+    console.warn("docx-preview failed, falling back to Mammoth + JSZip:", docxErr);
   }
 
-  // Secondary Engine: Mammoth with strict inline base64 image converter (NO image dumping)
+  // Robust fallback with Mammoth and base64 image extraction
   const mammothOptions = {
     convertImage: mammoth.images.imgElement(function (image: any) {
       return image.read("base64").then(function (imageBuffer: string) {
         return {
           src: `data:${image.contentType};base64,${imageBuffer}`,
-          style: "max-width: 100%; height: auto; display: inline-block; margin: 8px 0;",
+          style:
+            "max-width: 100%; height: auto; margin: 12px auto; display: block; border-radius: 4px;",
         };
       });
     }),
@@ -131,13 +139,48 @@ export async function parseDocxFileToHtml(
   };
 
   const mammothResult = await mammoth.convertToHtml({ arrayBuffer }, mammothOptions);
-  const html = mammothResult.value;
+  let html = mammothResult.value;
 
   if (!html || html.trim() === "") {
     throw new Error("El archivo Word está vacío o no se pudo extraer contenido.");
   }
 
-  // Split into pages by page-break tags or headings
+  // Also extract any media files from ZIP that were not in inline text (e.g. watermarks / header logos)
+  try {
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    const mediaFiles = Object.keys(zip.files).filter(
+      (path) => path.startsWith("word/media/") && !zip.files[path].dir
+    );
+
+    const allExtractedImgs: string[] = [];
+    for (const path of mediaFiles) {
+      const fileName = path.split("/").pop() || "";
+      const base64 = await zip.files[path].async("base64");
+      const ext = fileName.split(".").pop()?.toLowerCase() || "png";
+      const mime =
+        ext === "jpg" || ext === "jpeg"
+          ? "image/jpeg"
+          : ext === "png"
+          ? "image/png"
+          : "image/" + ext;
+      const dataUrl = `data:${mime};base64,${base64}`;
+
+      // If this image is not already in the mammoth HTML, prepend or store it
+      if (!html.includes(base64.substring(0, 40))) {
+        allExtractedImgs.push(
+          `<img src="${dataUrl}" alt="${fileName}" style="max-width: 100%; height: auto; margin: 12px auto; display: block; border-radius: 4px;" />`
+        );
+      }
+    }
+
+    if (allExtractedImgs.length > 0) {
+      html = `<div style="text-align: center; margin-bottom: 20px;">${allExtractedImgs.join("")}</div>` + html;
+    }
+  } catch (zipErr) {
+    console.warn("Could not check zip for extra media:", zipErr);
+  }
+
+  // Split into pages
   let pageBlocks: string[] = [];
   if (
     html.includes('<hr class="page-break" />') ||
@@ -167,12 +210,24 @@ export async function parseDocxFileToHtml(
     pageBlocks = [html];
   }
 
+  const totalPages = pageBlocks.length;
   return pageBlocks
-    .map((content) => {
+    .map((content, idx) => {
       return `
 <div class="a4-page-sheet" style="min-height: 1050px; position: relative; padding: 50px; background: #ffffff; margin: 0 auto 30px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.12); page-break-after: always; box-sizing: border-box;">
+  <div style="text-align: right; margin-bottom: 20px;">
+    <span style="font-size: 15px; font-weight: 700; color: #eb5454;">${productName}</span><br>
+    <span style="font-size: 10px; color: #888;">Formato de Alta de Servicio</span>
+  </div>
+
   <div class="imported-word-page-content" style="font-size: 12px; line-height: 1.5; color: #1a1a1a;">
     ${content}
+  </div>
+
+  <div style="position: absolute; bottom: 35px; left: 50px; right: 50px; border-top: 1px solid #ddd; padding-top: 6px; font-size: 10px; color: #777;">
+    <span style="float: left;">Un producto de Mr. Soft</span>
+    <span style="float: right;">${idx + 1} / ${totalPages}</span>
+    <div style="clear: both;"></div>
   </div>
 </div>
 `;

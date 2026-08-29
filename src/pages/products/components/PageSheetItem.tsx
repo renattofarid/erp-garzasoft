@@ -1,5 +1,16 @@
-import React, { useEffect, useRef } from "react";
-import { Copy, Plus, Trash2 } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  ArrowLeftRight,
+  Copy,
+  Maximize2,
+  Minimize2,
+  Plus,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface PageSheetItemProps {
@@ -27,21 +38,159 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
 }) => {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const isUpdatingFromParent = useRef(false);
+  const imageReplaceInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Synchronize incoming content from parent (e.g. on file upload or reset)
+  const [selectedImg, setSelectedImg] = useState<HTMLImageElement | null>(null);
+  const [imgToolbarPos, setImgToolbarPos] = useState<{ top: number; left: number } | null>(null);
+
+  // Synchronize incoming content from parent
   useEffect(() => {
     if (contentRef.current && contentRef.current.innerHTML !== content) {
       isUpdatingFromParent.current = true;
       contentRef.current.innerHTML = content || "<p></p>";
       isUpdatingFromParent.current = false;
+      attachImageHandlers();
     }
   }, [content]);
+
+  // Attach Drag & Drop + Click listeners to all images in this sheet
+  const attachImageHandlers = () => {
+    if (!contentRef.current) return;
+    const imgs = contentRef.current.querySelectorAll("img");
+
+    imgs.forEach((img) => {
+      img.setAttribute("draggable", "true");
+      img.style.cursor = "grab";
+
+      img.onclick = (e) => {
+        e.stopPropagation();
+        setSelectedImg(img);
+        updateToolbarPos(img);
+      };
+
+      img.ondragstart = (e) => {
+        e.dataTransfer?.setData("text/plain", img.src);
+        (window as any).__draggedDocxImg = img;
+        img.style.opacity = "0.5";
+      };
+
+      img.ondragend = () => {
+        img.style.opacity = "1";
+        (window as any).__draggedDocxImg = null;
+      };
+
+      img.ondragover = (e) => {
+        e.preventDefault();
+        img.style.outline = "3px dashed #eb5454";
+        img.style.outlineOffset = "4px";
+      };
+
+      img.ondragleave = () => {
+        img.style.outline = "";
+        img.style.outlineOffset = "";
+      };
+
+      img.ondrop = (e) => {
+        e.preventDefault();
+        img.style.outline = "";
+        img.style.outlineOffset = "";
+
+        const sourceImg = (window as any).__draggedDocxImg as HTMLImageElement | null;
+        if (sourceImg && sourceImg !== img) {
+          // SWAP IMAGES
+          const tempSrc = img.src;
+          const tempAlt = img.alt;
+          const tempStyle = img.getAttribute("style") || "";
+
+          img.src = sourceImg.src;
+          img.alt = sourceImg.alt;
+          if (sourceImg.getAttribute("style")) {
+            img.setAttribute("style", sourceImg.getAttribute("style") || "");
+          }
+
+          sourceImg.src = tempSrc;
+          sourceImg.alt = tempAlt;
+          if (tempStyle) {
+            sourceImg.setAttribute("style", tempStyle);
+          }
+
+          handleInput();
+        }
+      };
+    });
+  };
+
+  const updateToolbarPos = (img: HTMLImageElement) => {
+    const sheetEl = document.getElementById(`page-sheet-${pageIndex}`);
+    if (!sheetEl) return;
+    const sheetRect = sheetEl.getBoundingClientRect();
+    const imgRect = img.getBoundingClientRect();
+
+    setImgToolbarPos({
+      top: imgRect.top - sheetRect.top - 42,
+      left: Math.max(10, imgRect.left - sheetRect.left + imgRect.width / 2 - 140),
+    });
+  };
 
   const handleInput = () => {
     if (isUpdatingFromParent.current) return;
     if (contentRef.current) {
       onChange(contentRef.current.innerHTML);
+      attachImageHandlers();
     }
+  };
+
+  // Image actions
+  const handleAlign = (alignment: "left" | "center" | "right") => {
+    if (!selectedImg) return;
+    if (alignment === "left") {
+      selectedImg.style.margin = "10px 16px 10px 0";
+      selectedImg.style.float = "left";
+      selectedImg.style.display = "inline-block";
+    } else if (alignment === "right") {
+      selectedImg.style.margin = "10px 0 10px 16px";
+      selectedImg.style.float = "right";
+      selectedImg.style.display = "inline-block";
+    } else {
+      selectedImg.style.margin = "12px auto";
+      selectedImg.style.float = "none";
+      selectedImg.style.display = "block";
+    }
+    handleInput();
+    updateToolbarPos(selectedImg);
+  };
+
+  const handleResize = (multiplier: number) => {
+    if (!selectedImg) return;
+    const currentWidth = selectedImg.clientWidth || 200;
+    const newWidth = Math.max(60, Math.min(700, Math.round(currentWidth * multiplier)));
+    selectedImg.style.width = `${newWidth}px`;
+    selectedImg.style.maxWidth = "100%";
+    selectedImg.style.height = "auto";
+    handleInput();
+    updateToolbarPos(selectedImg);
+  };
+
+  const handleDeleteImage = () => {
+    if (!selectedImg) return;
+    selectedImg.remove();
+    setSelectedImg(null);
+    setImgToolbarPos(null);
+    handleInput();
+  };
+
+  const handleReplaceImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedImg) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string" && selectedImg) {
+        selectedImg.src = reader.result;
+        handleInput();
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
   };
 
   return (
@@ -55,8 +204,106 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
         padding: "50px 60px 75px 60px",
         boxSizing: "border-box",
       }}
-      onClick={onFocus}
+      onClick={() => {
+        onFocus();
+        setSelectedImg(null);
+        setImgToolbarPos(null);
+      }}
     >
+      <input
+        type="file"
+        ref={imageReplaceInputRef}
+        accept="image/*"
+        className="hidden"
+        onChange={handleReplaceImageFile}
+      />
+
+      {/* Floating Image Action Toolbar */}
+      {selectedImg && imgToolbarPos && (
+        <div
+          className="absolute bg-zinc-900/95 backdrop-blur-md text-white rounded-lg shadow-2xl px-2 py-1 flex items-center gap-1 z-30 border border-zinc-700 animate-in fade-in zoom-in-95 select-none"
+          style={{ top: `${imgToolbarPos.top}px`, left: `${imgToolbarPos.left}px` }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span className="text-[10px] font-bold text-amber-400 px-1 flex items-center gap-1">
+            <ArrowLeftRight className="h-3 w-3" /> Arrastra p/ Intercambiar
+          </span>
+          <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => handleAlign("left")}
+            title="Alinear a la izquierda"
+            className="h-6 w-6 text-zinc-300 hover:text-white hover:bg-zinc-800"
+          >
+            <AlignLeft className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => handleAlign("center")}
+            title="Centrar"
+            className="h-6 w-6 text-zinc-300 hover:text-white hover:bg-zinc-800"
+          >
+            <AlignCenter className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => handleAlign("right")}
+            title="Alinear a la derecha"
+            className="h-6 w-6 text-zinc-300 hover:text-white hover:bg-zinc-800"
+          >
+            <AlignRight className="h-3.5 w-3.5" />
+          </Button>
+          <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => handleResize(0.85)}
+            title="Reducir tamaño"
+            className="h-6 w-6 text-zinc-300 hover:text-white hover:bg-zinc-800"
+          >
+            <Minimize2 className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => handleResize(1.15)}
+            title="Aumentar tamaño"
+            className="h-6 w-6 text-zinc-300 hover:text-white hover:bg-zinc-800"
+          >
+            <Maximize2 className="h-3.5 w-3.5" />
+          </Button>
+          <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => imageReplaceInputRef.current?.click()}
+            title="Reemplazar por otra imagen"
+            className="h-6 w-6 text-cyan-400 hover:text-cyan-300 hover:bg-zinc-800"
+          >
+            <Upload className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={handleDeleteImage}
+            title="Eliminar imagen"
+            className="h-6 w-6 text-red-400 hover:text-red-300 hover:bg-zinc-800"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
+
       {/* Floating Header Actions on Page Sheet */}
       <div className="absolute -top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-800 text-white rounded-md shadow-lg px-2 py-1 flex items-center gap-1 z-10 select-none">
         <span className="text-[11px] font-bold px-1.5 text-zinc-300">
@@ -104,7 +351,7 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
         </Button>
       </div>
 
-      {/* Editable Document Body (Preserves 100% of Word formatting, fonts, colors, tables and images) */}
+      {/* Editable Document Body */}
       <style>{`
         #page-sheet-${pageIndex} .word-page-editable {
           outline: none;
@@ -148,6 +395,11 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
           border-radius: 4px;
           margin: 10px auto;
           display: block;
+          transition: outline 0.15s ease, transform 0.15s ease;
+        }
+        #page-sheet-${pageIndex} .word-page-editable img:hover {
+          outline: 2px solid #eb5454;
+          outline-offset: 2px;
         }
         #page-sheet-${pageIndex} .word-page-editable ul,
         #page-sheet-${pageIndex} .word-page-editable ol {
@@ -159,17 +411,16 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
       `}</style>
       <div
         ref={contentRef}
+        className="word-page-editable focus:outline-none"
         contentEditable
         suppressContentEditableWarning
-        onFocus={onFocus}
         onInput={handleInput}
-        className="word-page-editable"
       />
 
-      {/* Pie de Página Fijo en la Hoja A4 */}
-      <div className="absolute bottom-6 left-14 right-14 border-t border-zinc-200 pt-2 text-[10px] text-zinc-500 flex items-center justify-between select-none pointer-events-none">
+      {/* Institutional Printable Footer */}
+      <div className="absolute bottom-6 left-12 right-12 flex items-center justify-between text-[11px] text-zinc-400 border-t border-zinc-200/80 pt-2 select-none pointer-events-none">
         <span>Un producto de Mr. Soft</span>
-        <span className="font-semibold">
+        <span>
           Página {pageIndex + 1} de {totalPages}
         </span>
       </div>

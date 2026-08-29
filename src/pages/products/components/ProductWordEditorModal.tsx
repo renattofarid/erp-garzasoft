@@ -47,6 +47,7 @@ import {
 import { ProductResource } from "../lib/product.interface";
 import { getDefaultGesrestPages } from "../lib/defaultGesrestHtml";
 import { parseDocxFileToHtml } from "../lib/docxParser";
+import { parsePdfFileToPages } from "../lib/pdfParser";
 import { paginateHtmlByA4Height } from "../lib/a4Paginator";
 import { PageSheetItem } from "./PageSheetItem";
 
@@ -182,27 +183,39 @@ export default function ProductWordEditorModal({
     }
   };
 
-  const handleDocxUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !product) return;
 
-    if (!file.name.endsWith(".docx")) {
-      errorToast("Por favor selecciona un archivo de Microsoft Word válido (.docx)");
+    const isDocx = file.name.toLowerCase().endsWith(".docx");
+    const isPdf = file.name.toLowerCase().endsWith(".pdf");
+
+    if (!isDocx && !isPdf) {
+      errorToast("Por favor selecciona un archivo válido de Microsoft Word (.docx) o PDF (.pdf)");
       return;
     }
 
     setImportingDocx(true);
     try {
-      const parsedPages = await parseDocxFileToHtml(file, product.nombre);
+      let parsedPages: string[] = [];
+
+      if (isPdf) {
+        parsedPages = await parsePdfFileToPages(file);
+        successToast(
+          `Documento PDF importado: ${parsedPages.length} página(s) A4 generadas con fidelidad visual 100%.`
+        );
+      } else {
+        parsedPages = await parseDocxFileToHtml(file, product.nombre);
+        successToast(
+          `Documento Word importado: ${parsedPages.length} página(s) A4 generadas con todas las imágenes y tablas.`
+        );
+      }
 
       setPages(parsedPages);
       setActivePageIndex(0);
       setTimeout(() => scrollToPage(0), 100);
-      successToast(
-        `Documento Word importado: ${parsedPages.length} página(s) A4 generadas con todas las imágenes y tablas.`
-      );
     } catch (err: any) {
-      errorToast(err.message || "Error al procesar el archivo Word.");
+      errorToast(err.message || "Error al procesar el archivo.");
     } finally {
       setImportingDocx(false);
       if (fileInputRef.current) {
@@ -316,13 +329,13 @@ export default function ProductWordEditorModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[96vw] max-w-7xl h-[94vh] max-h-[94vh] p-0 gap-0 overflow-hidden rounded-2xl border shadow-2xl bg-background text-foreground flex flex-col sm:max-w-7xl">
-        {/* Input oculto para carga de archivos Word (.docx) */}
+        {/* Input oculto para carga de archivos Word (.docx) o PDF (.pdf) */}
         <input
           type="file"
           ref={fileInputRef}
-          accept=".docx"
+          accept=".docx,.pdf"
           className="hidden"
-          onChange={handleDocxUpload}
+          onChange={handleFileUpload}
         />
 
         {/* Cabecera Principal */}
@@ -349,13 +362,14 @@ export default function ProductWordEditorModal({
               onClick={() => fileInputRef.current?.click()}
               disabled={importingDocx || loading}
               className="text-xs gap-1.5 h-8 font-semibold text-primary border-primary/40 hover:bg-primary/10 shadow-2xs"
+              title="Cargar archivo Word (.docx) o PDF (.pdf)"
             >
               {importingDocx ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
                 <UploadCloud className="h-3.5 w-3.5" />
               )}
-              <span>Cargar Word (.docx)</span>
+              <span>Cargar Word / PDF</span>
             </Button>
 
             <Button

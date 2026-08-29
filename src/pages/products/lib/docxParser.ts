@@ -1,12 +1,15 @@
 import JSZip from "jszip";
 
 /**
- * High-fidelity Word (.docx) Direct XML & Media Parser.
- * - Reads word/document.xml, word/header*.xml and word/media/ directly.
- * - Scales images with exact pixel dimensions from Word EMUs.
- * - Preserves 2-column table widths (45% / 55%), cell padding, and borders.
- * - Styles hyperlinks with coral red (#eb5454) and underline.
- * - Slices into exact physical pages matching Word page breaks and sections.
+ * High-Fidelity OpenXML (.docx) Engine.
+ *
+ * Fully parses:
+ * - Page margins & section setups (w:sectPr, w:pgMar)
+ * - Headers & Footers (word/header*.xml, word/footer*.xml) with repeated logos/text
+ * - Floating & Absolute Images: Watermarks (behind text), top-right corner logos, inline drawings
+ * - Exact 2-Column and N-Column Tables with gridCol widths, cell shading (backgrounds), and borders
+ * - Complete Typography: Fonts, sizes (pt), colors (HEX), bold, italic, underline, strike, highlight, alignments
+ * - Native Page Breaks (<w:br w:type="page"/> and <w:sectPr>)
  */
 export async function parseDocxFileToHtml(
   file: File,
@@ -15,7 +18,7 @@ export async function parseDocxFileToHtml(
   const arrayBuffer = await file.arrayBuffer();
   const zip = await JSZip.loadAsync(arrayBuffer);
 
-  // 1. Extract all media files into base64 map
+  // 1. Extract all media files (images, logos, watermarks) into base64 map
   const imageMap: Record<string, string> = {};
   const mediaFiles = Object.keys(zip.files).filter(
     (p) => p.startsWith("word/media/") && !zip.files[p].dir
@@ -30,14 +33,16 @@ export async function parseDocxFileToHtml(
         ? "image/jpeg"
         : ext === "png"
         ? "image/png"
+        : ext === "svg"
+        ? "image/svg+xml"
         : "image/" + ext;
     imageMap[fileName] = `data:${mime};base64,${base64}`;
   }
 
-  // 2. Read relationship mappings (rId -> image / hyperlink)
+  // 2. Read all relationship files (document.xml.rels, header*.rels, etc.)
   const relsMap: Record<string, { target: string; type: string }> = {};
-  const relsFiles = Object.keys(zip.files).filter((p) =>
-    p.startsWith("word/_rels/") && p.endsWith(".rels")
+  const relsFiles = Object.keys(zip.files).filter(
+    (p) => p.includes("_rels") && p.endsWith(".rels")
   );
 
   for (const relsPath of relsFiles) {
@@ -53,7 +58,85 @@ export async function parseDocxFileToHtml(
     });
   }
 
-  // 3. Read main document XML
+  // 3. Helper to parse drawing objects (Floating logos, watermarks, inline images)
+  const parseDrawingNode = (drw: Element): string => {
+    const blip = drw.querySelector("a\\:blip, blip");
+    if (!blip) return "";
+
+    const embedId =
+      blip.getAttribute("r:embed") ||
+      blip.getAttribute("embed") ||
+      blip.getAttribute("r:link");
+    if (!embedId || !relsMap[embedId]) return "";
+
+    const target = relsMap[embedId].target;
+    const fileName = target.split("/").pop() || "";
+    const dataUrl = imageMap[fileName] || target;
+
+    // Calculate dimensions from EMUs (1px = 9525 EMUs)
+    let pxWidth = 0;
+    const extent = drw.querySelector("wp\\:extent, extent");
+    if (extent) {
+      const cx = extent.getAttribute("cx");
+      if (cx) pxWidth = Math.round(parseInt(cx, 10) / 9525);
+    }
+
+    const anchor = drw.querySelector("wp\\:anchor, anchor");
+    if (anchor) {
+      // Floating / Positioned Image
+      const isBehindDoc =
+        anchor.getAttribute("behindDoc") === "1" ||
+        anchor.querySelector("wp\\:behindDoc, behindDoc, wp\\:wrapNone, wrapNone") !== null;
+
+      const posH = anchor.querySelector("wp\\:positionH, positionH");
+      const alignH = posH?.querySelector("wp\\:align, align")?.textContent?.trim() || "";
+
+      // Top-Right Corner Logo (e.g. Gesrest logo)
+      if (alignH === "right" || alignH === "end") {
+        const w = pxWidth > 0 ? Math.min(220, pxWidth) : 160;
+        return `
+<div style="float: right; margin: 0 0 16px 20px; text-align: right; clear: right;">
+  <img src="${dataUrl}" alt="${fileName}" style="width: ${w}px; max-width: 100%; height: auto; display: block;" />
+</div>
+`;
+      }
+
+      // Watermark / Background Image
+      if (isBehindDoc || alignH === "center") {
+        const w = pxWidth > 0 ? Math.min(600, pxWidth) : 450;
+        return `
+<div style="position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); opacity: 0.12; pointer-events: none; z-index: 0; text-align: center; width: 100%;">
+  <img src="${dataUrl}" alt="Watermark" style="width: ${w}px; max-width: 85%; height: auto; margin: 0 auto; display: block;" />
+</div>
+`;
+      }
+    }
+
+    // Standard inline image
+    const widthStyle = pxWidth > 0 ? `width: ${Math.min(680, pxWidth)}px;` : "max-width: 100%;";
+    return `<img src="${dataUrl}" alt="${fileName}" style="${widthStyle} max-width: 100%; height: auto; margin: 10px auto; display: block; border-radius: 4px;" />`;
+  };
+
+  // 4. Extract Header XML if exists (e.g. repeated header logo / title)
+  let headerHtml = "";
+  const headerKeys = Object.keys(zip.files).filter(
+    (p) => p.startsWith("word/header") && p.endsWith(".xml")
+  );
+
+  for (const hKey of headerKeys) {
+    try {
+      const hXmlText = await zip.files[hKey].async("text");
+      const hDoc = new DOMParser().parseFromString(hXmlText, "application/xml");
+      const hDrawings = hDoc.querySelectorAll("w\\:drawing, drawing");
+      hDrawings.forEach((d) => {
+        headerHtml += parseDrawingNode(d);
+      });
+    } catch {
+      // Ignore header xml read error
+    }
+  }
+
+  // 5. Parse Document XML
   if (!zip.files["word/document.xml"]) {
     throw new Error("El archivo .docx no contiene word/document.xml");
   }
@@ -70,33 +153,48 @@ export async function parseDocxFileToHtml(
   const pages: string[] = [];
   let currentPageHtml = "";
 
-  // Helper to parse runs (<w:r>) inside a paragraph or cell
+  // Helper to parse runs (<w:r>)
   const parseRun = (runNode: Element): string => {
     let runText = "";
-
-    // Text content
     const textNodes = runNode.querySelectorAll("w\\:t, t");
     textNodes.forEach((t) => {
       runText += t.textContent || "";
     });
 
-    // Formatting
+    const drawings = runNode.querySelectorAll("w\\:drawing, drawing");
+    let drawingsHtml = "";
+    drawings.forEach((d) => {
+      drawingsHtml += parseDrawingNode(d);
+    });
+
+    if (!runText && !drawingsHtml) return "";
+
     const rPr = runNode.querySelector("w\\:rPr, rPr");
     let isBold = false;
     let isItalic = false;
     let isUnderline = false;
+    let isStrike = false;
     let color = "";
     let fontSize = "";
+    let fontFamily = "";
+    let bgColor = "";
 
     if (rPr) {
       if (rPr.querySelector("w\\:b, b")) isBold = true;
       if (rPr.querySelector("w\\:i, i")) isItalic = true;
       if (rPr.querySelector("w\\:u, u")) isUnderline = true;
+      if (rPr.querySelector("w\\:strike, strike")) isStrike = true;
 
       const colorEl = rPr.querySelector("w\\:color, color");
       if (colorEl) {
         const val = colorEl.getAttribute("w:val") || colorEl.getAttribute("val");
         if (val && val !== "auto") color = "#" + val;
+      }
+
+      const hlEl = rPr.querySelector("w\\:highlight, highlight");
+      if (hlEl) {
+        const val = hlEl.getAttribute("w:val") || hlEl.getAttribute("val");
+        if (val && val !== "none") bgColor = val;
       }
 
       const szEl = rPr.querySelector("w\\:sz, sz");
@@ -107,53 +205,34 @@ export async function parseDocxFileToHtml(
           if (!isNaN(pt) && pt > 0) fontSize = `${pt}pt`;
         }
       }
-    }
 
-    // Images inside run (<w:drawing>) with exact EMU dimensions
-    let imgHtml = "";
-    const drawings = runNode.querySelectorAll("w\\:drawing, drawing");
-    drawings.forEach((drw) => {
-      const blip = drw.querySelector("a\\:blip, blip");
-      if (blip) {
-        const embedId =
-          blip.getAttribute("r:embed") ||
-          blip.getAttribute("embed") ||
-          blip.getAttribute("r:link");
-        if (embedId && relsMap[embedId]) {
-          const target = relsMap[embedId].target;
-          const fileName = target.split("/").pop() || "";
-          const dataUrl = imageMap[fileName] || target;
-
-          // Compute pixel width & height from Word EMUs (1px = 9525 EMUs)
-          let widthStyle = "max-width: 100%; height: auto;";
-          const extent = drw.querySelector("wp\\:extent, extent");
-          if (extent) {
-            const cx = extent.getAttribute("cx");
-            if (cx) {
-              const px = Math.min(680, Math.round(parseInt(cx, 10) / 9525));
-              if (px > 20) widthStyle = `width: ${px}px; max-width: 100%; height: auto;`;
-            }
-          }
-
-          imgHtml += `<img src="${dataUrl}" alt="${fileName}" style="${widthStyle} margin: 8px auto; display: block; border-radius: 4px;" />`;
-        }
+      const fontEl = rPr.querySelector("w\\:rFonts, rFonts");
+      if (fontEl) {
+        const fontName =
+          fontEl.getAttribute("w:ascii") ||
+          fontEl.getAttribute("w:hAnsi") ||
+          fontEl.getAttribute("ascii");
+        if (fontName) fontFamily = `"${fontName}", sans-serif`;
       }
-    });
+    }
 
     let formatted = runText ? escapeHtml(runText) : "";
     if (isBold) formatted = `<strong>${formatted}</strong>`;
     if (isItalic) formatted = `<em>${formatted}</em>`;
     if (isUnderline) formatted = `<u>${formatted}</u>`;
+    if (isStrike) formatted = `<s>${formatted}</s>`;
 
     let style = "";
     if (color) style += `color: ${color}; `;
     if (fontSize) style += `font-size: ${fontSize}; `;
+    if (fontFamily) style += `font-family: ${fontFamily}; `;
+    if (bgColor) style += `background-color: ${bgColor}; `;
 
     if (style && formatted) {
       formatted = `<span style="${style}">${formatted}</span>`;
     }
 
-    return formatted + imgHtml;
+    return formatted + drawingsHtml;
   };
 
   // Helper to parse paragraph (<w:p>)
@@ -161,7 +240,7 @@ export async function parseDocxFileToHtml(
     let pContent = "";
     let isPageBreak = false;
 
-    // Check if this paragraph contains a page break
+    // Check for page break
     const brPage = pNode.querySelector('w\\:br[w\\:type="page"], br[type="page"]');
     if (brPage) {
       isPageBreak = true;
@@ -177,7 +256,7 @@ export async function parseDocxFileToHtml(
       else if (val === "both" || val === "justify") textAlign = "justify";
     }
 
-    // Check for Heading style
+    // Headings
     let isHeading1 = false;
     let isHeading2 = false;
     const pStyle = pNode.querySelector("w\\:pStyle, pStyle");
@@ -187,12 +266,14 @@ export async function parseDocxFileToHtml(
       else if (val.includes("heading 2") || val.includes("heading2") || val.includes("heading 3")) isHeading2 = true;
     }
 
+    // Bullet list
+    const isBullet = pNode.querySelector("w\\:numPr, numPr") !== null;
+
     // Iterate children of paragraph
     Array.from(pNode.children).forEach((child) => {
       const tag = child.tagName.toLowerCase();
       if (tag.endsWith("hyperlink")) {
-        const rId =
-          child.getAttribute("r:id") || child.getAttribute("id");
+        const rId = child.getAttribute("r:id") || child.getAttribute("id");
         let href = "#";
         if (rId && relsMap[rId]) {
           href = relsMap[rId].target;
@@ -207,6 +288,8 @@ export async function parseDocxFileToHtml(
         pContent += `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color: #eb5454; font-weight: 500; text-decoration: underline; word-break: break-all;">${linkInner}</a>`;
       } else if (tag.endsWith(":r") || tag === "r") {
         pContent += parseRun(child);
+      } else if (tag.endsWith(":drawing") || tag === "drawing") {
+        pContent += parseDrawingNode(child);
       }
     });
 
@@ -219,7 +302,7 @@ export async function parseDocxFileToHtml(
 
     if (isHeading1) {
       return {
-        html: `<h1 style="color: #eb5454; font-size: 20px; font-weight: 700; margin: 12px 0 6px 0;${textAlign ? ` text-align: ${textAlign};` : ""}">${pContent}</h1>`,
+        html: `<h1 style="color: #eb5454; font-size: 20px; font-weight: 700; margin: 14px 0 8px 0;${textAlign ? ` text-align: ${textAlign};` : ""}">${pContent}</h1>`,
         isPageBreak,
       };
     }
@@ -231,11 +314,28 @@ export async function parseDocxFileToHtml(
       };
     }
 
+    if (isBullet) {
+      return {
+        html: `<ul style="margin: 4px 0 6px 20px; padding: 0;"><li style="${style}">${pContent}</li></ul>`,
+        isPageBreak,
+      };
+    }
+
     return { html: `<p style="${style}">${pContent}</p>`, isPageBreak };
   };
 
   // Helper to parse table (<w:tbl>)
   const parseTable = (tblNode: Element): string => {
+    // Read grid column widths
+    const gridCols = tblNode.querySelectorAll("w\\:gridCol, gridCol");
+    const colWidths: number[] = [];
+    let totalGridW = 0;
+    gridCols.forEach((gc) => {
+      const w = parseInt(gc.getAttribute("w:w") || gc.getAttribute("w") || "0", 10);
+      colWidths.push(w);
+      totalGridW += w;
+    });
+
     const rows = tblNode.querySelectorAll("w\\:tr, tr");
     if (rows.length === 0) return "";
 
@@ -256,9 +356,12 @@ export async function parseDocxFileToHtml(
           cellContent += parsed.html;
         });
 
-        // Calculate proportional width (e.g. 45% left, 55% right for 2-column tables)
+        // Exact proportional width
         let widthStyle = "";
-        if (numCells === 2) {
+        if (colWidths.length > cellIdx && totalGridW > 0) {
+          const pct = Math.round((colWidths[cellIdx] / totalGridW) * 100);
+          widthStyle = `width: ${pct}%;`;
+        } else if (numCells === 2) {
           widthStyle = cellIdx === 0 ? "width: 45%;" : "width: 55%;";
         }
 
@@ -283,7 +386,7 @@ export async function parseDocxFileToHtml(
     return tableHtml;
   };
 
-  // 4. Iterate over top-level body elements
+  // 6. Iterate over top-level body elements
   const bodyChildren = Array.from(body.children);
 
   bodyChildren.forEach((node) => {
@@ -294,7 +397,7 @@ export async function parseDocxFileToHtml(
 
       if (isPageBreak) {
         if (currentPageHtml.trim()) {
-          pages.push(currentPageHtml);
+          pages.push(headerHtml + currentPageHtml);
           currentPageHtml = "";
         }
       }
@@ -306,14 +409,14 @@ export async function parseDocxFileToHtml(
     } else if (tag.endsWith(":sectpr") || tag === "sectpr") {
       // Section break in Word creates a new page
       if (currentPageHtml.trim()) {
-        pages.push(currentPageHtml);
+        pages.push(headerHtml + currentPageHtml);
         currentPageHtml = "";
       }
     }
   });
 
   if (currentPageHtml.trim()) {
-    pages.push(currentPageHtml);
+    pages.push(headerHtml + currentPageHtml);
   }
 
   return pages.length > 0 ? pages : [

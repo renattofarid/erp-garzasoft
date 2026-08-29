@@ -12,28 +12,23 @@ export function getDefaultGesrestPages(productName: string = "GESREST"): string[
   return [
     // PÁGINA 1: PORTADA
     `
-<div style="position: absolute; left: 40%; top: 40%; transform: translate(-50%, -50%); opacity: 0.08; pointer-events: none; z-index: 0; font-size: 380px; font-weight: 900; color: #eb5454; user-select: none;">
-  G
+<div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0;">
+  <img src="/fondo_gesrest.png" alt="Fondo Gesrest" style="width: 100%; height: 100%; object-fit: fill;" />
 </div>
 
-<div style="text-align: right; padding-top: 20px; padding-right: 15px; position: relative; z-index: 1;">
-  <h1 style="font-size: 38px; font-weight: bold; color: #eb5454; margin: 0; line-height: 1;">${productName}</h1>
-  <div style="font-size: 14px; color: #eb5454; margin-top: 6px; font-weight: 600;">Tu restaurante digital</div>
-  <div style="font-size: 12px; color: #555; margin-top: 18px; line-height: 1.7;">
-    <div>+51 979 293 176</div>
-    <div><a href="mailto:martin.ampuero@garzasoft.com" style="color: #0b4e8c; text-decoration: underline;">martin.ampuero@garzasoft.com</a></div>
+<div style="position: relative; z-index: 1; padding: 20px;">
+  <div style="text-align: right; margin-top: 60px; margin-right: 10px;">
+    <div style="font-size: 12px; color: #444; line-height: 1.8;">
+      <div>+51 979 293 176</div>
+      <div><a href="mailto:martin.ampuero@garzasoft.com" style="color: #0b4e8c; text-decoration: underline;">martin.ampuero@garzasoft.com</a></div>
+    </div>
   </div>
-</div>
 
-<div style="margin-top: 560px; position: relative; z-index: 1;">
-  <div style="float: left;">
-    <div style="font-size: 26px; font-weight: bold; color: #1a1a1a;">Mr. Soft</div>
-    <div style="font-size: 11px; color: #0088cc; letter-spacing: 1.5px;">DEVELOPMENT</div>
+  <div style="text-align: right; margin-top: 640px; margin-right: 15px;">
+    <a href="https://www.gesrest.net" target="_blank" rel="noopener noreferrer" style="color: #eb5454; font-weight: bold; font-size: 14px; text-decoration: none;">
+      www.gesrest.net
+    </a>
   </div>
-  <div style="float: right; color: #eb5454; font-weight: bold; font-size: 14px; padding-top: 10px;">
-    www.gesrest.net
-  </div>
-  <div style="clear: both;"></div>
 </div>
 `,
 

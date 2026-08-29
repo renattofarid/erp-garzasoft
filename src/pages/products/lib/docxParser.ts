@@ -259,7 +259,16 @@ export async function parseDocxFileToHtml(
       .filter((p) => p.length > 0);
 
     if (explicitPages.length > 0) {
-      otherPages = explicitPages.map((p) => headerLogoHtml + p);
+      let bodyPages = explicitPages;
+      // If the first chunk is the raw unformatted cover from Word, discard it so page1Html takes its place
+      if (
+        explicitPages.length > 1 &&
+        !explicitPages[0].toUpperCase().includes("PRESENTACIÓN") &&
+        !explicitPages[0].toUpperCase().includes("PRESENTACION")
+      ) {
+        bodyPages = explicitPages.slice(1);
+      }
+      otherPages = bodyPages.map((p) => headerLogoHtml + p);
     }
   }
 

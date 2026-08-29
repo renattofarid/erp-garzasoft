@@ -4,10 +4,11 @@ import { paginateHtmlByA4Height } from "./a4Paginator";
 
 /**
  * High-Fidelity DOCX Parser.
- * - Extracts 100% of images directly from the Word document (Logo, Watermark, Signature, Screenshots).
- * - Pulls the real Gesrest logo from the Word file and places it on Page 1 (large) and headers of Pages 2 to N.
- * - Preserves the CEO signature image and all screenshots in their exact positions in the content body.
- * - Styles all tables to match the "Insert Table" design (coral header #eb5454, zebra rows, 2 columns).
+ * - Extracts 100% of images directly from the Word document.
+ * - Accurately uses the 2nd image (Gesrest Logo) for the top-right header across all pages.
+ * - Positions the 1st image (Mr. Soft) at the bottom-left and 3rd image (G Watermark) as 2/3 cover background.
+ * - Preserves all body images (CEO signature, screenshots, diagrams) in their exact locations.
+ * - Formats all tables into clean 2-column tables with coral headers (#eb5454).
  */
 export async function parseDocxFileToHtml(
   file: File,
@@ -77,29 +78,36 @@ export async function parseDocxFileToHtml(
   const container = document.createElement("div");
   container.innerHTML = rawHtml;
 
-  // Identify Gesrest Logo extracted from Word
-  // The Gesrest logo is usually the 2nd image or the first non-background image
-  let gesrestLogoSrc = "";
-  if (zipImages.length > 1) {
-    gesrestLogoSrc = zipImages[1].src;
-  } else if (zipImages.length === 1) {
-    gesrestLogoSrc = zipImages[0].src;
-  } else {
-    const firstImg = container.querySelector("img");
-    if (firstImg) gesrestLogoSrc = firstImg.src;
-  }
+  // Identify images from Word:
+  // Image 1: Mr. Soft Development
+  // Image 2: Gesrest - Tu restaurante digital (The official Gesrest logo!)
+  // Image 3: G watermark
+  const mrSoftLogoSrc = zipImages.length > 0 ? zipImages[0].src : "";
+  const gesrestLogoSrc = zipImages.length > 1 ? zipImages[1].src : (zipImages[0]?.src || "");
+  const watermarkImgSrc = zipImages.length > 2 ? zipImages[2].src : "/fondo_gesrest.png";
 
-  // Style all content images (signature, screenshots, diagrams)
-  const docxImgs = Array.from(container.querySelectorAll("img"));
-  docxImgs.forEach((img) => {
-    // Check if this image is a signature (near Ampuero/CEO) or a diagram
+  // Remove the cover logos (first 3 images) from content body so they don't appear in the middle of page 2
+  const coverSrcs = [mrSoftLogoSrc, gesrestLogoSrc, watermarkImgSrc].filter(Boolean);
+  container.querySelectorAll("img").forEach((img) => {
+    if (coverSrcs.includes(img.src)) {
+      const parent = img.parentElement;
+      if (parent && parent.children.length === 1 && parent.tagName.toLowerCase() === "p") {
+        parent.remove();
+      } else {
+        img.remove();
+      }
+    }
+  });
+
+  // Style all remaining body images (CEO signature, screenshots, diagrams)
+  container.querySelectorAll("img").forEach((img) => {
     img.setAttribute(
       "style",
       "max-width: 100%; max-height: 280px; height: auto; margin: 12px auto; display: block; border-radius: 4px;"
     );
   });
 
-  // Remove cover items from the content body so they don't duplicate on page 2
+  // Remove cover text items from the content body so they don't duplicate on page 2
   const allParagraphs = Array.from(container.querySelectorAll("p, div"));
   allParagraphs.forEach((p) => {
     const text = p.textContent?.trim() || "";
@@ -190,18 +198,18 @@ export async function parseDocxFileToHtml(
     p.setAttribute("style", "margin: 0 0 6px 0; line-height: 1.55; font-size: 12.5px;");
   });
 
-  // 4. Build Page 1 (Cover Page) with 2/3 width background and positioned logo from Word
+  // 4. Build Page 1 (Cover Page) with 2/3 width background and positioned logos from Word
   const page1Html = `
 <div style="position: absolute; top: 0; left: 0; bottom: 0; width: 68%; height: 100%; pointer-events: none; z-index: 0;">
-  <img src="/fondo_gesrest.png" alt="Fondo Gesrest" style="width: 100%; height: 100%; object-fit: contain; object-position: left center;" />
+  <img src="${watermarkImgSrc || '/fondo_gesrest.png'}" alt="Fondo Gesrest" style="width: 100%; height: 100%; object-fit: contain; object-position: left center;" />
 </div>
 
 <div style="position: relative; z-index: 1; padding: 20px; min-height: 980px;">
-  <!-- Logo de Gesrest (Grande del Word) y Contacto Superior Derecho -->
+  <!-- Logo de Gesrest (Grande del Word: Imagen 2) y Contacto Superior Derecho -->
   <div style="text-align: right; margin-top: 50px; margin-right: 15px;">
     ${
       gesrestLogoSrc
-        ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="max-height: 52px; width: auto; margin-left: auto; margin-bottom: 6px; display: inline-block;" />`
+        ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="max-height: 64px; width: auto; margin-left: auto; margin-bottom: 8px; display: inline-block;" />`
         : `<h1 style="font-size: 28px; font-weight: bold; color: #eb5454; margin: 0;">GESREST</h1><div style="font-size: 12px; color: #eb5454; font-weight: 600;">Tu restaurante digital</div>`
     }
     <div style="font-size: 12px; color: #444; line-height: 1.8; margin-top: 8px;">
@@ -210,8 +218,17 @@ export async function parseDocxFileToHtml(
     </div>
   </div>
 
+  <!-- Logo Mr. Soft (Imagen 1 del Word) en Esquina Inferior Izquierda -->
+  <div style="position: absolute; bottom: 45px; left: 30px; z-index: 1;">
+    ${
+      mrSoftLogoSrc
+        ? `<img src="${mrSoftLogoSrc}" alt="Mr. Soft Development" style="max-height: 48px; width: auto;" />`
+        : `<div style="font-size: 22px; font-weight: bold; color: #1a1a1a;">Mr. Soft</div><div style="font-size: 10px; color: #0088cc; letter-spacing: 1.5px;">DEVELOPMENT</div>`
+    }
+  </div>
+
   <!-- Enlace Inferior Derecho -->
-  <div style="text-align: right; margin-top: 640px; margin-right: 20px;">
+  <div style="position: absolute; bottom: 45px; right: 30px; z-index: 1;">
     <a href="https://www.gesrest.net" target="_blank" rel="noopener noreferrer" style="color: #eb5454; font-weight: bold; font-size: 14px; text-decoration: none;">
       www.gesrest.net
     </a>
@@ -219,12 +236,12 @@ export async function parseDocxFileToHtml(
 </div>
 `;
 
-  // 5. Header logo template for every subsequent page (Pages 2 to N)
+  // 5. Header logo template for every subsequent page (Pages 2 to N) using Image 2 (Gesrest Logo)
   const headerLogoHtml = `
 <div style="float: right; text-align: right; margin-bottom: 20px; clear: right;">
   ${
     gesrestLogoSrc
-      ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="max-height: 38px; width: auto; display: inline-block;" />`
+      ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="max-height: 42px; width: auto; display: inline-block;" />`
       : `<span style="font-size: 16px; font-weight: 700; color: #eb5454;">GESREST</span><br><span style="font-size: 9.5px; color: #888;">Tu restaurante digital</span>`
   }
 </div>

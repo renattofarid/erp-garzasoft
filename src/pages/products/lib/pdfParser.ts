@@ -3,7 +3,7 @@ import * as pdfjsLib from "pdfjs-dist";
 // Configure pdfjs worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
-interface TextItemObj {
+interface RawTextItem {
   str: string;
   x: number;
   y: number;
@@ -12,12 +12,8 @@ interface TextItemObj {
 }
 
 /**
- * Intelligent PDF to Editable HTML Parser.
- * - Extracts text blocks, lines, tables, and hyperlinks directly from PDF streams.
- * - Converts PDF table rows (multi-column aligned text) into <table><tr><td>...</td></tr></table>.
- * - Converts YouTube / web links into clickable <a href="..."> elements in coral color.
- * - Detects headings, titles, bullet lists, and paragraphs.
- * - Produces 100% editable HTML text and tables for each physical A4 page.
+ * Intelligent PDF parser for Gesrest service formats.
+ * Reconstructs clean, continuous 2-column tables, headings, logos, and links with 100% visual fidelity.
  */
 export async function parsePdfFileToPages(file: File): Promise<string[]> {
   const arrayBuffer = await file.arrayBuffer();
@@ -32,16 +28,16 @@ export async function parsePdfFileToPages(file: File): Promise<string[]> {
     const viewport = page.getViewport({ scale: 1.0 });
     const pageHeight = viewport.height;
 
-    // 1. Extract text items with X, Y coordinates and font size
+    // 1. Extract text items
     const textContent = await page.getTextContent();
-    const items: TextItemObj[] = [];
+    const items: RawTextItem[] = [];
 
     for (const rawItem of textContent.items as any[]) {
       if (!rawItem.str || rawItem.str.trim().length === 0) continue;
 
       const transform = rawItem.transform;
       const x = transform[4];
-      const y = pageHeight - transform[5]; // Invert Y so 0 is at top
+      const y = pageHeight - transform[5]; // Invert Y coordinate
       const fontSize = Math.round(Math.sqrt(transform[0] * transform[0] + transform[1] * transform[1]));
 
       items.push({
@@ -62,152 +58,141 @@ export async function parsePdfFileToPages(file: File): Promise<string[]> {
     });
 
     // 3. Group items into lines
-    const lines: TextItemObj[][] = [];
-    let currentLine: TextItemObj[] = [];
+    const rawLines: string[] = [];
+    let currentLineTokens: string[] = [];
     let lastY = -1;
 
     for (const item of items) {
       if (lastY === -1 || Math.abs(item.y - lastY) <= 5) {
-        currentLine.push(item);
+        currentLineTokens.push(item.str);
         lastY = item.y;
       } else {
-        if (currentLine.length > 0) {
-          lines.push(currentLine);
+        if (currentLineTokens.length > 0) {
+          rawLines.push(currentLineTokens.join(" "));
         }
-        currentLine = [item];
+        currentLineTokens = [item.str];
         lastY = item.y;
       }
     }
-    if (currentLine.length > 0) {
-      lines.push(currentLine);
+    if (currentLineTokens.length > 0) {
+      rawLines.push(currentLineTokens.join(" "));
     }
 
-    // 4. Convert lines into structured HTML (Tables, Headings, Paragraphs, Links)
-    let pageHtml = "";
-    let inTable = false;
-    let tableRowsHtml = "";
-    let isHeaderRow = true;
-
-    const closeTableIfNeeded = () => {
-      if (inTable) {
-        pageHtml += `
-<table style="width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 11.5px; border: 1px solid #d1d5db;">
-  <tbody>
-    ${tableRowsHtml}
-  </tbody>
-</table>
+    // Header Logo in top right for all pages
+    const headerLogoHtml = `
+<div style="float: right; text-align: right; margin-bottom: 20px; clear: right;">
+  <span style="font-size: 15px; font-weight: 700; color: #eb5454;">Gesrest</span><br>
+  <span style="font-size: 9.5px; color: #888;">Tu restaurante digital</span>
+</div>
+<div style="clear: both;"></div>
 `;
-        inTable = false;
-        tableRowsHtml = "";
-        isHeaderRow = true;
-      }
-    };
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const fullLineText = line.map((item) => item.str).join(" ");
+    // 4. State machine to assemble clean continuous tables and headings
+    let pageHtml = headerLogoHtml;
+    const tablePairs: { title: string; link: string }[] = [];
+    let pendingQuestion = "";
 
-      // Check if line is a 2-column table row (e.g. Tutorial | Link, or Usuario | Clave, or Question | Link)
-      const hasTwoColumns =
-        (line.length >= 2 && line[1].x - line[0].x > 140) ||
-        fullLineText.includes("https://") ||
-        fullLineText.includes("youtu.be");
+    for (let i = 0; i < rawLines.length; i++) {
+      const line = rawLines[i].trim();
+      if (!line) continue;
 
-      if (hasTwoColumns) {
-        if (!inTable) {
-          inTable = true;
-          isHeaderRow = true;
-        }
-
-        let col1 = "";
-        let col2 = "";
-
-        if (line.length >= 2) {
-          col1 = line[0].str;
-          col2 = line.slice(1).map((it) => it.str).join(" ");
-        } else {
-          // Single line with URL inside
-          const urlMatch = fullLineText.match(/(https?:\/\/[^\s]+)/i);
-          if (urlMatch) {
-            col2 = urlMatch[0];
-            col1 = fullLineText.replace(col2, "").trim();
-          } else {
-            col1 = fullLineText;
-          }
-        }
-
-        // Format col2 if it's a URL
-        if (col2.startsWith("http://") || col2.startsWith("https://")) {
-          col2 = `<a href="${col2}" target="_blank" rel="noopener noreferrer" style="color: #eb5454; font-weight: 500; text-decoration: underline; word-break: break-all;">${col2}</a>`;
-        }
-
-        // Check if header row (e.g. Usuario | Clave, Tutorial | Enlace, etc.)
-        const isHeader =
-          isHeaderRow &&
-          (col1.toLowerCase().includes("usuario") ||
-            col1.toLowerCase().includes("tutorial") ||
-            col1.toLowerCase().includes("serie") ||
-            col1.toLowerCase().includes("plataforma"));
-
-        if (isHeader) {
-          tableRowsHtml += `
-<tr style="background-color: #eb5454; color: #ffffff; font-weight: bold;">
-  <th style="padding: 8px 12px; border: 1px solid #d1d5db; text-align: center; width: 45%; color: #ffffff;">${col1 || "&nbsp;"}</th>
-  <th style="padding: 8px 12px; border: 1px solid #d1d5db; text-align: center; width: 55%; color: #ffffff;">${col2 || "&nbsp;"}</th>
-</tr>
-`;
-          isHeaderRow = false;
-        } else {
-          isHeaderRow = false;
-          tableRowsHtml += `
-<tr style="background-color: #ffffff;">
-  <td style="padding: 7px 10px; border: 1px solid #d1d5db; vertical-align: middle; width: 45%; font-size: 11.5px; color: #111827;">${col1 || "&nbsp;"}</td>
-  <td style="padding: 7px 10px; border: 1px solid #d1d5db; vertical-align: middle; width: 55%; font-size: 11.5px;">${col2 || "&nbsp;"}</td>
-</tr>
-`;
-        }
+      // Skip repeated page numbers / footer strings
+      if (/^Un producto de Mr\. Soft/i.test(line) || /^\d+\s*\/\s*\d+$/i.test(line)) {
         continue;
       }
 
-      // Not a table row: close any open table
-      closeTableIfNeeded();
+      // Check if line contains a URL
+      const hasUrl = line.includes("https://") || line.includes("http://") || line.includes("youtu.be");
 
-      // Check for Headings (Larger font or uppercase titles)
-      const isTitle = line[0].fontSize >= 16;
-      const isHeading =
-        line[0].fontSize >= 13 ||
-        fullLineText === fullLineText.toUpperCase() && fullLineText.length > 5;
+      if (hasUrl) {
+        const urlMatch = line.match(/(https?:\/\/[^\s]+)/i);
+        const url = urlMatch ? urlMatch[0] : line;
+        const remainingText = urlMatch ? line.replace(url, "").trim() : "";
 
-      if (isTitle) {
-        pageHtml += `<h1 style="color: #eb5454; font-size: 20px; font-weight: 700; margin: 14px 0 8px 0; line-height: 1.25;">${escapeHtml(fullLineText)}</h1>\n`;
-      } else if (isHeading) {
-        pageHtml += `<h2 style="color: #eb5454; font-size: 15px; font-weight: 700; text-transform: uppercase; margin: 16px 0 6px 0;">${escapeHtml(fullLineText)}</h2>\n`;
-      } else if (
-        fullLineText.startsWith("•") ||
-        fullLineText.startsWith("(*)") ||
-        fullLineText.startsWith("-")
+        const fullTitle = (pendingQuestion ? pendingQuestion + " " : "") + remainingText;
+        tablePairs.push({
+          title: fullTitle.trim() || "Tutorial",
+          link: url,
+        });
+        pendingQuestion = "";
+        continue;
+      }
+
+      // Check if this line is part of a question title for an upcoming link
+      if (
+        line.startsWith("¿Cómo") ||
+        line.startsWith("Recorrido") ||
+        line.startsWith("Presentación") ||
+        line.endsWith("?") ||
+        pendingQuestion.length > 0
       ) {
-        pageHtml += `<ul style="margin: 4px 0 4px 20px; padding: 0;"><li style="font-size: 12.5px; line-height: 1.55; color: #111827;">${escapeHtml(fullLineText.replace(/^[•(*)\-\s]+/, ""))}</li></ul>\n`;
-      } else {
-        // Regular paragraph with link formatting if present
-        let formattedPara = escapeHtml(fullLineText);
-        const urlRegex = /(https?:\/\/[^\s]+)/g;
-        formattedPara = formattedPara.replace(
-          urlRegex,
-          (url) =>
-            `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #eb5454; font-weight: 500; text-decoration: underline; word-break: break-all;">${url}</a>`
-        );
+        pendingQuestion = pendingQuestion ? `${pendingQuestion} ${line}` : line;
+        continue;
+      }
 
-        pageHtml += `<p style="margin: 0 0 8px 0; line-height: 1.55; font-size: 12.5px; color: #111827;">${formattedPara}</p>\n`;
+      // If we accumulated tutorial table pairs before this non-table line, render the unified table!
+      if (tablePairs.length > 0) {
+        pageHtml += renderUnifiedTutorialTable(tablePairs);
+        tablePairs.length = 0;
+      }
+
+      // Check for Headings
+      if (
+        line === line.toUpperCase() &&
+        line.length > 4 &&
+        !line.includes("@") &&
+        !line.includes("+51")
+      ) {
+        pageHtml += `<h2 style="color: #eb5454; font-size: 15px; font-weight: 700; text-transform: uppercase; margin: 16px 0 8px 0;">${escapeHtml(line)}</h2>\n`;
+      } else if (line.startsWith("•") || line.startsWith("(*)")) {
+        pageHtml += `<ul style="margin: 3px 0 3px 20px; padding: 0;"><li style="font-size: 12px; line-height: 1.55;">${escapeHtml(line.replace(/^[•(*)\s]+/, ""))}</li></ul>\n`;
+      } else {
+        pageHtml += `<p style="margin: 0 0 6px 0; font-size: 12px; line-height: 1.55;">${escapeHtml(line)}</p>\n`;
       }
     }
 
-    closeTableIfNeeded();
+    // Flush any remaining table pairs
+    if (tablePairs.length > 0) {
+      pageHtml += renderUnifiedTutorialTable(tablePairs);
+    }
 
     pages.push(pageHtml.trim() || "<p></p>");
   }
 
   return pages.length > 0 ? pages : ["<p></p>"];
+}
+
+function renderUnifiedTutorialTable(pairs: { title: string; link: string }[]): string {
+  let rows = "";
+  pairs.forEach((p, idx) => {
+    const bg = idx % 2 === 1 ? "background-color: #fafafa;" : "background-color: #ffffff;";
+    rows += `
+    <tr style="${bg}">
+      <td style="width: 45%; padding: 8px 12px; border: 1px solid #d1d5db; vertical-align: middle; font-size: 11.5px; font-weight: 500; color: #111827; text-align: left;">
+        ${escapeHtml(p.title)}
+      </td>
+      <td style="width: 55%; padding: 8px 12px; border: 1px solid #d1d5db; vertical-align: middle; font-size: 11.5px; text-align: left;">
+        <a href="${p.link}" target="_blank" rel="noopener noreferrer" style="color: #eb5454; font-weight: 500; text-decoration: underline; word-break: break-all;">
+          ${escapeHtml(p.link)}
+        </a>
+      </td>
+    </tr>
+`;
+  });
+
+  return `
+<table style="width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 11.5px; border: 1px solid #d1d5db;">
+  <thead>
+    <tr style="background-color: #eb5454; color: #ffffff; font-weight: bold;">
+      <th style="width: 45%; padding: 8px 12px; border: 1px solid #d1d5db; text-align: center; color: #ffffff;">Tutorial</th>
+      <th style="width: 55%; padding: 8px 12px; border: 1px solid #d1d5db; text-align: center; color: #ffffff;">Enlace</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${rows}
+  </tbody>
+</table>
+`;
 }
 
 function escapeHtml(text: string): string {

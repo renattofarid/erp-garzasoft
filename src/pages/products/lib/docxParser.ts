@@ -362,12 +362,28 @@ export async function parseDocxFileToHtml(
     }
   });
 
-  // Apply colors and alignments from Word XML
+  // Detect uppercase bold heading paragraphs and convert to styled headings
+  container.querySelectorAll("p").forEach((p) => {
+    const t = p.textContent?.trim() || "";
+    const hasOnlyBold =
+      p.children.length === 1 && (p.children[0].tagName === "STRONG" || p.children[0].tagName === "B");
+    if (
+      (hasOnlyBold && t.length < 90 && (t === t.toUpperCase() || t.startsWith("CREDENCIALES") || t.startsWith("CONFIGURACIÓN") || t.startsWith("PRESENTACIÓN") || t.startsWith("PERFIL") || t.startsWith("PORTAL"))) ||
+      (t === "PRESENTACIÓN" || t === "CREDENCIALES PARA ACCESO A PORTAL DE CONTADOR" || t === "CONFIGURACIÓN DE SERIES")
+    ) {
+      const h2 = document.createElement("h2");
+      h2.innerHTML = p.innerHTML;
+      h2.setAttribute(
+        "style",
+        "color: #eb5454; font-size: 15px; font-weight: 700; text-transform: uppercase; margin: 18px 0 8px 0; letter-spacing: 0.3px;"
+      );
+      p.parentNode?.replaceChild(h2, p);
+    }
+  });
+
+  // Apply alignments from Word XML
   container.querySelectorAll("p, h1, h2, h3, div, span, li").forEach((el) => {
     const text = el.textContent?.trim() || "";
-    if (text && colorMap.has(text)) {
-      el.setAttribute("style", (el.getAttribute("style") || "") + ` color: ${colorMap.get(text)};`);
-    }
     if (text && centeredTexts.has(text)) {
       el.setAttribute(
         "style",

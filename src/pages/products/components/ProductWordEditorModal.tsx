@@ -7,6 +7,7 @@ import {
   Bold,
   Eye,
   FileSpreadsheet,
+  FileText,
   Heading1,
   Heading2,
   Heading3,
@@ -143,7 +144,10 @@ export default function ProductWordEditorModal({
 
   const handleDeletePage = (fromIndex: number) => {
     if (pages.length <= 1) {
-      errorToast("El documento debe tener al menos una página.");
+      if (confirm("¿Deseas vaciar esta página y dejarla en blanco?")) {
+        setPages(["<p style='font-size: 13px; line-height: 1.6;'>Escribe aquí tu contenido...</p>"]);
+        successToast("Página vaciada.");
+      }
       return;
     }
     if (!confirm(`¿Eliminar la Página ${fromIndex + 1}?`)) return;
@@ -155,7 +159,27 @@ export default function ProductWordEditorModal({
     });
     const newIdx = Math.max(0, fromIndex - 1);
     setTimeout(() => scrollToPage(newIdx), 100);
-    successToast(`Página eliminada.`);
+    successToast(`Página ${fromIndex + 1} eliminada.`);
+  };
+
+  const handleClearAllToBlank = () => {
+    if (
+      confirm(
+        "¿Deseas eliminar todas las páginas del documento y empezar con una sola hoja A4 en blanco?"
+      )
+    ) {
+      setPages([
+        `<div style="text-align: right; margin-bottom: 25px;">
+  <span style="font-size: 16px; font-weight: 700; color: #eb5454;">${product?.nombre || "PRODUCTO"}</span><br>
+  <span style="font-size: 10px; color: #888;">Tu restaurante digital</span>
+</div>
+<h2 style="color: #eb5454; font-size: 16px; font-weight: 700; text-transform: uppercase; margin-bottom: 16px;">TÍTULO PRINCIPAL</h2>
+<p style="font-size: 13px; line-height: 1.6;">Escribe aquí el contenido del documento...</p>`,
+      ]);
+      setActivePageIndex(0);
+      setTimeout(() => scrollToPage(0), 100);
+      successToast("Documento vaciado a una sola hoja en blanco.");
+    }
   };
 
   const handleDocxUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -332,6 +356,18 @@ export default function ProductWordEditorModal({
                 <UploadCloud className="h-3.5 w-3.5" />
               )}
               <span>Cargar Word (.docx)</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleClearAllToBlank}
+              className="text-xs gap-1.5 h-8 font-medium shadow-2xs text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10"
+              title="Eliminar todo y empezar con una sola hoja en blanco"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              <span>Hoja en Blanco</span>
             </Button>
 
             <Button

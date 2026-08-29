@@ -89,21 +89,19 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
         >
           <Copy className="h-3 w-3" />
         </Button>
-        {totalPages > 1 && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            title="Eliminar página"
-            className="h-6 w-6 text-red-400 hover:text-red-300 hover:bg-red-950"
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
-        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          title={totalPages > 1 ? "Eliminar esta página" : "Vaciar esta página"}
+          className="h-6 w-6 text-red-400 hover:text-red-300 hover:bg-red-950"
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
       </div>
 
       {/* Editable Document Body (Preserves 100% of Word formatting, fonts, colors, tables and images) */}

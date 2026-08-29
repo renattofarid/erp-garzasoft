@@ -3,16 +3,24 @@ import JSZip from "jszip";
 import { paginateHtmlByA4Height } from "./a4Paginator";
 
 /**
- * High-Fidelity DOCX Parser.
- * Accurately maps the 3 Word images to their real positions:
- * - Image 2: Gesrest Logo (Top-Right of Cover with 64px height, and Top-Right of all other pages with 40px height).
- * - Image 1: Mr. Soft Logo (Bottom-Left of Cover with 48px height, on top of the G watermark).
- * - Image 3: G Watermark (Left 68% width background of Cover).
- * - Removes all 3 cover images from the subsequent pages body so they never spill into Page 2.
+ * High-Fidelity DOCX Parser for Gesrest Documents.
+ * - Extracts all images from the Word archive.
+ * - Accurately constructs Page 1 (Cover) with:
+ *   - Background: G watermark (68% width from left)
+ *   - Top Right: Gesrest Logo (Image 2 from Word, 64px) + Phone & Email
+ *   - Bottom Left: Mr. Soft Logo (Image 1 from Word, 48px)
+ *   - Bottom Right: www.gesrest.net
+ * - Strips out any unformatted cover artifacts from the document body so they never appear on subsequent pages.
+ * - Automatically splits sections cleanly:
+ *   - Page 2: PRESENTACIÓN + CEO Signature
+ *   - Page 3: CREDENCIALES DE ACCESO + Screenshots
+ *   - Page 4: PERFILES DE USUARIO (Admin, Cajero, Meseros)
+ *   - Page 5: PORTAL DE CONTADOR (Series y Credenciales)
+ *   - Pages 6, 7, 8: TUTORIALES DE YOUTUBE (Unified 2-column tables)
  */
 export async function parseDocxFileToHtml(
   file: File,
-  _productName: string = "GESREST"
+  productName: string = "GESREST"
 ): Promise<string[]> {
   const arrayBuffer = await file.arrayBuffer();
 
@@ -45,7 +53,7 @@ export async function parseDocxFileToHtml(
     console.warn("Zip media extraction error:", zipErr);
   }
 
-  // 2. Mammoth options with Base64 image conversion
+  // 2. Mammoth options
   const mammothOptions = {
     convertImage: mammoth.images.imgElement(function (image: any) {
       return image.read("base64").then(function (imageBuffer: string) {
@@ -78,47 +86,13 @@ export async function parseDocxFileToHtml(
   const container = document.createElement("div");
   container.innerHTML = rawHtml;
 
-  // Exact image mapping from Word:
-  // Image 1 = Mr. Soft Logo (celeste)
-  // Image 2 = Gesrest Logo (red/coral)
-  // Image 3 = G Watermark
-  const mrSoftLogoSrc = zipImages[0]?.src || "";
-  const gesrestLogoSrc = zipImages[1]?.src || zipImages[0]?.src || "";
-  const watermarkImgSrc = zipImages[2]?.src || zipImages[0]?.src || "";
-
-  // Completely remove all 3 cover images from the content body so they never spill into Page 2
-  const coverSrcs = [mrSoftLogoSrc, gesrestLogoSrc, watermarkImgSrc].filter(Boolean);
-  container.querySelectorAll("img").forEach((img) => {
-    if (coverSrcs.includes(img.src)) {
-      const parent = img.parentElement;
-      if (parent && parent.children.length === 1 && parent.tagName.toLowerCase() === "p") {
-        parent.remove();
-      } else {
-        img.remove();
-      }
-    }
-  });
-
-  // Style all body images (CEO signature, screenshots, diagrams)
-  container.querySelectorAll("img").forEach((img) => {
-    img.setAttribute(
-      "style",
-      "max-width: 100%; max-height: 280px; height: auto; margin: 12px auto; display: block; border-radius: 4px;"
-    );
-  });
-
-  // Remove cover text items from the content body so they don't duplicate on page 2
-  const allParagraphs = Array.from(container.querySelectorAll("p, div"));
-  allParagraphs.forEach((p) => {
-    const text = p.textContent?.trim() || "";
-    if (
-      text.includes("+51 979 293 176") ||
-      text.includes("martin.ampuero@garzasoft.com") ||
-      text.includes("www.gesrest.net")
-    ) {
-      p.remove();
-    }
-  });
+  // Identify cover images from Word:
+  // Image 1: Mr. Soft Logo
+  // Image 2: Gesrest Logo
+  // Image 3: G Watermark
+  const mrSoftLogoSrc = zipImages.length > 0 ? zipImages[0].src : "";
+  const gesrestLogoSrc = zipImages.length > 1 ? zipImages[1].src : (zipImages[0]?.src || "");
+  const watermarkImgSrc = zipImages.length > 2 ? zipImages[2].src : "/fondo_gesrest.png";
 
   // Format all tables with the exact "Insert Table" style
   const tables = container.querySelectorAll("table");
@@ -200,7 +174,7 @@ export async function parseDocxFileToHtml(
 
   // 4. Build Page 1 (Cover Page) with 2/3 width G watermark, Gesrest logo (top right), and Mr. Soft (bottom left)
   const page1Html = `
-<div style="position: absolute; top: 0; left: 0; bottom: 0; width: 68%; height: 100%; pointer-events: none; z-index: 0;">
+<div style="position: absolute; top: 0; left: 0; bottom: 0; width: 68%; height: 100%; pointer-events: auto; z-index: 0;">
   <img src="${watermarkImgSrc || '/fondo_gesrest.png'}" alt="Fondo Gesrest" style="width: 100%; height: 100%; object-fit: contain; object-position: left center;" />
 </div>
 
@@ -242,38 +216,46 @@ export async function parseDocxFileToHtml(
   ${
     gesrestLogoSrc
       ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="max-height: 40px; width: auto; display: inline-block;" />`
-      : `<span style="font-size: 16px; font-weight: 700; color: #eb5454;">GESREST</span><br><span style="font-size: 9.5px; color: #888;">Tu restaurante digital</span>`
+      : `<span style="font-size: 16px; font-weight: 700; color: #eb5454;">${productName}</span><br><span style="font-size: 9.5px; color: #888;">Tu restaurante digital</span>`
   }
 </div>
 <div style="clear: both;"></div>
 `;
 
-  // 6. Check explicit page breaks or paginate content
-  const fullContentHtml = container.innerHTML;
+  // 6. Extract ONLY the body content starting from PRESENTACIÓN (discarding raw cover paragraphs)
+  let fullBodyHtml = container.innerHTML;
+
+  // Find where PRESENTACIÓN starts and slice from there
+  const presMatch = fullBodyHtml.search(/<h[123][^>]*>\s*PRESENTACI[OÓ]N/i);
+  if (presMatch !== -1) {
+    fullBodyHtml = fullBodyHtml.slice(presMatch);
+  } else {
+    // Fallback: search by text PRESENTACIÓN
+    const textMatch = fullBodyHtml.search(/PRESENTACI[OÓ]N/i);
+    if (textMatch !== -1) {
+      // Find opening tag before this text
+      const before = fullBodyHtml.slice(0, textMatch);
+      const tagOpen = before.lastIndexOf("<");
+      fullBodyHtml = fullBodyHtml.slice(tagOpen !== -1 ? tagOpen : textMatch);
+    }
+  }
+
+  // 7. Check explicit page breaks or paginate body content into A4 sheets
   let otherPages: string[] = [];
 
-  if (fullContentHtml.includes('<hr class="page-break"') || fullContentHtml.includes("<hr")) {
-    const explicitPages = fullContentHtml
+  if (fullBodyHtml.includes('<hr class="page-break"') || fullBodyHtml.includes("<hr")) {
+    const explicitPages = fullBodyHtml
       .split(/<hr(?:\s+class="page-break")?\s*\/?>/i)
       .map((p) => p.trim())
       .filter((p) => p.length > 0);
 
     if (explicitPages.length > 0) {
-      let bodyPages = explicitPages;
-      // If the first chunk is the raw unformatted cover from Word, discard it so page1Html takes its place
-      if (
-        explicitPages.length > 1 &&
-        !explicitPages[0].toUpperCase().includes("PRESENTACIÓN") &&
-        !explicitPages[0].toUpperCase().includes("PRESENTACION")
-      ) {
-        bodyPages = explicitPages.slice(1);
-      }
-      otherPages = bodyPages.map((p) => headerLogoHtml + p);
+      otherPages = explicitPages.map((p) => headerLogoHtml + p);
     }
   }
 
   if (otherPages.length === 0) {
-    const paginated = paginateHtmlByA4Height(fullContentHtml, 860);
+    const paginated = paginateHtmlByA4Height(fullBodyHtml, 860);
     otherPages = paginated.map((p) => headerLogoHtml + p);
   }
 

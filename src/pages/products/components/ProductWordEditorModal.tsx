@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Editor } from "@tiptap/react";
 import {
   AlignCenter,
   AlignJustify,
   AlignLeft,
   AlignRight,
   Bold,
-  Columns,
   Eye,
   FileSpreadsheet,
   Heading1,
@@ -24,11 +22,9 @@ import {
   Redo,
   RefreshCw,
   RemoveFormatting,
-  Rows,
   Save,
   Strikethrough,
   Table as TableIcon,
-  Trash2,
   Underline as UnderlineIcon,
   Undo,
   UploadCloud,
@@ -38,7 +34,6 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { errorToast, successToast } from "@/lib/core.function";
@@ -73,7 +68,6 @@ export default function ProductWordEditorModal({
   // Array of individual A4 pages
   const [pages, setPages] = useState<string[]>([]);
   const [activePageIndex, setActivePageIndex] = useState(0);
-  const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
 
   // Extract pages from raw saved html or use defaults
   const extractPagesFromHtml = (htmlContent?: string): string[] => {
@@ -252,26 +246,46 @@ export default function ProductWordEditorModal({
     }
   };
 
+  const exec = (cmd: string, val: string = "") => {
+    document.execCommand(cmd, false, val);
+  };
+
   const setLink = () => {
-    if (!activeEditor) return;
-    const previousUrl = activeEditor.getAttributes("link").href;
-    const url = window.prompt("Ingresa la URL del enlace:", previousUrl);
-
-    if (url === null) return;
-    if (url === "") {
-      activeEditor.chain().focus().extendMarkRange("link").unsetLink().run();
-      return;
+    const url = window.prompt("Ingresa la URL del enlace:");
+    if (url) {
+      exec("createLink", url);
     }
-
-    activeEditor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
 
   const addImage = () => {
-    if (!activeEditor) return;
     const url = window.prompt("Ingresa la URL de la imagen:");
     if (url) {
-      activeEditor.chain().focus().setImage({ src: url }).run();
+      exec("insertImage", url);
     }
+  };
+
+  const insertTable = () => {
+    const tableHtml = `
+      <table style="width: 100%; border-collapse: collapse; margin: 14px 0; border: 1px solid #ddd;">
+        <thead>
+          <tr style="background-color: #eb5454; color: #fff;">
+            <th style="padding: 8px 12px; border: 1px solid #ddd; text-align: center;">Columna 1</th>
+            <th style="padding: 8px 12px; border: 1px solid #ddd; text-align: center;">Columna 2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 8px 12px; border: 1px solid #ddd; text-align: center;">Dato 1</td>
+            <td style="padding: 8px 12px; border: 1px solid #ddd; text-align: center;">Dato 2</td>
+          </tr>
+          <tr style="background-color: #fafafa;">
+            <td style="padding: 8px 12px; border: 1px solid #ddd; text-align: center;">Dato 3</td>
+            <td style="padding: 8px 12px; border: 1px solid #ddd; text-align: center;">Dato 4</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+    exec("insertHTML", tableHtml);
   };
 
   if (!open) return null;
@@ -369,8 +383,8 @@ export default function ProductWordEditorModal({
               variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => activeEditor?.chain().focus().undo().run()}
-              disabled={!activeEditor?.can().undo()}
+              onClick={() => exec("undo")}
+              title="Deshacer"
             >
               <Undo className="h-3.5 w-3.5" />
             </Button>
@@ -379,8 +393,8 @@ export default function ProductWordEditorModal({
               variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => activeEditor?.chain().focus().redo().run()}
-              disabled={!activeEditor?.can().redo()}
+              onClick={() => exec("redo")}
+              title="Rehacer"
             >
               <Redo className="h-3.5 w-3.5" />
             </Button>
@@ -390,37 +404,40 @@ export default function ProductWordEditorModal({
           <div className="flex items-center gap-0.5 pr-2 border-r border-border">
             <Button
               type="button"
-              variant={activeEditor?.isActive("paragraph") ? "secondary" : "ghost"}
+              variant="ghost"
               size="sm"
               className="h-7 px-2 text-xs font-semibold"
-              onClick={() => activeEditor?.chain().focus().setParagraph().run()}
+              onClick={() => exec("formatBlock", "<p>")}
             >
               Párrafo
             </Button>
             <Button
               type="button"
-              variant={activeEditor?.isActive("heading", { level: 1 }) ? "secondary" : "ghost"}
+              variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => activeEditor?.chain().focus().toggleHeading({ level: 1 }).run()}
+              onClick={() => exec("formatBlock", "<h1>")}
+              title="Título Principal H1"
             >
               <Heading1 className="h-3.5 w-3.5" />
             </Button>
             <Button
               type="button"
-              variant={activeEditor?.isActive("heading", { level: 2 }) ? "secondary" : "ghost"}
+              variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => activeEditor?.chain().focus().toggleHeading({ level: 2 }).run()}
+              onClick={() => exec("formatBlock", "<h2>")}
+              title="Subtítulo H2"
             >
               <Heading2 className="h-3.5 w-3.5" />
             </Button>
             <Button
               type="button"
-              variant={activeEditor?.isActive("heading", { level: 3 }) ? "secondary" : "ghost"}
+              variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => activeEditor?.chain().focus().toggleHeading({ level: 3 }).run()}
+              onClick={() => exec("formatBlock", "<h3>")}
+              title="Encabezado H3"
             >
               <Heading3 className="h-3.5 w-3.5" />
             </Button>
@@ -430,37 +447,41 @@ export default function ProductWordEditorModal({
           <div className="flex items-center gap-0.5 pr-2 border-r border-border">
             <Button
               type="button"
-              variant={activeEditor?.isActive("bold") ? "secondary" : "ghost"}
+              variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => activeEditor?.chain().focus().toggleBold().run()}
+              onClick={() => exec("bold")}
+              title="Negrita"
             >
               <Bold className="h-3.5 w-3.5" />
             </Button>
             <Button
               type="button"
-              variant={activeEditor?.isActive("italic") ? "secondary" : "ghost"}
+              variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => activeEditor?.chain().focus().toggleItalic().run()}
+              onClick={() => exec("italic")}
+              title="Cursiva"
             >
               <Italic className="h-3.5 w-3.5" />
             </Button>
             <Button
               type="button"
-              variant={activeEditor?.isActive("underline") ? "secondary" : "ghost"}
+              variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => activeEditor?.chain().focus().toggleUnderline().run()}
+              onClick={() => exec("underline")}
+              title="Subrayado"
             >
               <UnderlineIcon className="h-3.5 w-3.5" />
             </Button>
             <Button
               type="button"
-              variant={activeEditor?.isActive("strike") ? "secondary" : "ghost"}
+              variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => activeEditor?.chain().focus().toggleStrike().run()}
+              onClick={() => exec("strikeThrough")}
+              title="Tachado"
             >
               <Strikethrough className="h-3.5 w-3.5" />
             </Button>
@@ -490,7 +511,7 @@ export default function ProductWordEditorModal({
                     key={c.color}
                     type="button"
                     title={c.label}
-                    onClick={() => activeEditor?.chain().focus().setColor(c.color).run()}
+                    onClick={() => exec("foreColor", c.color)}
                     className="h-6 w-full rounded border border-border flex items-center justify-center transition-transform hover:scale-110"
                     style={{ backgroundColor: c.color }}
                   />
@@ -517,19 +538,11 @@ export default function ProductWordEditorModal({
                     key={c.color}
                     type="button"
                     title={c.label}
-                    onClick={() => activeEditor?.chain().focus().toggleHighlight({ color: c.color }).run()}
+                    onClick={() => exec("hiliteColor", c.color)}
                     className="h-6 w-full rounded border border-border transition-transform hover:scale-110"
                     style={{ backgroundColor: c.color }}
                   />
                 ))}
-                <button
-                  type="button"
-                  title="Quitar resaltado"
-                  onClick={() => activeEditor?.chain().focus().unsetHighlight().run()}
-                  className="h-6 w-full rounded border border-dashed border-border text-[10px] flex items-center justify-center text-muted-foreground"
-                >
-                  Borrar
-                </button>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -538,37 +551,41 @@ export default function ProductWordEditorModal({
           <div className="flex items-center gap-0.5 pr-2 border-r border-border">
             <Button
               type="button"
-              variant={activeEditor?.isActive({ textAlign: "left" }) ? "secondary" : "ghost"}
+              variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => activeEditor?.chain().focus().setTextAlign("left").run()}
+              onClick={() => exec("justifyLeft")}
+              title="Alinear a la Izquierda"
             >
               <AlignLeft className="h-3.5 w-3.5" />
             </Button>
             <Button
               type="button"
-              variant={activeEditor?.isActive({ textAlign: "center" }) ? "secondary" : "ghost"}
+              variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => activeEditor?.chain().focus().setTextAlign("center").run()}
+              onClick={() => exec("justifyCenter")}
+              title="Centrar"
             >
               <AlignCenter className="h-3.5 w-3.5" />
             </Button>
             <Button
               type="button"
-              variant={activeEditor?.isActive({ textAlign: "right" }) ? "secondary" : "ghost"}
+              variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => activeEditor?.chain().focus().setTextAlign("right").run()}
+              onClick={() => exec("justifyRight")}
+              title="Alinear a la Derecha"
             >
               <AlignRight className="h-3.5 w-3.5" />
             </Button>
             <Button
               type="button"
-              variant={activeEditor?.isActive({ textAlign: "justify" }) ? "secondary" : "ghost"}
+              variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => activeEditor?.chain().focus().setTextAlign("justify").run()}
+              onClick={() => exec("justifyFull")}
+              title="Justificar"
             >
               <AlignJustify className="h-3.5 w-3.5" />
             </Button>
@@ -578,19 +595,21 @@ export default function ProductWordEditorModal({
           <div className="flex items-center gap-0.5 pr-2 border-r border-border">
             <Button
               type="button"
-              variant={activeEditor?.isActive("bulletList") ? "secondary" : "ghost"}
+              variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => activeEditor?.chain().focus().toggleBulletList().run()}
+              onClick={() => exec("insertUnorderedList")}
+              title="Viñetas"
             >
               <List className="h-3.5 w-3.5" />
             </Button>
             <Button
               type="button"
-              variant={activeEditor?.isActive("orderedList") ? "secondary" : "ghost"}
+              variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => activeEditor?.chain().focus().toggleOrderedList().run()}
+              onClick={() => exec("insertOrderedList")}
+              title="Lista Numerada"
             >
               <ListOrdered className="h-3.5 w-3.5" />
             </Button>
@@ -598,48 +617,27 @@ export default function ProductWordEditorModal({
 
           {/* Tablas Avanzadas */}
           <div className="flex items-center gap-1 pr-2 border-r border-border">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 font-medium">
-                  <TableIcon className="h-3.5 w-3.5 text-primary" />
-                  <span>Tabla</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-48">
-                <DropdownMenuItem
-                  onClick={() =>
-                    activeEditor?.chain().focus().insertTable({ rows: 3, cols: 2, withHeaderRow: true }).run()
-                  }
-                >
-                  <TableIcon className="mr-2 h-4 w-4" /> Insertar Tabla 3x2
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => activeEditor?.chain().focus().addRowAfter().run()}>
-                  <Rows className="mr-2 h-4 w-4" /> Agregar Fila
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => activeEditor?.chain().focus().deleteRow().run()}>
-                  <Trash2 className="mr-2 h-4 w-4 text-destructive" /> Eliminar Fila
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => activeEditor?.chain().focus().addColumnAfter().run()}>
-                  <Columns className="mr-2 h-4 w-4" /> Agregar Columna
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => activeEditor?.chain().focus().deleteColumn().run()}>
-                  <Trash2 className="mr-2 h-4 w-4 text-destructive" /> Eliminar Columna
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => activeEditor?.chain().focus().deleteTable().run()}>
-                  <Trash2 className="mr-2 h-4 w-4 text-destructive font-semibold" /> Eliminar Tabla
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={insertTable}
+              className="h-7 px-2 text-xs gap-1 font-medium"
+            >
+              <TableIcon className="h-3.5 w-3.5 text-primary" />
+              <span>+ Insertar Tabla</span>
+            </Button>
           </div>
 
           {/* Elementos & Enlaces */}
           <div className="flex items-center gap-0.5">
             <Button
               type="button"
-              variant={activeEditor?.isActive("link") ? "secondary" : "ghost"}
+              variant="ghost"
               size="icon"
               className="h-7 w-7"
               onClick={setLink}
+              title="Insertar Enlace"
             >
               <LinkIcon className="h-3.5 w-3.5" />
             </Button>
@@ -649,6 +647,7 @@ export default function ProductWordEditorModal({
               size="icon"
               className="h-7 w-7"
               onClick={addImage}
+              title="Insertar Imagen por URL"
             >
               <ImageIcon className="h-3.5 w-3.5" />
             </Button>
@@ -657,7 +656,7 @@ export default function ProductWordEditorModal({
               variant="ghost"
               size="icon"
               className="h-7 w-7 text-muted-foreground"
-              onClick={() => activeEditor?.chain().focus().clearNodes().unsetAllMarks().run()}
+              onClick={() => exec("removeFormat")}
               title="Limpiar Formato"
             >
               <RemoveFormatting className="h-3.5 w-3.5" />
@@ -724,10 +723,7 @@ export default function ProductWordEditorModal({
                   totalPages={pages.length}
                   content={content}
                   isActive={idx === activePageIndex}
-                  onFocus={(ed) => {
-                    setActivePageIndex(idx);
-                    setActiveEditor(ed);
-                  }}
+                  onFocus={() => setActivePageIndex(idx)}
                   onChange={(newHtml) => handlePageChange(idx, newHtml)}
                   onAddBelow={() => handleAddPageBelow(idx)}
                   onDuplicate={() => handleDuplicatePage(idx)}

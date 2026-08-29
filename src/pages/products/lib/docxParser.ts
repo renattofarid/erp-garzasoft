@@ -17,7 +17,7 @@ function getImageDimensions(src: string): Promise<{ src: string; width: number; 
 /**
  * High-Fidelity DOCX Parser for Gesrest Documents.
  * - Cover Page:
- *   - Background: G watermark taking full page height (object-fit: cover, left center)
+ *   - Background: G watermark expanded to 900px width shifted left (-320px) to fill full sheet height and bleed to left edge
  *   - Top Right: Gesrest Logo (width: 310px) + Phone & Email
  *   - Bottom Left: Mr. Soft Logo (width: 250px)
  *   - Bottom Right: www.gesrest.net
@@ -216,13 +216,13 @@ export async function parseDocxFileToHtml(
 
   // 5. Build Page 1 (Cover Page) with 100% faithful enlarged layout
   const page1Html = `
-<div style="position: absolute; top: 0; left: -20px; bottom: 0; width: 95%; height: 100%; pointer-events: auto; z-index: 0; overflow: hidden;">
-  <img src="${watermarkImgSrc}" alt="Fondo Gesrest" style="width: 100%; height: 100%; object-fit: cover; object-position: left center;" />
+<div style="position: absolute; top: -50px; left: -60px; right: -60px; bottom: -75px; width: 800px; height: 1080px; pointer-events: auto; z-index: 0; overflow: hidden; margin: 0; padding: 0;">
+  <img src="${watermarkImgSrc}" alt="Fondo Gesrest" style="position: absolute; top: -30px; left: -310px; width: 920px; height: 1140px; max-width: none; max-height: none; object-fit: contain;" />
 </div>
 
-<div style="position: relative; z-index: 1; padding: 20px; min-height: 980px;">
+<div style="position: relative; z-index: 1; padding: 10px; min-height: 960px;">
   <!-- Logo de Gesrest (Superior Derecho - MUY GRANDE) y Contacto -->
-  <div style="text-align: right; margin-top: 30px; margin-right: 10px;">
+  <div style="text-align: right; margin-top: 25px; margin-right: 5px;">
     ${
       gesrestLogoSrc
         ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="width: 310px; max-width: 100%; height: auto; margin-left: auto; margin-bottom: 8px; display: inline-block;" />`
@@ -235,7 +235,7 @@ export async function parseDocxFileToHtml(
   </div>
 
   <!-- Logo Mr. Soft (Inferior Izquierdo - MUY GRANDE) -->
-  <div style="position: absolute; bottom: 40px; left: 45px; z-index: 1;">
+  <div style="position: absolute; bottom: 35px; left: 35px; z-index: 1;">
     ${
       mrSoftLogoSrc
         ? `<img src="${mrSoftLogoSrc}" alt="Mr. Soft Development" style="width: 250px; max-width: 100%; height: auto;" />`
@@ -244,7 +244,7 @@ export async function parseDocxFileToHtml(
   </div>
 
   <!-- Enlace Inferior Derecho -->
-  <div style="position: absolute; bottom: 45px; right: 40px; z-index: 1;">
+  <div style="position: absolute; bottom: 35px; right: 35px; z-index: 1;">
     <a href="https://www.gesrest.net" target="_blank" rel="noopener noreferrer" style="color: #eb5454; font-weight: 700; font-size: 16px; text-decoration: none;">
       www.gesrest.net
     </a>

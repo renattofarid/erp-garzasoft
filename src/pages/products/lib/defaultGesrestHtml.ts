@@ -12,19 +12,19 @@ export function getDefaultGesrestPages(productName: string = "GESREST"): string[
   return [
     // PÁGINA 1: PORTADA
     `
-<div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0;">
-  <img src="/fondo_gesrest.png" alt="Fondo Gesrest" style="width: 100%; height: 100%; object-fit: fill;" />
+<div style="position: absolute; top: 0; left: 0; bottom: 0; width: 68%; height: 100%; pointer-events: none; z-index: 0;">
+  <img src="/fondo_gesrest.png" alt="Fondo Gesrest" style="width: 100%; height: 100%; object-fit: contain; object-position: left center;" />
 </div>
 
-<div style="position: relative; z-index: 1; padding: 20px;">
-  <div style="text-align: right; margin-top: 60px; margin-right: 10px;">
+<div style="position: relative; z-index: 1; padding: 20px; min-height: 980px;">
+  <div style="text-align: right; margin-top: 70px; margin-right: 15px;">
     <div style="font-size: 12px; color: #444; line-height: 1.8;">
       <div>+51 979 293 176</div>
       <div><a href="mailto:martin.ampuero@garzasoft.com" style="color: #0b4e8c; text-decoration: underline;">martin.ampuero@garzasoft.com</a></div>
     </div>
   </div>
 
-  <div style="text-align: right; margin-top: 640px; margin-right: 15px;">
+  <div style="text-align: right; margin-top: 670px; margin-right: 20px;">
     <a href="https://www.gesrest.net" target="_blank" rel="noopener noreferrer" style="color: #eb5454; font-weight: bold; font-size: 14px; text-decoration: none;">
       www.gesrest.net
     </a>

@@ -15,6 +15,71 @@ import Image from "@tiptap/extension-image";
 import { Copy, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+// Extend Table elements to preserve all inline styles, backgrounds, widths and alignments
+const CustomTableCell = TableCell.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      style: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("style"),
+        renderHTML: (attributes) => {
+          if (!attributes.style) return {};
+          return { style: attributes.style };
+        },
+      },
+    };
+  },
+});
+
+const CustomTableHeader = TableHeader.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      style: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("style"),
+        renderHTML: (attributes) => {
+          if (!attributes.style) return {};
+          return { style: attributes.style };
+        },
+      },
+    };
+  },
+});
+
+const CustomTableRow = TableRow.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      style: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("style"),
+        renderHTML: (attributes) => {
+          if (!attributes.style) return {};
+          return { style: attributes.style };
+        },
+      },
+    };
+  },
+});
+
+const CustomTable = Table.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      style: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("style"),
+        renderHTML: (attributes) => {
+          if (!attributes.style) return {};
+          return { style: attributes.style };
+        },
+      },
+    };
+  },
+});
+
 interface PageSheetItemProps {
   pageIndex: number;
   totalPages: number;
@@ -52,12 +117,12 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
       TextAlign.configure({
         types: ["heading", "paragraph"],
       }),
-      Table.configure({
+      CustomTable.configure({
         resizable: true,
       }),
-      TableRow,
-      TableHeader,
-      TableCell,
+      CustomTableRow,
+      CustomTableHeader,
+      CustomTableCell,
       Link.configure({
         openOnClick: false,
       }),
@@ -153,7 +218,7 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
           min-height: 920px;
           font-family: Arial, Helvetica, sans-serif;
           font-size: 13px;
-          line-height: 1.55;
+          line-height: 1.6;
           color: #111827 !important;
         }
         #page-sheet-${pageIndex} .ProseMirror table {
@@ -161,20 +226,22 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
           table-layout: fixed;
           width: 100%;
           margin: 14px 0;
+          border: 1px solid #d1d5db;
         }
         #page-sheet-${pageIndex} .ProseMirror td, #page-sheet-${pageIndex} .ProseMirror th {
           min-width: 1em;
           border: 1px solid #d1d5db;
-          padding: 7px 10px;
-          vertical-align: top;
+          padding: 8px 12px;
+          vertical-align: middle;
           box-sizing: border-box;
-          color: #111827 !important;
+          font-size: 12px;
+          color: inherit;
         }
         #page-sheet-${pageIndex} .ProseMirror th {
           font-weight: bold;
           text-align: center;
-          background-color: #eb5454 !important;
-          color: #ffffff !important;
+          background-color: #eb5454;
+          color: #ffffff;
         }
         #page-sheet-${pageIndex} .ProseMirror .selectedCell:after {
           z-index: 2;
@@ -188,9 +255,42 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
           color: #eb5454;
           text-decoration: underline;
         }
-        #page-sheet-${pageIndex} .ProseMirror h1, #page-sheet-${pageIndex} .ProseMirror h2, #page-sheet-${pageIndex} .ProseMirror h3 {
+        #page-sheet-${pageIndex} .ProseMirror h1 {
           color: #eb5454;
-          margin-top: 0;
+          font-size: 22px;
+          font-weight: 700;
+          margin: 0 0 10px 0;
+          line-height: 1.2;
+        }
+        #page-sheet-${pageIndex} .ProseMirror h2 {
+          color: #eb5454;
+          font-size: 16px;
+          font-weight: 700;
+          text-transform: uppercase;
+          margin: 16px 0 10px 0;
+          line-height: 1.3;
+        }
+        #page-sheet-${pageIndex} .ProseMirror h3 {
+          color: #eb5454;
+          font-size: 13px;
+          font-weight: 700;
+          text-transform: uppercase;
+          margin: 14px 0 8px 0;
+        }
+        #page-sheet-${pageIndex} .ProseMirror p {
+          margin: 0 0 8px 0;
+          font-size: 12.5px;
+          line-height: 1.6;
+          color: #111827;
+        }
+        #page-sheet-${pageIndex} .ProseMirror ul, #page-sheet-${pageIndex} .ProseMirror ol {
+          margin: 8px 0 16px 24px;
+          padding: 0;
+          font-size: 12.5px;
+          line-height: 1.6;
+        }
+        #page-sheet-${pageIndex} .ProseMirror li {
+          margin-bottom: 4px;
         }
         #page-sheet-${pageIndex} .ProseMirror img {
           max-width: 100%;
@@ -198,10 +298,6 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
           border-radius: 4px;
           margin: 12px auto;
           display: block;
-        }
-        #page-sheet-${pageIndex} .ProseMirror p {
-          margin: 0 0 8px 0;
-          color: #111827 !important;
         }
       `}</style>
       <EditorContent editor={editor} />

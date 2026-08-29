@@ -248,17 +248,17 @@ export default function ProductWordEditorModal({
           const footerHtml = isCover
             ? ""
             : `
-  <div style="position: absolute; bottom: 25px; left: 60px; right: 60px; border-top: 1px solid #e5e7eb; padding-top: 6px; font-size: 10.5px; color: #9ca3af; font-family: Arial, sans-serif;">
+  <div style="position: absolute; bottom: 20pt; left: 45pt; right: 45pt; border-top: 1px solid #e5e7eb; padding-top: 5pt; font-size: 8.5pt; color: #9ca3af; font-family: Arial, sans-serif;">
     <span style="float: left;">Un producto de Mr. Soft</span>
     <span style="float: right;">Página ${idx} de ${total - 1}</span>
     <div style="clear: both;"></div>
   </div>`;
 
           return `
-<div class="a4-page-sheet" style="width: 794px; height: 1123px; position: relative; padding: 50px 60px 75px 60px; background: #ffffff; box-sizing: border-box; overflow: hidden; page-break-after: ${
+<div class="a4-page-sheet" style="width: 595pt; height: 842pt; position: relative; padding: 38pt 45pt 55pt 45pt; background: #ffffff; box-sizing: border-box; overflow: hidden; page-break-after: ${
             idx === total - 1 ? "avoid" : "always"
           };">
-  <div class="page-content" style="font-size: 12px; line-height: 1.55; color: #111827; position: relative; z-index: 1;">
+  <div class="page-content" style="font-size: 9.5pt; line-height: 1.55; color: #111827; position: relative; z-index: 1;">
     ${content}
   </div>
   ${footerHtml}
@@ -280,6 +280,7 @@ export default function ProductWordEditorModal({
   const handlePreviewPdf = async () => {
     if (!product) return;
     try {
+      await handleSave();
       await openPdfFromFetcher(
         () => getFormatoAltaPdfBlob(product.id),
         `Generando PDF de ${product.nombre}...`

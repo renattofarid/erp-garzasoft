@@ -519,38 +519,38 @@ export async function parseDocxFileToHtml(
     rawMrSoftLogoSrc ? trimImageWhiteBorders(rawMrSoftLogoSrc) : Promise.resolve(""),
   ]);
 
-  // 5. Build Page 1 (Cover Page) with symmetric G watermark positioned to top-left
+  // 5. Build Page 1 (Cover Page) with symmetric G watermark positioned in points (pt) for perfect PDF and screen parity
   const page1Html = `
-<div style="position: absolute; top: -50px; left: -60px; width: 800px; height: 1080px; pointer-events: auto; z-index: 0; overflow: hidden; margin: 0; padding: 0;">
-  <img src="${watermarkImgSrc}" alt="Fondo Gesrest" style="position: absolute; top: -320px; left: -700px; width: 1800px; height: 1800px; max-width: none; max-height: none; display: block;" />
+<div style="position: absolute; top: -38pt; left: -45pt; width: 595pt; height: 810pt; pointer-events: auto; z-index: 0; overflow: hidden; margin: 0; padding: 0;">
+  <img src="${watermarkImgSrc}" alt="Fondo Gesrest" style="position: absolute; top: -240pt; left: -525pt; width: 1350pt; height: 1350pt; max-width: none; max-height: none; display: block;" />
 </div>
 
-<div style="position: relative; z-index: 1; padding: 10px; min-height: 960px;">
+<div style="position: relative; z-index: 1; padding: 8pt; min-height: 720pt;">
   <!-- Logo de Gesrest (Superior Derecho - Rectangular Ajustado) y Contacto -->
-  <div style="text-align: right; margin-top: 25px; margin-right: 5px;">
+  <div style="text-align: right; margin-top: 20pt; margin-right: 5pt;">
     ${
       gesrestLogoSrc
-        ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="width: 280px; max-width: 100%; height: auto; margin-left: auto; margin-bottom: 6px; display: inline-block;" />`
-        : `<h1 style="font-size: 38px; font-weight: bold; color: #eb5454; margin: 0;">${productName}</h1><div style="font-size: 15px; color: #eb5454; font-weight: 600;">Tu restaurante digital</div>`
+        ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="width: 210pt; max-width: 100%; height: auto; margin-left: auto; margin-bottom: 5pt; display: inline-block;" />`
+        : `<h1 style="font-size: 28pt; font-weight: bold; color: #eb5454; margin: 0;">${productName}</h1><div style="font-size: 11pt; color: #eb5454; font-weight: 600;">Tu restaurante digital</div>`
     }
-    <div style="font-size: 13px; font-weight: 500; color: #333; line-height: 1.8;">
+    <div style="font-size: 10pt; font-weight: 500; color: #333; line-height: 1.8;">
       <div>+51 979 293 176</div>
       <div><a href="mailto:martin.ampuero@garzasoft.com" style="color: #0b4e8c; text-decoration: underline;">martin.ampuero@garzasoft.com</a></div>
     </div>
   </div>
 
   <!-- Logo Mr. Soft (Inferior Izquierdo - Rectangular Ajustado) -->
-  <div style="position: absolute; bottom: 35px; left: 35px; z-index: 1;">
+  <div style="position: absolute; bottom: 25pt; left: 25pt; z-index: 1;">
     ${
       mrSoftLogoSrc
-        ? `<img src="${mrSoftLogoSrc}" alt="Mr. Soft Development" style="width: 220px; max-width: 100%; height: auto;" />`
-        : `<div style="font-size: 28px; font-weight: bold; color: #1a1a1a;">Mr. Soft</div><div style="font-size: 12px; color: #0088cc; letter-spacing: 2px;">DEVELOPMENT</div>`
+        ? `<img src="${mrSoftLogoSrc}" alt="Mr. Soft Development" style="width: 165pt; max-width: 100%; height: auto;" />`
+        : `<div style="font-size: 21pt; font-weight: bold; color: #1a1a1a;">Mr. Soft</div><div style="font-size: 9pt; color: #0088cc; letter-spacing: 2px;">DEVELOPMENT</div>`
     }
   </div>
 
   <!-- Enlace Inferior Derecho -->
-  <div style="position: absolute; bottom: 35px; right: 35px; z-index: 1;">
-    <a href="https://www.gesrest.net" target="_blank" rel="noopener noreferrer" style="color: #eb5454; font-weight: 700; font-size: 16px; text-decoration: none;">
+  <div style="position: absolute; bottom: 25pt; right: 25pt; z-index: 1;">
+    <a href="https://www.gesrest.net" target="_blank" rel="noopener noreferrer" style="color: #eb5454; font-weight: 700; font-size: 12pt; text-decoration: none;">
       www.gesrest.net
     </a>
   </div>

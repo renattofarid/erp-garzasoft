@@ -21,8 +21,8 @@ export function getDefaultGesrestPages(productName: string = "GESREST"): string[
   return [
     // PÁGINA 1: PORTADA
     `
-<div style="position: absolute; top: -50px; left: -60px; right: -60px; bottom: -75px; width: 800px; height: 1080px; pointer-events: auto; z-index: 0; overflow: hidden; margin: 0; padding: 0;">
-  <img src="/fondo_gesrest.png" alt="Fondo Gesrest" style="position: absolute; top: -950px; left: -1150px; width: 3000px; height: 3700px; max-width: none; max-height: none; object-fit: contain;" />
+<div style="position: absolute; top: -50px; left: -60px; width: 800px; height: 1080px; pointer-events: auto; z-index: 0; overflow: hidden; margin: 0; padding: 0;">
+  <img src="/fondo_gesrest.png" alt="Fondo Gesrest" style="position: absolute; top: -320px; left: -700px; width: 1800px; height: 1800px; max-width: none; max-height: none; display: block;" />
 </div>
 
 <div style="position: relative; z-index: 1; padding: 10px; min-height: 960px;">

@@ -3,8 +3,17 @@ export function getDefaultGesrestPages(productName: string = "GESREST"): string[
 
   const headerLogoHtml = `
 <div style="float: right; text-align: right; margin-bottom: 20px; clear: right;">
-  <span style="font-size: 16px; font-weight: 700; color: #eb5454;">${productName}</span><br>
-  <span style="font-size: 9.5px; color: #888;">Tu restaurante digital</span>
+  <div style="display: inline-flex; align-items: center; gap: 8px; justify-content: flex-end; text-align: right;">
+    <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="45" stroke="#eb5454" stroke-width="9" fill="none"/>
+      <path d="M30 48 H70 V52 C70 63 61 72 50 72 C39 72 30 63 30 52 Z" fill="#eb5454"/>
+      <path d="M42 30 V42 M50 26 V42 M58 30 V42" stroke="#eb5454" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+    <div style="text-align: left; line-height: 1.15;">
+      <span style="font-size: 18px; font-weight: 800; color: #eb5454; letter-spacing: -0.5px;">${productName}</span><br>
+      <span style="font-size: 9px; color: #eb5454; font-weight: 600;">Tu restaurante digital</span>
+    </div>
+  </div>
 </div>
 <div style="clear: both;"></div>
 `;
@@ -17,14 +26,26 @@ export function getDefaultGesrestPages(productName: string = "GESREST"): string[
 </div>
 
 <div style="position: relative; z-index: 1; padding: 20px; min-height: 980px;">
-  <div style="text-align: right; margin-top: 70px; margin-right: 15px;">
-    <div style="font-size: 12px; color: #444; line-height: 1.8;">
+  <!-- Logo y Contacto Superior Derecho (Grande) -->
+  <div style="text-align: right; margin-top: 50px; margin-right: 15px;">
+    <div style="display: inline-flex; align-items: center; gap: 9px; justify-content: flex-end; text-align: right;">
+      <svg width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="45" stroke="#eb5454" stroke-width="9" fill="none"/>
+        <path d="M30 48 H70 V52 C70 63 61 72 50 72 C39 72 30 63 30 52 Z" fill="#eb5454"/>
+        <path d="M42 30 V42 M50 26 V42 M58 30 V42" stroke="#eb5454" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+      <div style="text-align: left; line-height: 1.15;">
+        <span style="font-size: 26px; font-weight: 800; color: #eb5454; letter-spacing: -0.5px;">${productName}</span><br>
+        <span style="font-size: 11px; color: #eb5454; font-weight: 600;">Tu restaurante digital</span>
+      </div>
+    </div>
+    <div style="font-size: 12px; color: #444; line-height: 1.8; margin-top: 10px;">
       <div>+51 979 293 176</div>
       <div><a href="mailto:martin.ampuero@garzasoft.com" style="color: #0b4e8c; text-decoration: underline;">martin.ampuero@garzasoft.com</a></div>
     </div>
   </div>
 
-  <div style="text-align: right; margin-top: 670px; margin-right: 20px;">
+  <div style="text-align: right; margin-top: 640px; margin-right: 20px;">
     <a href="https://www.gesrest.net" target="_blank" rel="noopener noreferrer" style="color: #eb5454; font-weight: bold; font-size: 14px; text-decoration: none;">
       www.gesrest.net
     </a>

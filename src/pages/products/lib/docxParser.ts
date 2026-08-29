@@ -4,19 +4,19 @@ import { paginateHtmlByA4Height } from "./a4Paginator";
 
 /**
  * High-Fidelity DOCX Parser.
- * - Extracts 100% of images, text, and tables.
- * - Accurately sets Page 1 cover with /fondo_gesrest.png (2/3 width) and contact info.
- * - Places top-right Gesrest logo/header on every subsequent page.
- * - Formats all tables into clean 2-column tables with coral headers (#eb5454).
+ * - Extracts 100% of images directly from the Word document (Logo, Watermark, Signature, Screenshots).
+ * - Pulls the real Gesrest logo from the Word file and places it on Page 1 (large) and headers of Pages 2 to N.
+ * - Preserves the CEO signature image and all screenshots in their exact positions in the content body.
+ * - Styles all tables to match the "Insert Table" design (coral header #eb5454, zebra rows, 2 columns).
  */
 export async function parseDocxFileToHtml(
   file: File,
-  productName: string = "GESREST"
+  _productName: string = "GESREST"
 ): Promise<string[]> {
   const arrayBuffer = await file.arrayBuffer();
 
-  // 1. Extract all images from ZIP
-  const extractedImages: string[] = [];
+  // 1. Extract all images from the Word ZIP in order
+  const zipImages: { name: string; src: string }[] = [];
   try {
     const zip = await JSZip.loadAsync(arrayBuffer);
     const mediaFiles = Object.keys(zip.files)
@@ -35,13 +35,16 @@ export async function parseDocxFileToHtml(
           : ext === "svg"
           ? "image/svg+xml"
           : "image/" + ext;
-      extractedImages.push(`data:${mime};base64,${base64}`);
+      zipImages.push({
+        name: fileName,
+        src: `data:${mime};base64,${base64}`,
+      });
     }
   } catch (zipErr) {
     console.warn("Zip media extraction error:", zipErr);
   }
 
-  // 2. Mammoth options
+  // 2. Mammoth options with Base64 image conversion
   const mammothOptions = {
     convertImage: mammoth.images.imgElement(function (image: any) {
       return image.read("base64").then(function (imageBuffer: string) {
@@ -70,9 +73,31 @@ export async function parseDocxFileToHtml(
     throw new Error("El archivo Word no contiene texto legible.");
   }
 
-  // 3. Post-process and style HTML in DOM
+  // 3. Post-process HTML in DOM
   const container = document.createElement("div");
   container.innerHTML = rawHtml;
+
+  // Identify Gesrest Logo extracted from Word
+  // The Gesrest logo is usually the 2nd image or the first non-background image
+  let gesrestLogoSrc = "";
+  if (zipImages.length > 1) {
+    gesrestLogoSrc = zipImages[1].src;
+  } else if (zipImages.length === 1) {
+    gesrestLogoSrc = zipImages[0].src;
+  } else {
+    const firstImg = container.querySelector("img");
+    if (firstImg) gesrestLogoSrc = firstImg.src;
+  }
+
+  // Style all content images (signature, screenshots, diagrams)
+  const docxImgs = Array.from(container.querySelectorAll("img"));
+  docxImgs.forEach((img) => {
+    // Check if this image is a signature (near Ampuero/CEO) or a diagram
+    img.setAttribute(
+      "style",
+      "max-width: 100%; max-height: 280px; height: auto; margin: 12px auto; display: block; border-radius: 4px;"
+    );
+  });
 
   // Remove cover items from the content body so they don't duplicate on page 2
   const allParagraphs = Array.from(container.querySelectorAll("p, div"));
@@ -81,26 +106,11 @@ export async function parseDocxFileToHtml(
     if (
       text.includes("+51 979 293 176") ||
       text.includes("martin.ampuero@garzasoft.com") ||
-      text.includes("www.gesrest.net") ||
-      (text === "Mr. Soft" && !p.nextElementSibling?.tagName.startsWith("TABLE"))
+      text.includes("www.gesrest.net")
     ) {
       p.remove();
     }
   });
-
-  // Remove standalone cover logo images from content body
-  const docxImgElements = Array.from(container.querySelectorAll("img"));
-  if (docxImgElements.length >= 3) {
-    // First 3 images are usually cover logos in the template
-    docxImgElements.slice(0, 3).forEach((img) => {
-      const parent = img.parentElement;
-      if (parent && parent.children.length === 1 && parent.tagName.toLowerCase() === "p") {
-        parent.remove();
-      } else {
-        img.remove();
-      }
-    });
-  }
 
   // Format all tables with the exact "Insert Table" style
   const tables = container.querySelectorAll("table");
@@ -180,21 +190,28 @@ export async function parseDocxFileToHtml(
     p.setAttribute("style", "margin: 0 0 6px 0; line-height: 1.55; font-size: 12.5px;");
   });
 
-  // 4. Build Page 1 (Cover Page) with exact 2/3 width background and positioned text
+  // 4. Build Page 1 (Cover Page) with 2/3 width background and positioned logo from Word
   const page1Html = `
 <div style="position: absolute; top: 0; left: 0; bottom: 0; width: 68%; height: 100%; pointer-events: none; z-index: 0;">
   <img src="/fondo_gesrest.png" alt="Fondo Gesrest" style="width: 100%; height: 100%; object-fit: contain; object-position: left center;" />
 </div>
 
 <div style="position: relative; z-index: 1; padding: 20px; min-height: 980px;">
-  <div style="text-align: right; margin-top: 70px; margin-right: 15px;">
-    <div style="font-size: 12px; color: #444; line-height: 1.8;">
+  <!-- Logo de Gesrest (Grande del Word) y Contacto Superior Derecho -->
+  <div style="text-align: right; margin-top: 50px; margin-right: 15px;">
+    ${
+      gesrestLogoSrc
+        ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="max-height: 52px; width: auto; margin-left: auto; margin-bottom: 6px; display: inline-block;" />`
+        : `<h1 style="font-size: 28px; font-weight: bold; color: #eb5454; margin: 0;">GESREST</h1><div style="font-size: 12px; color: #eb5454; font-weight: 600;">Tu restaurante digital</div>`
+    }
+    <div style="font-size: 12px; color: #444; line-height: 1.8; margin-top: 8px;">
       <div>+51 979 293 176</div>
       <div><a href="mailto:martin.ampuero@garzasoft.com" style="color: #0b4e8c; text-decoration: underline;">martin.ampuero@garzasoft.com</a></div>
     </div>
   </div>
 
-  <div style="text-align: right; margin-top: 670px; margin-right: 20px;">
+  <!-- Enlace Inferior Derecho -->
+  <div style="text-align: right; margin-top: 640px; margin-right: 20px;">
     <a href="https://www.gesrest.net" target="_blank" rel="noopener noreferrer" style="color: #eb5454; font-weight: bold; font-size: 14px; text-decoration: none;">
       www.gesrest.net
     </a>
@@ -202,11 +219,14 @@ export async function parseDocxFileToHtml(
 </div>
 `;
 
-  // 5. Header logo template for every subsequent page
+  // 5. Header logo template for every subsequent page (Pages 2 to N)
   const headerLogoHtml = `
 <div style="float: right; text-align: right; margin-bottom: 20px; clear: right;">
-  <span style="font-size: 16px; font-weight: 700; color: #eb5454;">${productName}</span><br>
-  <span style="font-size: 9.5px; color: #888;">Tu restaurante digital</span>
+  ${
+    gesrestLogoSrc
+      ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="max-height: 38px; width: auto; display: inline-block;" />`
+      : `<span style="font-size: 16px; font-weight: 700; color: #eb5454;">GESREST</span><br><span style="font-size: 9.5px; color: #888;">Tu restaurante digital</span>`
+  }
 </div>
 <div style="clear: both;"></div>
 `;

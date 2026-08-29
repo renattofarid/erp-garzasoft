@@ -16,13 +16,11 @@ function getImageDimensions(src: string): Promise<{ src: string; width: number; 
 
 /**
  * High-Fidelity DOCX Parser for Gesrest Documents.
- * - Extracts 100% of images directly from the Word file.
- * - Inspects cover images before "PRESENTACIÓN" to accurately assign:
- *   - Background: G watermark (2/3 width)
- *   - Top Right: Gesrest Logo (64px) + Phone & Email
- *   - Bottom Left: Mr. Soft Logo (48px)
- *   - Bottom Right: www.gesrest.net
- * - Keeps Pages 2 to 8 clean starting right from "PRESENTACIÓN" with institutional headers.
+ * - Accurately places:
+ *   - Top Right: Gesrest Logo (Large, height: 80px) + Phone & Email
+ *   - Bottom Left: Mr. Soft Logo (Large, height: 60px)
+ *   - Background: G Watermark (Left 70% width)
+ *   - Headers Pages 2 to 8: Gesrest Logo (height: 48px)
  */
 export async function parseDocxFileToHtml(
   file: File,
@@ -30,7 +28,7 @@ export async function parseDocxFileToHtml(
 ): Promise<string[]> {
   const arrayBuffer = await file.arrayBuffer();
 
-  // 1. Extract all images from ZIP
+  // 1. Extract all images from ZIP in order
   const zipImages: string[] = [];
   try {
     const zip = await JSZip.loadAsync(arrayBuffer);
@@ -193,57 +191,56 @@ export async function parseDocxFileToHtml(
   imageDims.sort((a, b) => b.width * b.height - a.width * a.height);
 
   let watermarkImgSrc = "/fondo_gesrest.png";
-  let gesrestLogoSrc = "";
-  let mrSoftLogoSrc = "";
-
-  if (imageDims.length > 0) {
-    // If largest image is > 250px width or height, it's the G watermark
-    if (imageDims[0].width >= 250 || imageDims[0].height >= 250) {
-      watermarkImgSrc = imageDims[0].src;
-    }
+  if (imageDims.length > 0 && (imageDims[0].width >= 250 || imageDims[0].height >= 250)) {
+    watermarkImgSrc = imageDims[0].src;
   }
 
-  // The remaining images are the logos
+  // The remaining 2 images are:
+  // candidateImages[0] = Mr. Soft Logo
+  // candidateImages[1] = Gesrest Logo
+  // We explicitly assign Gesrest to Top Right and Mr. Soft to Bottom Left
   const logoCandidates = candidateImages.filter((src) => src !== watermarkImgSrc);
+  let mrSoftLogoSrc = "";
+  let gesrestLogoSrc = "";
+
   if (logoCandidates.length >= 2) {
-    // In Word cover: Gesrest logo and Mr. Soft logo
-    // Typically in cover: top is Gesrest logo, bottom is Mr. Soft
-    gesrestLogoSrc = logoCandidates[0];
-    mrSoftLogoSrc = logoCandidates[1];
+    // In Word: image 1 is Mr. Soft, image 2 is Gesrest
+    mrSoftLogoSrc = logoCandidates[0];
+    gesrestLogoSrc = logoCandidates[1];
   } else if (logoCandidates.length === 1) {
     gesrestLogoSrc = logoCandidates[0];
     mrSoftLogoSrc = "";
   } else if (zipImages.length >= 2) {
-    gesrestLogoSrc = zipImages[1];
     mrSoftLogoSrc = zipImages[0];
+    gesrestLogoSrc = zipImages[1];
   }
 
-  // 5. Build Page 1 (Cover Page) with 100% exact layout
+  // 5. Build Page 1 (Cover Page) with prominent enlarged logos
   const page1Html = `
-<div style="position: absolute; top: 0; left: 0; bottom: 0; width: 68%; height: 100%; pointer-events: auto; z-index: 0;">
+<div style="position: absolute; top: 0; left: 0; bottom: 0; width: 70%; height: 100%; pointer-events: auto; z-index: 0;">
   <img src="${watermarkImgSrc}" alt="Fondo Gesrest" style="width: 100%; height: 100%; object-fit: contain; object-position: left center;" />
 </div>
 
 <div style="position: relative; z-index: 1; padding: 20px; min-height: 980px;">
-  <!-- Logo de Gesrest (Superior Derecho) y Contacto -->
-  <div style="text-align: right; margin-top: 50px; margin-right: 15px;">
+  <!-- Logo de Gesrest (Superior Derecho - GRANDE) y Contacto -->
+  <div style="text-align: right; margin-top: 45px; margin-right: 15px;">
     ${
       gesrestLogoSrc
-        ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="max-height: 64px; width: auto; margin-left: auto; margin-bottom: 8px; display: inline-block;" />`
-        : `<h1 style="font-size: 28px; font-weight: bold; color: #eb5454; margin: 0;">${productName}</h1><div style="font-size: 12px; color: #eb5454; font-weight: 600;">Tu restaurante digital</div>`
+        ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="max-height: 80px; max-width: 260px; width: auto; height: auto; margin-left: auto; margin-bottom: 10px; display: inline-block;" />`
+        : `<h1 style="font-size: 32px; font-weight: bold; color: #eb5454; margin: 0;">${productName}</h1><div style="font-size: 13px; color: #eb5454; font-weight: 600;">Tu restaurante digital</div>`
     }
-    <div style="font-size: 12px; color: #444; line-height: 1.8; margin-top: 8px;">
+    <div style="font-size: 12.5px; color: #444; line-height: 1.8; margin-top: 6px;">
       <div>+51 979 293 176</div>
       <div><a href="mailto:martin.ampuero@garzasoft.com" style="color: #0b4e8c; text-decoration: underline;">martin.ampuero@garzasoft.com</a></div>
     </div>
   </div>
 
-  <!-- Logo Mr. Soft (Inferior Izquierdo) -->
-  <div style="position: absolute; bottom: 45px; left: 30px; z-index: 1;">
+  <!-- Logo Mr. Soft (Inferior Izquierdo - GRANDE) -->
+  <div style="position: absolute; bottom: 45px; left: 35px; z-index: 1;">
     ${
       mrSoftLogoSrc
-        ? `<img src="${mrSoftLogoSrc}" alt="Mr. Soft Development" style="max-height: 48px; width: auto;" />`
-        : `<div style="font-size: 22px; font-weight: bold; color: #1a1a1a;">Mr. Soft</div><div style="font-size: 10px; color: #0088cc; letter-spacing: 1.5px;">DEVELOPMENT</div>`
+        ? `<img src="${mrSoftLogoSrc}" alt="Mr. Soft Development" style="max-height: 60px; max-width: 220px; width: auto; height: auto;" />`
+        : `<div style="font-size: 24px; font-weight: bold; color: #1a1a1a;">Mr. Soft</div><div style="font-size: 11px; color: #0088cc; letter-spacing: 1.5px;">DEVELOPMENT</div>`
     }
   </div>
 
@@ -256,13 +253,13 @@ export async function parseDocxFileToHtml(
 </div>
 `;
 
-  // 6. Header logo template for every subsequent page (Pages 2 to N)
+  // 6. Header logo template for every subsequent page (Pages 2 to N) using Gesrest Logo
   const headerLogoHtml = `
 <div style="float: right; text-align: right; margin-bottom: 20px; clear: right;">
   ${
     gesrestLogoSrc
-      ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="max-height: 40px; width: auto; display: inline-block;" />`
-      : `<span style="font-size: 16px; font-weight: 700; color: #eb5454;">${productName}</span><br><span style="font-size: 9.5px; color: #888;">Tu restaurante digital</span>`
+      ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="max-height: 48px; max-width: 200px; width: auto; height: auto; display: inline-block;" />`
+      : `<span style="font-size: 18px; font-weight: 700; color: #eb5454;">${productName}</span><br><span style="font-size: 10px; color: #888;">Tu restaurante digital</span>`
   }
 </div>
 <div style="clear: both;"></div>

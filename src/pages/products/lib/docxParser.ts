@@ -313,12 +313,20 @@ export async function parseDocxFileToHtml(
   // Format all tables with high-fidelity Word XML cell shading & styling
   const tables = container.querySelectorAll("table");
   tables.forEach((tbl, tblIdx) => {
+    const rows = Array.from(tbl.querySelectorAll("tr"));
+    const maxCols = Math.max(...rows.map((r) => r.querySelectorAll("td, th").length), 1);
+    const textLen = tbl.textContent?.length || 0;
+    const isExtensive = maxCols >= 3 || textLen > 250 || rows.length > 5;
+
+    const tableWidthStyle = isExtensive
+      ? "width: 100%; margin: 16px auto;"
+      : "width: auto; min-width: 340px; max-width: 540px; margin: 16px auto;";
+
     tbl.setAttribute(
       "style",
-      "border-collapse: collapse; margin: 14px 0; font-size: 12px; width: auto; min-width: 320px; max-width: 520px;"
+      `border-collapse: collapse; font-size: 11.5px; ${tableWidthStyle}`
     );
 
-    const rows = Array.from(tbl.querySelectorAll("tr"));
     const metaTable = tableMetaList[tblIdx];
 
     rows.forEach((row, rIdx) => {
@@ -327,23 +335,26 @@ export async function parseDocxFileToHtml(
 
       cells.forEach((cell, cIdx) => {
         const cellMeta = metaTable?.[rIdx]?.[cIdx];
-        const isColoredBg = cellMeta ? cellMeta.bg !== "transparent" : (rIdx === 0 && numCells > 2);
-        const bg = cellMeta?.bg || (isColoredBg ? "#eb5454" : "transparent");
+        const isColoredBg = cellMeta ? cellMeta.bg !== "transparent" : (rIdx === 0 && (maxCols > 2 || isExtensive));
+        const bg = cellMeta?.bg || (isColoredBg ? "#eb5454" : (isExtensive && rIdx % 2 === 1 ? "#fafafa" : "transparent"));
         const textColor = isColoredBg ? "#ffffff" : (cellMeta?.color || "#111827");
         const fontWeight = (cellMeta?.bold || isColoredBg) ? "600" : "normal";
-        const textAlign = cellMeta?.align || "center";
+        const textAlign = cellMeta?.align || (isColoredBg ? "center" : (isExtensive && cIdx > 0 ? "left" : "center"));
 
-        // White border if colored bg (for separating rows/cols in coral cells), otherwise no outer border
-        const borderStyle = isColoredBg
-          ? "border: 1px solid #ffffff;"
-          : "border: none;";
+        // If extensive table, add light borders
+        let borderStyle = "border: none;";
+        if (isExtensive) {
+          borderStyle = "border: 1px solid #d1d5db;";
+        } else if (isColoredBg) {
+          borderStyle = "border: 1px solid #ffffff;";
+        }
 
-        const padding = "padding: 6px 20px;";
-        const widthStyle = numCells === 2 ? (cIdx === 0 ? "min-width: 140px;" : "min-width: 120px;") : "";
+        const padding = isExtensive ? "padding: 8px 12px;" : "padding: 6px 20px;";
+        const widthStyle = !isExtensive && numCells === 2 ? (cIdx === 0 ? "min-width: 140px;" : "min-width: 120px;") : "";
 
         cell.setAttribute(
           "style",
-          `background-color: ${bg}; color: ${textColor}; font-weight: ${fontWeight}; text-align: ${textAlign}; font-size: 12px; ${padding} ${borderStyle} ${widthStyle}`
+          `background-color: ${bg}; color: ${textColor}; font-weight: ${fontWeight}; text-align: ${textAlign}; font-size: 11.5px; ${padding} ${borderStyle} ${widthStyle}`
         );
       });
     });

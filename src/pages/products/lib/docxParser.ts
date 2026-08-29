@@ -2,6 +2,13 @@ import mammoth from "mammoth";
 import JSZip from "jszip";
 import { paginateHtmlByA4Height } from "./a4Paginator";
 
+interface CellMeta {
+  bg: string;
+  color: string;
+  bold: boolean;
+  align: string;
+}
+
 /**
  * Gets image natural dimensions asynchronously
  */
@@ -144,7 +151,7 @@ function trimImageWhiteBorders(src: string): Promise<string> {
 
 /**
  * High-Fidelity DOCX Parser for Gesrest Documents.
- * - Extracts colors and bullet styles from Word XML.
+ * - Extracts individual cell shading, borders, and alignments from Word XML for perfect table rendering.
  * - Auto-crops logos to tight rectangular bounding boxes.
  * - Preserves coral heading colors (#eb5454) and bullet lists.
  * - Keeps header clean on Pages 2 to 8 (logo only, without contact text).
@@ -155,12 +162,12 @@ export async function parseDocxFileToHtml(
 ): Promise<string[]> {
   const arrayBuffer = await file.arrayBuffer();
 
-  // 1. Extract all images, paragraph alignments, colors, and bullet paragraphs from Word ZIP
+  // 1. Extract all images, paragraph alignments, colors, bullets, and table cell shading from Word ZIP
   const zipImages: string[] = [];
   const centeredTexts = new Set<string>();
   const rightTexts = new Set<string>();
   const bulletTexts = new Set<string>();
-  const colorMap = new Map<string, string>();
+  const tableMetaList: CellMeta[][][] = [];
 
   try {
     const zip = await JSZip.loadAsync(arrayBuffer);
@@ -183,17 +190,18 @@ export async function parseDocxFileToHtml(
       zipImages.push(`data:${mime};base64,${base64}`);
     }
 
-    // Extract exact paragraph properties from word/document.xml
+    // Extract exact paragraph properties and table cell structures from word/document.xml
     const docXmlStr = await zip.files["word/document.xml"]?.async("text");
     if (docXmlStr) {
       const xmlDoc = new DOMParser().parseFromString(docXmlStr, "application/xml");
+
+      // Paragraph alignments & bullets
       const pElements = xmlDoc.getElementsByTagName("w:p");
       for (let i = 0; i < pElements.length; i++) {
         const p = pElements[i];
         const text = p.textContent?.trim();
         if (!text) continue;
 
-        // Alignment
         const jc = p.getElementsByTagName("w:jc")[0];
         if (jc) {
           const val = jc.getAttribute("w:val");
@@ -201,20 +209,61 @@ export async function parseDocxFileToHtml(
           else if (val === "right") rightTexts.add(text);
         }
 
-        // Bullet / Numbering
         const numPr = p.getElementsByTagName("w:numPr")[0];
         if (numPr) {
           bulletTexts.add(text);
         }
+      }
 
-        // Colors
-        const colors = p.getElementsByTagName("w:color");
-        if (colors.length > 0) {
-          const hex = colors[0].getAttribute("w:val");
-          if (hex && hex !== "auto") {
-            colorMap.set(text, `#${hex}`);
+      // Tables & Cell Shading (Background Colors)
+      const tblElements = xmlDoc.getElementsByTagName("w:tbl");
+      for (let t = 0; t < tblElements.length; t++) {
+        const tbl = tblElements[t];
+        const trElements = tbl.getElementsByTagName("w:tr");
+        const tableRows: CellMeta[][] = [];
+
+        for (let r = 0; r < trElements.length; r++) {
+          const tr = trElements[r];
+          const tcElements = tr.getElementsByTagName("w:tc");
+          const rowCells: CellMeta[] = [];
+
+          for (let c = 0; c < tcElements.length; c++) {
+            const tc = tcElements[c];
+            let bg = "transparent";
+            let color = "#111827";
+            let bold = false;
+            let align = "center";
+
+            // Cell Shading / Background
+            const shd = tc.getElementsByTagName("w:shd")[0];
+            if (shd) {
+              const fill = shd.getAttribute("w:fill");
+              if (fill && fill !== "auto" && fill !== "none" && fill.toLowerCase() !== "ffffff") {
+                bg = `#${fill}`;
+                color = "#ffffff";
+                bold = true;
+              }
+            }
+
+            // Cell alignment
+            const jc = tc.getElementsByTagName("w:jc")[0];
+            if (jc) {
+              const val = jc.getAttribute("w:val");
+              if (val === "left") align = "left";
+              else if (val === "right") align = "right";
+              else if (val === "center") align = "center";
+            }
+
+            // Check bold inside cell
+            if (tc.getElementsByTagName("w:b").length > 0) {
+              bold = true;
+            }
+
+            rowCells.push({ bg, color, bold, align });
           }
+          tableRows.push(rowCells);
         }
+        tableMetaList.push(tableRows);
       }
     }
   } catch (zipErr) {
@@ -261,43 +310,40 @@ export async function parseDocxFileToHtml(
   const container = document.createElement("div");
   container.innerHTML = rawHtml;
 
-  // Format all tables with the exact "Insert Table" style
+  // Format all tables with high-fidelity Word XML cell shading & styling
   const tables = container.querySelectorAll("table");
-  tables.forEach((tbl) => {
+  tables.forEach((tbl, tblIdx) => {
     tbl.setAttribute(
       "style",
-      "width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 11.5px; border: 1px solid #d1d5db;"
+      "border-collapse: collapse; margin: 14px 0; font-size: 12px; width: auto; min-width: 320px; max-width: 520px;"
     );
 
     const rows = Array.from(tbl.querySelectorAll("tr"));
+    const metaTable = tableMetaList[tblIdx];
+
     rows.forEach((row, rIdx) => {
-      const isHeader = rIdx === 0;
-
-      if (isHeader) {
-        row.setAttribute(
-          "style",
-          "background-color: #eb5454; color: #ffffff; font-weight: bold;"
-        );
-      } else {
-        const bg = rIdx % 2 === 1 ? "background-color: #fafafa;" : "background-color: #ffffff;";
-        row.setAttribute("style", bg);
-      }
-
       const cells = Array.from(row.querySelectorAll("td, th"));
       const numCells = cells.length || 1;
 
       cells.forEach((cell, cIdx) => {
-        let widthStyle = "";
-        if (numCells === 2) {
-          widthStyle = cIdx === 0 ? "width: 45%;" : "width: 55%;";
-        }
+        const cellMeta = metaTable?.[rIdx]?.[cIdx];
+        const isColoredBg = cellMeta ? cellMeta.bg !== "transparent" : (rIdx === 0 && numCells > 2);
+        const bg = cellMeta?.bg || (isColoredBg ? "#eb5454" : "transparent");
+        const textColor = isColoredBg ? "#ffffff" : (cellMeta?.color || "#111827");
+        const fontWeight = (cellMeta?.bold || isColoredBg) ? "600" : "normal";
+        const textAlign = cellMeta?.align || "center";
 
-        const textColor = isHeader
-          ? "color: #ffffff; font-weight: bold; text-align: center;"
-          : "color: #111827;";
+        // White border if colored bg (for separating rows/cols in coral cells), otherwise no outer border
+        const borderStyle = isColoredBg
+          ? "border: 1px solid #ffffff;"
+          : "border: none;";
+
+        const padding = "padding: 6px 20px;";
+        const widthStyle = numCells === 2 ? (cIdx === 0 ? "min-width: 140px;" : "min-width: 120px;") : "";
+
         cell.setAttribute(
           "style",
-          `border: 1px solid #d1d5db; padding: 8px 12px; vertical-align: middle; font-size: 11.5px; ${textColor} ${widthStyle}`
+          `background-color: ${bg}; color: ${textColor}; font-weight: ${fontWeight}; text-align: ${textAlign}; font-size: 12px; ${padding} ${borderStyle} ${widthStyle}`
         );
       });
     });
@@ -369,7 +415,7 @@ export async function parseDocxFileToHtml(
       p.children.length === 1 && (p.children[0].tagName === "STRONG" || p.children[0].tagName === "B");
     if (
       (hasOnlyBold && t.length < 90 && (t === t.toUpperCase() || t.startsWith("CREDENCIALES") || t.startsWith("CONFIGURACIÓN") || t.startsWith("PRESENTACIÓN") || t.startsWith("PERFIL") || t.startsWith("PORTAL"))) ||
-      (t === "PRESENTACIÓN" || t === "CREDENCIALES PARA ACCESO A PORTAL DE CONTADOR" || t === "CONFIGURACIÓN DE SERIES")
+      (t === "PRESENTACIÓN" || t === "CREDENCIALES PARA ACCESO A PORTAL DE CONTADOR" || t === "CONFIGURACIÓN DE SERIES" || t === "CREDENCIALES DE ACCESO")
     ) {
       const h2 = document.createElement("h2");
       h2.innerHTML = p.innerHTML;

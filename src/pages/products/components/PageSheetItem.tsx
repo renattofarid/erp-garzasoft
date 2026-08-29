@@ -486,12 +486,22 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
           outline: 2px solid #eb5454;
           outline-offset: 2px;
         }
-        #page-sheet-${pageIndex} .word-page-editable ul,
+        #page-sheet-${pageIndex} .word-page-editable ul {
+          margin: 10px 0 16px 28px !important;
+          padding-left: 10px !important;
+          list-style-type: disc !important;
+        }
+        #page-sheet-${pageIndex} .word-page-editable li {
+          display: list-item !important;
+          list-style-type: disc !important;
+          margin: 4px 0 !important;
+          font-size: 12.5px !important;
+          line-height: 1.6 !important;
+        }
         #page-sheet-${pageIndex} .word-page-editable ol {
-          margin: 8px 0 16px 24px;
-          padding: 0;
-          font-size: 12.5px;
-          line-height: 1.6;
+          margin: 10px 0 16px 28px !important;
+          padding-left: 10px !important;
+          list-style-type: decimal !important;
         }
       `}</style>
       <div

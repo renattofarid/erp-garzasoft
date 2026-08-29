@@ -144,12 +144,10 @@ function trimImageWhiteBorders(src: string): Promise<string> {
 
 /**
  * High-Fidelity DOCX Parser for Gesrest Documents.
- * - Detects centered, right-aligned, and justified text directly from document.xml.
+ * - Extracts colors and bullet styles from Word XML.
  * - Auto-crops logos to tight rectangular bounding boxes.
- * - Background: G watermark scaled to 1800x1800 symmetric, top: -320px, left: -700px.
- * - Top Right: Gesrest Logo (rectangular, width: 280px) + Phone & Email.
- * - Bottom Left: Mr. Soft Logo (rectangular, width: 220px).
- * - Bottom Right: www.gesrest.net.
+ * - Preserves coral heading colors (#eb5454) and bullet lists.
+ * - Keeps header clean on Pages 2 to 8 (logo only, without contact text).
  */
 export async function parseDocxFileToHtml(
   file: File,
@@ -157,10 +155,12 @@ export async function parseDocxFileToHtml(
 ): Promise<string[]> {
   const arrayBuffer = await file.arrayBuffer();
 
-  // 1. Extract all images and paragraph alignments directly from Word ZIP
+  // 1. Extract all images, paragraph alignments, colors, and bullet paragraphs from Word ZIP
   const zipImages: string[] = [];
   const centeredTexts = new Set<string>();
   const rightTexts = new Set<string>();
+  const bulletTexts = new Set<string>();
+  const colorMap = new Map<string, string>();
 
   try {
     const zip = await JSZip.loadAsync(arrayBuffer);
@@ -183,23 +183,36 @@ export async function parseDocxFileToHtml(
       zipImages.push(`data:${mime};base64,${base64}`);
     }
 
-    // Extract exact paragraph alignments from word/document.xml
+    // Extract exact paragraph properties from word/document.xml
     const docXmlStr = await zip.files["word/document.xml"]?.async("text");
     if (docXmlStr) {
       const xmlDoc = new DOMParser().parseFromString(docXmlStr, "application/xml");
       const pElements = xmlDoc.getElementsByTagName("w:p");
       for (let i = 0; i < pElements.length; i++) {
         const p = pElements[i];
+        const text = p.textContent?.trim();
+        if (!text) continue;
+
+        // Alignment
         const jc = p.getElementsByTagName("w:jc")[0];
         if (jc) {
           const val = jc.getAttribute("w:val");
-          const text = p.textContent?.trim();
-          if (text) {
-            if (val === "center") {
-              centeredTexts.add(text);
-            } else if (val === "right") {
-              rightTexts.add(text);
-            }
+          if (val === "center") centeredTexts.add(text);
+          else if (val === "right") rightTexts.add(text);
+        }
+
+        // Bullet / Numbering
+        const numPr = p.getElementsByTagName("w:numPr")[0];
+        if (numPr) {
+          bulletTexts.add(text);
+        }
+
+        // Colors
+        const colors = p.getElementsByTagName("w:color");
+        if (colors.length > 0) {
+          const hex = colors[0].getAttribute("w:val");
+          if (hex && hex !== "auto") {
+            colorMap.set(text, `#${hex}`);
           }
         }
       }
@@ -208,7 +221,7 @@ export async function parseDocxFileToHtml(
     console.warn("Zip media/XML extraction error:", zipErr);
   }
 
-  // 2. Mammoth options
+  // 2. Mammoth options with list bullet styling
   const mammothOptions = {
     convertImage: mammoth.images.imgElement(function (image: any) {
       return image.read("base64").then(function (imageBuffer: string) {
@@ -228,6 +241,10 @@ export async function parseDocxFileToHtml(
       "p[style-name='Centered'] => p.text-center:fresh",
       "p[style-name='Center'] => p.text-center:fresh",
       "p[style-name='Centrado'] => p.text-center:fresh",
+      "p[style-name='List Bullet'] => ul > li:fresh",
+      "p[style-name='List Bullet 2'] => ul > li:fresh",
+      "p[style-name='List'] => ul > li:fresh",
+      "p[style-name='List Paragraph'] => ul > li:fresh",
       "table => table.a4-doc-table:fresh",
       "br[type='page'] => hr.page-break:fresh",
     ],
@@ -297,34 +314,60 @@ export async function parseDocxFileToHtml(
     a.setAttribute("rel", "noopener noreferrer");
   });
 
-  // Enhance headings
+  // Enhance headings with distinctive Coral color (#eb5454)
   container.querySelectorAll("h1").forEach((h) => {
     h.setAttribute(
       "style",
-      "color: #eb5454; font-size: 20px; font-weight: 700; margin: 16px 0 8px 0; line-height: 1.25;"
+      "color: #eb5454; font-size: 18px; font-weight: 700; text-transform: uppercase; margin: 18px 0 10px 0; line-height: 1.3;"
     );
   });
   container.querySelectorAll("h2").forEach((h) => {
     h.setAttribute(
       "style",
-      "color: #eb5454; font-size: 15px; font-weight: 700; text-transform: uppercase; margin: 14px 0 6px 0;"
+      "color: #eb5454; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin: 18px 0 10px 0;"
     );
   });
   container.querySelectorAll("h3").forEach((h) => {
     h.setAttribute(
       "style",
-      "color: #eb5454; font-size: 13px; font-weight: 700; text-transform: uppercase; margin: 12px 0 4px 0;"
+      "color: #eb5454; font-size: 14px; font-weight: 700; text-transform: uppercase; margin: 14px 0 6px 0;"
     );
   });
 
   // Enhance paragraphs
   container.querySelectorAll("p").forEach((p) => {
-    p.setAttribute("style", "margin: 0 0 6px 0; line-height: 1.55; font-size: 12.5px;");
+    p.setAttribute("style", "margin: 0 0 8px 0; line-height: 1.6; font-size: 12.5px; color: #111827;");
   });
 
-  // Apply centered and right alignments detected from Word XML
-  container.querySelectorAll("p, h1, h2, h3, div").forEach((el) => {
+  // Convert bullet items to real <ul> <li> lists if they weren't wrapped
+  const paragraphs = Array.from(container.querySelectorAll("p"));
+  paragraphs.forEach((p) => {
+    const text = p.textContent?.trim() || "";
+    if (bulletTexts.has(text) || text.startsWith("•") || text.startsWith("Detalle de los productos") || text.startsWith("El personal") || text.startsWith("El importe") || text.startsWith("El tiempo") || text.startsWith("La estadística") || text.startsWith("La productividad")) {
+      const li = document.createElement("li");
+      li.innerHTML = p.innerHTML.replace(/^[•\-*]\s*/, "");
+      li.setAttribute("style", "margin: 4px 0; line-height: 1.6; font-size: 12.5px; list-style-type: disc;");
+
+      const prevEl = p.previousElementSibling;
+      if (prevEl && prevEl.tagName.toLowerCase() === "ul") {
+        prevEl.appendChild(li);
+        p.remove();
+      } else {
+        const ul = document.createElement("ul");
+        ul.setAttribute("style", "margin: 8px 0 16px 24px; padding-left: 10px; list-style-type: disc;");
+        ul.appendChild(li);
+        p.parentNode?.insertBefore(ul, p);
+        p.remove();
+      }
+    }
+  });
+
+  // Apply colors and alignments from Word XML
+  container.querySelectorAll("p, h1, h2, h3, div, span, li").forEach((el) => {
     const text = el.textContent?.trim() || "";
+    if (text && colorMap.has(text)) {
+      el.setAttribute("style", (el.getAttribute("style") || "") + ` color: ${colorMap.get(text)};`);
+    }
     if (text && centeredTexts.has(text)) {
       el.setAttribute(
         "style",
@@ -352,6 +395,11 @@ export async function parseDocxFileToHtml(
     fullBodyHtml = fullHtml.slice(splitPoint);
   }
 
+  // Remove any leftover cover contact text from the body if it leaked
+  fullBodyHtml = fullBodyHtml
+    .replace(/<p[^>]*>\s*(?:\+51\s*979\s*293\s*176|martin\.ampuero@garzasoft\.com|www\.gesrest\.net)\s*<\/p>/gi, "")
+    .replace(/<div>\s*(?:\+51\s*979\s*293\s*176|martin\.ampuero@garzasoft\.com|www\.gesrest\.net)\s*<\/div>/gi, "");
+
   // Extract cover image sources from coverHtml or zipImages
   const tempCoverDiv = document.createElement("div");
   tempCoverDiv.innerHTML = coverHtml;
@@ -360,7 +408,6 @@ export async function parseDocxFileToHtml(
 
   // Inspect image dimensions to accurately determine roles
   const imageDims = await Promise.all(candidateImages.map(getImageDimensions));
-  // Sort by area descending
   imageDims.sort((a, b) => b.width * b.height - a.width * a.height);
 
   let watermarkImgSrc = "/fondo_gesrest.png";
@@ -368,9 +415,6 @@ export async function parseDocxFileToHtml(
     watermarkImgSrc = imageDims[0].src;
   }
 
-  // The remaining 2 images are:
-  // candidateImages[0] = Mr. Soft Logo
-  // candidateImages[1] = Gesrest Logo
   const logoCandidates = candidateImages.filter((src) => src !== watermarkImgSrc);
   let rawMrSoftLogoSrc = "";
   let rawGesrestLogoSrc = "";
@@ -430,13 +474,13 @@ export async function parseDocxFileToHtml(
 </div>
 `;
 
-  // 6. Header logo template for every subsequent page (Pages 2 to N) using Gesrest Logo
+  // 6. Header logo template for every subsequent page (Pages 2 to N) - ONLY Logo, no contact text!
   const headerLogoHtml = `
-<div style="float: right; text-align: right; margin-bottom: 20px; clear: right;">
+<div style="float: right; text-align: right; margin-bottom: 24px; clear: right;">
   ${
     gesrestLogoSrc
-      ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="width: 150px; max-width: 100%; height: auto; display: inline-block;" />`
-      : `<span style="font-size: 22px; font-weight: 700; color: #eb5454;">${productName}</span><br><span style="font-size: 11px; color: #888;">Tu restaurante digital</span>`
+      ? `<img src="${gesrestLogoSrc}" alt="Gesrest" style="width: 140px; max-width: 100%; height: auto; display: inline-block;" />`
+      : `<span style="font-size: 20px; font-weight: 700; color: #eb5454;">${productName}</span><br><span style="font-size: 10px; color: #888;">Tu restaurante digital</span>`
   }
 </div>
 <div style="clear: both;"></div>

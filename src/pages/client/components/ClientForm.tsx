@@ -275,22 +275,30 @@ function ClientNodeSection({
           </div>
         )}
 
-        {(isCorporacion || isEmpresa) && (
+        {(isCorporacion || isEmpresa || isLocal) && (
           <>
             <FormField
               control={control}
               name={joinPath(basePath, "ruc") as Path<any>}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>RUC</FormLabel>
+                  <FormLabel>
+                    {isLocal ? "RUC (Opcional)" : "RUC"}
+                  </FormLabel>
                   <FormControl>
                     <div className="flex gap-2">
-                      <Input maxLength={11} placeholder="20123456789" {...field} value={field.value ?? ""} />
+                      <Input
+                        maxLength={11}
+                        placeholder={isLocal ? "10123456789 (Opcional)" : "20123456789"}
+                        {...field}
+                        value={field.value ?? ""}
+                      />
                       <Button
                         type="button"
                         variant="outline"
                         disabled={Boolean(lookupLoadingPath)}
                         onClick={() => onLookupRuc(rucPath)}
+                        title="Buscar en SUNAT"
                       >
                         {lookupLoadingPath === rucPath ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -310,9 +318,15 @@ function ClientNodeSection({
               name={joinPath(basePath, "razon_social") as Path<any>}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Razón social</FormLabel>
+                  <FormLabel>
+                    {isLocal ? "Razón social / Titular (Opcional)" : "Razón social"}
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder="Razón social" {...field} value={field.value ?? ""} />
+                    <Input
+                      placeholder={isLocal ? "Razón social o nombre del titular" : "Razón social"}
+                      {...field}
+                      value={field.value ?? ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -840,6 +854,13 @@ export const ClientForm = ({
         form.setValue(joinPath(basePath, "nombre_comercial") as Path<ClientSchema>, data.nombre_comercial, {
           shouldValidate: true,
         });
+      } else {
+        const currentName = form.getValues(joinPath(basePath, "nombre_comercial") as Path<ClientSchema>);
+        if (!currentName && razonSocial) {
+          form.setValue(joinPath(basePath, "nombre_comercial") as Path<ClientSchema>, razonSocial, {
+            shouldValidate: true,
+          });
+        }
       }
       successToast("Busqueda de RUC completada.", razonSocial || "Datos obtenidos correctamente.");
     } catch (error: unknown) {

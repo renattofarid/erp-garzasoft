@@ -59,6 +59,10 @@ export const ContractBasicInfo = ({
     control,
     name: "cliente_padre_id",
   }) as number | string | undefined;
+  const periodicidadCuota = useWatch({
+    control,
+    name: "periodicidad_cuota",
+  }) as string | undefined;
 
   const currentClientId = Number(selectedClientId) || undefined;
   const currentParentId = Number(selectedParentId) || undefined;
@@ -292,6 +296,42 @@ export const ContractBasicInfo = ({
                 ]
           }
         />
+
+        {periodicidadCuota === "mensual" && (
+          <FormField
+            control={control}
+            name="costo_instalacion"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Costo de Instalación (S/.)</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      S/.
+                    </span>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={1}
+                      placeholder="100.00"
+                      value={field.value ?? 100}
+                      className="pl-10 font-semibold"
+                      onChange={(event) =>
+                        field.onChange(
+                          event.target.value === "" ? 0 : Number(event.target.value)
+                        )
+                      }
+                    />
+                  </div>
+                </FormControl>
+                <p className="text-xs text-muted-foreground">
+                  Cobro único agregado al 1er mes (por defecto S/ 100.00)
+                </p>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={control}

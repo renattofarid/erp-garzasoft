@@ -43,6 +43,7 @@ const contractBaseObject = z.object({
   tipo_contrato: z.enum(["desarrollo", "saas", "soporte"]),
   vigencia_contrato: z.enum(["semestral", "anual"]),
   duracion_anios: z.coerce.number().int().min(1).default(1),
+  costo_instalacion: z.coerce.number().min(0).default(0).optional(),
   total: z.coerce.number().nonnegative({ message: "El total no puede ser negativo" }),
   forma_pago: z.enum(["unico", "parcial"]),
   periodicidad_cuota: z.enum(["mensual", "anual"]),
@@ -119,7 +120,8 @@ const validateContract = (
 
   if (data.tipo_contrato === "saas") {
     const baseSum = (data.productos_modulos ?? []).reduce((acc, x) => acc + x.precio, 0);
-    const expectedTotal = baseSum * billingPeriods;
+    const costoInstalacion = data.periodicidad_cuota === "mensual" ? (data.costo_instalacion ?? 0) : 0;
+    const expectedTotal = baseSum * billingPeriods + costoInstalacion;
     if (eq(data.total) !== eq(expectedTotal)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

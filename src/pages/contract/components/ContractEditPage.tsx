@@ -66,6 +66,12 @@ export default function ContractEditPage() {
     tipo_contrato: data.tipo_contrato,
     vigencia_contrato: data.vigencia_contrato ?? "anual",
     duracion_anios: data.duracion_anios ?? 1,
+    costo_instalacion:
+      data.costo_instalacion !== undefined && data.costo_instalacion !== null
+        ? Number(data.costo_instalacion)
+        : data.periodicidad_cuota === "anual"
+        ? 0
+        : 100,
     total: Number(data.total),
     forma_pago: data.forma_pago,
     periodicidad_cuota: data.periodicidad_cuota ?? "mensual",

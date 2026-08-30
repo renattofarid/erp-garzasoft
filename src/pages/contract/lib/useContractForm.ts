@@ -111,6 +111,8 @@ export const useContractForm = ({
   const fechaInicio = watch("fecha_inicio");
   const fechaFin = watch("fecha_fin");
 
+  const costoInstalacion = watch("costo_instalacion");
+
   const sum = useMemo(() => {
     const currentValues = form.getValues("productos_modulos") || [];
     return currentValues.reduce((acc, item) => acc + (Number(item?.precio) || 0), 0);
@@ -190,19 +192,39 @@ export const useContractForm = ({
   const adjustExistingInstallments = () => {
     if (cuotaFields.length === 0 || !total) return;
 
-    const installmentAmount =
-      Math.round((total / cuotaFields.length) * 100) / 100;
-    const lastInstallmentAmount =
-      Math.round((total - installmentAmount * (cuotaFields.length - 1)) * 100) /
-      100;
+    const count = cuotaFields.length;
+    const instalacion =
+      paymentPeriodicity === "mensual"
+        ? Number(costoInstalacion ?? 0)
+        : 0;
+    const baseTotal = Math.max(0, total - instalacion);
+    const baseInstallment = Math.round((baseTotal / count) * 100) / 100;
 
-    const updatedCuotas = cuotaFields.map((cuota, index) => ({
-      monto:
-        index === cuotaFields.length - 1
-          ? lastInstallmentAmount
-          : installmentAmount,
-      fecha_vencimiento: cuota.fecha_vencimiento,
-    }));
+    const updatedCuotas = cuotaFields.map((cuota, index) => {
+      if (index === 0) {
+        const firstAmount =
+          count === 1
+            ? total
+            : Math.round((baseInstallment + instalacion) * 100) / 100;
+        return {
+          monto: firstAmount,
+          fecha_vencimiento: cuota.fecha_vencimiento,
+        };
+      }
+      if (index === count - 1) {
+        const sumPrevious =
+          baseInstallment + instalacion + baseInstallment * (count - 2);
+        const lastAmount = Math.round((total - sumPrevious) * 100) / 100;
+        return {
+          monto: lastAmount,
+          fecha_vencimiento: cuota.fecha_vencimiento,
+        };
+      }
+      return {
+        monto: baseInstallment,
+        fecha_vencimiento: cuota.fecha_vencimiento,
+      };
+    });
 
     replaceCuotas(updatedCuotas);
     setTimeout(() => form.trigger("cuotas"), 0);
@@ -215,21 +237,39 @@ export const useContractForm = ({
       return;
     }
 
-    const suggestedInstallments = suggestedDates.length;
-    const installmentAmount =
-      Math.round((total / suggestedInstallments) * 100) / 100;
-    const lastInstallmentAmount =
-      Math.round(
-        (total - installmentAmount * (suggestedInstallments - 1)) * 100
-      ) / 100;
+    const count = suggestedDates.length;
+    const instalacion =
+      paymentPeriodicity === "mensual"
+        ? Number(costoInstalacion ?? 0)
+        : 0;
+    const baseTotal = Math.max(0, total - instalacion);
+    const baseInstallment = Math.round((baseTotal / count) * 100) / 100;
 
-    const newCuotas = suggestedDates.map((fecha, index) => ({
-      monto:
-        index === suggestedInstallments - 1
-          ? lastInstallmentAmount
-          : installmentAmount,
-      fecha_vencimiento: fecha,
-    }));
+    const newCuotas = suggestedDates.map((fecha, index) => {
+      if (index === 0) {
+        const firstAmount =
+          count === 1
+            ? total
+            : Math.round((baseInstallment + instalacion) * 100) / 100;
+        return {
+          monto: firstAmount,
+          fecha_vencimiento: fecha,
+        };
+      }
+      if (index === count - 1) {
+        const sumPrevious =
+          baseInstallment + instalacion + baseInstallment * (count - 2);
+        const lastAmount = Math.round((total - sumPrevious) * 100) / 100;
+        return {
+          monto: lastAmount,
+          fecha_vencimiento: fecha,
+        };
+      }
+      return {
+        monto: baseInstallment,
+        fecha_vencimiento: fecha,
+      };
+    });
 
     replaceCuotas(newCuotas);
     setTimeout(() => form.trigger("cuotas"), 0);
@@ -246,11 +286,34 @@ export const useContractForm = ({
     if (contractType !== "saas") return;
 
     const baseSum = manualSum || sum;
-    const finalSum = baseSum * getBillingPeriods();
+    const instalacion =
+      paymentPeriodicity === "mensual"
+        ? Number(costoInstalacion ?? 0)
+        : 0;
+    const finalSum = baseSum * getBillingPeriods() + instalacion;
     setValue("total", Math.round(finalSum * 100) / 100, {
       shouldValidate: true,
     });
-  }, [sum, manualSum, setValue, contractType, getBillingPeriods]);
+  }, [
+    sum,
+    manualSum,
+    setValue,
+    contractType,
+    getBillingPeriods,
+    paymentPeriodicity,
+    costoInstalacion,
+  ]);
+
+  useEffect(() => {
+    if (paymentPeriodicity === "mensual") {
+      const current = form.getValues("costo_instalacion");
+      if (current === undefined || current === null) {
+        setValue("costo_instalacion", 100, { shouldValidate: true });
+      }
+    } else if (paymentPeriodicity === "anual") {
+      setValue("costo_instalacion", 0, { shouldValidate: true });
+    }
+  }, [paymentPeriodicity, setValue, form]);
 
   useEffect(() => {
     if (vigenciaContrato === "semestral" && paymentPeriodicity === "anual") {

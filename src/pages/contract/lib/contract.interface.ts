@@ -42,6 +42,7 @@ export interface ContractResource {
   tipo_contrato: ContractType;
   vigencia_contrato: VigenciaContrato;
   duracion_anios: number;
+  costo_instalacion?: number | string | null;
   total: string;
   forma_pago: FormaPago;
   estado: EstadoContrato;

@@ -98,6 +98,7 @@ export default function ContractAddPage() {
           cliente_id: 0,
           forma_pago: "unico",
           periodicidad_cuota: "mensual",
+          costo_instalacion: 100,
           tipo_contrato: "saas",
           vigencia_contrato: "anual",
           duracion_anios: 1,

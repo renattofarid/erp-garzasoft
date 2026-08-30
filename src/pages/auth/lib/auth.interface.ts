@@ -17,10 +17,14 @@ export interface Usuario {
   } | null;
   cliente?: {
     id: number;
+    tipo?: string | null;
     razon_social?: string | null;
     nombre_comercial?: string | null;
     nombre_cliente?: string | null;
     ruc?: string | null;
+    direccion?: string | null;
+    dueno_celular?: string | null;
+    dueno_email?: string | null;
   } | null;
   created_at: Date;
   updated_at: Date;

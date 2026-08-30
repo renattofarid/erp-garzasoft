@@ -12,7 +12,7 @@ import { ContractCreate } from "@/pages/contract/lib/contract.schema.ts";
 import TitleFormComponent from "@/components/TitleFormComponent.tsx";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { getNextContractNumber, openContractPdf } from "../lib/contract.actions.ts";
+import { getNextContractNumber, openContractPdf, downloadContractWord } from "../lib/contract.actions.ts";
 import { ContractCreatedDialog } from "./ContractCreatedDialog.tsx";
 
 export default function ContractAddPage() {
@@ -120,6 +120,12 @@ export default function ContractAddPage() {
           openContractPdf(createdContract.id).catch(() =>
             errorToast("No se pudo abrir el PDF del contrato.")
           );
+        }}
+        onDownloadWord={() => {
+          if (!createdContract) return;
+          downloadContractWord(createdContract.id, createdContract.numero)
+            .then(() => successToast("Descargando contrato en Word (.docx)..."))
+            .catch(() => errorToast("No se pudo descargar el Word del contrato."));
         }}
         onGoToList={() => {
           setCreatedContract(null);

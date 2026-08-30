@@ -26,6 +26,7 @@ function ContractActionsCell({
   onDelete,
   onNotification,
   onPreview,
+  onDownloadWord,
   onViewInstallments,
   onSignature,
 }: {
@@ -34,6 +35,7 @@ function ContractActionsCell({
   onDelete: (id: number) => void;
   onNotification: (id: number) => void;
   onPreview: (id: number) => void;
+  onDownloadWord: (id: number, numero?: string) => void;
   onViewInstallments: (contract: ContractResource) => void;
   onSignature: (contract: ContractResource) => void;
 }) {
@@ -51,6 +53,9 @@ function ContractActionsCell({
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => onPreview(id)}>
           Ver PDF
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onDownloadWord(id, contract.numero)}>
+          Descargar Word (.docx)
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => onViewInstallments(contract)}>
           Ver cuotas
@@ -72,12 +77,14 @@ export const ContractColumns = ({
   onDelete,
   onNotification,
   onPreview,
+  onDownloadWord,
   onViewInstallments,
   onSignature,
 }: {
   onDelete: (id: number) => void;
   onNotification: (id: number) => void;
   onPreview: (id: number) => void;
+  onDownloadWord: (id: number, numero?: string) => void;
   onViewInstallments: (contract: ContractResource) => void;
   onSignature: (contract: ContractResource) => void;
 }): ColumnDef<ContractResource>[] => [
@@ -211,6 +218,7 @@ export const ContractColumns = ({
           onDelete={onDelete}
           onNotification={onNotification}
           onPreview={onPreview}
+          onDownloadWord={onDownloadWord}
           onViewInstallments={onViewInstallments}
           onSignature={onSignature}
         />

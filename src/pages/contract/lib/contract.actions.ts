@@ -82,6 +82,31 @@ export async function openContractPdf(id: number): Promise<void> {
   );
 }
 
+export async function getContractWord(id: number): Promise<Blob> {
+  const response = await api.get(`${ENDPOINT}/${id}/word`, {
+    responseType: "blob",
+  });
+
+  return response.data;
+}
+
+export async function downloadContractWord(
+  id: number,
+  numero = "contrato"
+): Promise<void> {
+  const blob = await getContractWord(id);
+  const cleanNumber = numero.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const filename = `contrato-${cleanNumber}.docx`;
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+}
+
 export async function getNextContractNumber(
   yearOrParams?: number | string | { year?: number | string; fecha_inicio?: string }
 ): Promise<string> {

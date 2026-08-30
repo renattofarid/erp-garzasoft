@@ -15,12 +15,17 @@ import {
 } from "../lib/product.interface";
 import ProductEditPage from "./ProductEditPage";
 import DataTablePagination from "@/components/DataTablePagination";
+import ProductWordEditorModal from "./ProductWordEditorModal";
+import { openPdfFromFetcher } from "@/lib/pdf";
+import { getFormatoAltaPdfBlob } from "../lib/product.actions";
+import { ProductResource } from "../lib/product.interface";
 
 export default function ProductPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [editId, setEditId] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [formatoAltaProduct, setFormatoAltaProduct] = useState<ProductResource | null>(null);
 
   const { data, meta, isLoading, refetch } = useProducts();
 
@@ -41,6 +46,17 @@ export default function ProductPage() {
     }
   };
 
+  const handlePreviewPdf = async (id: number, nombre: string) => {
+    try {
+      await openPdfFromFetcher(
+        () => getFormatoAltaPdfBlob(id),
+        `Generando Formato de Alta de ${nombre}...`
+      );
+    } catch (err: any) {
+      errorToast(err.message || "No se pudo generar el PDF del formato de alta.");
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Encabezado */}
@@ -56,7 +72,12 @@ export default function ProductPage() {
       {/* Tabla */}
       <ProductTable
         isLoading={isLoading}
-        columns={ProductColumns({ onEdit: setEditId, onDelete: setDeleteId })}
+        columns={ProductColumns({
+          onEdit: setEditId,
+          onDelete: setDeleteId,
+          onFormatoAlta: setFormatoAltaProduct,
+          onPreviewPdf: handlePreviewPdf,
+        })}
         data={data || []}
       >
         <ProductOptions search={search} setSearch={setSearch} />
@@ -74,6 +95,15 @@ export default function ProductPage() {
           id={editId}
           open={true}
           setOpen={() => setEditId(null)}
+        />
+      )}
+
+      {/* Modal Editor Word Formato de Alta */}
+      {formatoAltaProduct !== null && (
+        <ProductWordEditorModal
+          open={true}
+          onOpenChange={(open) => !open && setFormatoAltaProduct(null)}
+          product={formatoAltaProduct}
         />
       )}
 

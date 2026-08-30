@@ -45,7 +45,7 @@ import { Input } from "@/components/ui/input";
 import { errorToast } from "@/lib/core.function";
 import { openPdfFromFetcher } from "@/lib/pdf";
 import { useAuthStore } from "@/pages/auth/lib/auth.store";
-import { getContract, openContractPdf } from "@/pages/contract/lib/contract.actions";
+import { getContract, openContractPdf, downloadContractWord } from "@/pages/contract/lib/contract.actions";
 import { ContractResource } from "@/pages/contract/lib/contract.interface";
 import {
   castContractType,
@@ -399,15 +399,31 @@ export default function ClientPortalPage() {
                           </div>
                         </div>
 
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openContractPdf(contract.id)}
-                          className="h-8 gap-1.5 text-xs font-semibold shadow-xs shrink-0 border-border hover:bg-primary hover:text-primary-foreground transition-colors"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          <span>Ver PDF</span>
-                        </Button>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openContractPdf(contract.id)}
+                            className="h-8 gap-1.5 text-xs font-semibold shadow-xs border-border hover:bg-primary hover:text-primary-foreground transition-colors"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            <span>Ver PDF</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              downloadContractWord(contract.id, contract.numero).catch(() =>
+                                errorToast("No se pudo descargar el Word del contrato.")
+                              )
+                            }
+                            className="h-8 gap-1.5 text-xs font-semibold shadow-xs border-border hover:bg-blue-600 hover:text-white transition-colors"
+                            title="Descargar en Word (.docx)"
+                          >
+                            <FileText className="h-3.5 w-3.5 text-blue-500 group-hover:text-white" />
+                            <span>Word</span>
+                          </Button>
+                        </div>
                       </div>
                     </CardHeader>
 

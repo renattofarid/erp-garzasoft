@@ -11,8 +11,7 @@ import {
   ContractIconName,
   ContractTitle,
 } from "@/pages/contract/lib/contract.interface.ts";
-import { deleteContract } from "@/pages/contract/lib/contract.actions.ts";
-import { openContractPdf } from "@/pages/contract/lib/contract.actions.ts";
+import { deleteContract, openContractPdf, downloadContractWord } from "@/pages/contract/lib/contract.actions.ts";
 import { useContracts } from "@/pages/contract/lib/contract.hook.ts";
 import NotificationModal from "@/pages/notifications/components/NotificationModal.tsx";
 import { ContractCancelDialog } from "./ContractCancelDialog.tsx";
@@ -114,6 +113,11 @@ export default function ContractPage() {
           openContractPdf(id).catch(() =>
             errorToast("No se pudo abrir el PDF del contrato.")
           );
+        },
+        onDownloadWord: (id, numero) => {
+          downloadContractWord(id, numero)
+            .then(() => successToast("Descargando contrato en Word (.docx)..."))
+            .catch(() => errorToast("No se pudo descargar el Word del contrato."));
         },
         onViewInstallments: setInstallmentsContract,
         onSignature: setSignatureContract,

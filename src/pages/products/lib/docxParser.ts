@@ -1,6 +1,6 @@
 import mammoth from "mammoth";
 import JSZip from "jszip";
-import { paginateHtmlByA4Height } from "./a4Paginator";
+import { cleanHtmlPageContent, paginateHtmlByA4Height } from "./a4Paginator";
 
 interface CellMeta {
   bg: string;
@@ -626,9 +626,14 @@ export async function parseDocxFileToHtml(
 
   const finalBodyPages: string[] = [];
   for (const sec of rawSections) {
-    const subPages = paginateHtmlByA4Height(sec, 680);
+    const cleanSec = cleanHtmlPageContent(sec);
+    if (!cleanSec || cleanSec.trim() === "") continue;
+    const subPages = paginateHtmlByA4Height(cleanSec, 680);
     for (const subPage of subPages) {
-      finalBodyPages.push(headerLogoHtml + subPage);
+      const cleanSub = cleanHtmlPageContent(subPage);
+      if (cleanSub && cleanSub.trim() !== "") {
+        finalBodyPages.push(headerLogoHtml + cleanSub);
+      }
     }
   }
 

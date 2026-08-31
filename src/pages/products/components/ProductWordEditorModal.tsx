@@ -48,7 +48,10 @@ import { ProductResource } from "../lib/product.interface";
 import { getDefaultGesrestPages } from "../lib/defaultGesrestHtml";
 import { parseDocxFileToHtml } from "../lib/docxParser";
 import { parsePdfFileToPages } from "../lib/pdfParser";
-import { paginateHtmlByA4Height } from "../lib/a4Paginator";
+import {
+  cleanHtmlPageContent,
+  extractPagesFromCombinedHtml,
+} from "../lib/a4Paginator";
 import { PageSheetItem } from "./PageSheetItem";
 
 interface Props {
@@ -73,10 +76,10 @@ export default function ProductWordEditorModal({
 
   // Extract pages from raw saved html or use defaults
   const extractPagesFromHtml = (htmlContent?: string): string[] => {
-    if (!htmlContent || htmlContent.trim() === "") {
-      return getDefaultGesrestPages(product?.nombre || "GESREST");
-    }
-    return paginateHtmlByA4Height(htmlContent, 860);
+    return extractPagesFromCombinedHtml(
+      htmlContent,
+      getDefaultGesrestPages(product?.nombre || "GESREST")
+    );
   };
 
   useEffect(() => {
@@ -245,10 +248,11 @@ export default function ProductWordEditorModal({
       const combinedHtml = pages
         .map((content, idx) => {
           const isCover = idx === 0;
+          const cleanContent = cleanHtmlPageContent(content);
           const footerHtml = isCover
             ? ""
             : `
-  <table style="width: 100%; border: none; border-collapse: collapse; border-top: 1px solid #e5e7eb; margin-top: 15px; font-size: 9.5px; color: #9ca3af; font-family: Arial, sans-serif;">
+  <table class="page-footer-table" style="width: 100%; border: none; border-collapse: collapse; border-top: 1px solid #e5e7eb; margin-top: 15px; font-size: 9.5px; color: #9ca3af; font-family: Arial, sans-serif;">
     <tr>
       <td style="border: none; text-align: left; padding: 4px 0; color: #9ca3af; font-size: 9.5px;">Un producto de Mr. Soft</td>
       <td style="border: none; text-align: right; padding: 4px 0; color: #9ca3af; font-size: 9.5px;">Página ${idx} de ${total - 1}</td>
@@ -260,7 +264,7 @@ export default function ProductWordEditorModal({
           return `
 <div class="a4-page-sheet" style="position: relative; ${pagePadding} background: #ffffff; box-sizing: border-box;">
   <div class="page-content" style="font-size: 11.5px; line-height: 1.5; color: #111827; position: relative; z-index: 1;">
-    ${content}
+    ${cleanContent}
   </div>
   ${footerHtml}
 </div>`;

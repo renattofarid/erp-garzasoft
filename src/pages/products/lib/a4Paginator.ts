@@ -41,6 +41,37 @@ export function cleanHtmlPageContent(htmlContent: string): string {
 }
 
 /**
+ * Checks if a page has actual content or is effectively blank (only whitespace, empty tags, or only header)
+ */
+export function isPageEmpty(html: string): boolean {
+  if (!html || html.trim() === "") return true;
+  const container = document.createElement("div");
+  container.innerHTML = html;
+
+  // Remove header table/logo or footer if any
+  container.querySelectorAll("table, div, p").forEach((el) => {
+    const text = el.textContent?.toLowerCase() || "";
+    if (
+      text.includes("tu restaurante digital") ||
+      (text.includes("gesrest") && text.length < 60) ||
+      text.includes("un producto de mr. soft")
+    ) {
+      if (el.tagName.toLowerCase() === "table" || text.length < 70) {
+        el.remove();
+      }
+    }
+  });
+
+  const hasImg = container.querySelector("img") !== null;
+  const hasTable = container.querySelector("table") !== null;
+  const remainingText =
+    container.textContent?.replace(/\s+/g, "").replace(/\u00a0/g, "").trim() ||
+    "";
+
+  return !hasImg && !hasTable && remainingText.length === 0;
+}
+
+/**
  * Parses saved combined HTML or raw document HTML into an array of clean A4 pages
  */
 export function extractPagesFromCombinedHtml(
@@ -56,16 +87,23 @@ export function extractPagesFromCombinedHtml(
 
   const pageSheets = Array.from(container.querySelectorAll(".a4-page-sheet"));
   if (pageSheets.length > 0) {
-    return pageSheets.map((sheet) => {
+    const rawPages = pageSheets.map((sheet) => {
       const pageContent = sheet.querySelector(".page-content");
       const rawHtml = pageContent ? pageContent.innerHTML : sheet.innerHTML;
       return cleanHtmlPageContent(rawHtml);
     });
+
+    const filtered = rawPages.filter(
+      (p, idx) => idx === 0 || !isPageEmpty(p)
+    );
+    return filtered.length > 0 ? filtered : defaultPagesFallback;
   }
 
   // If there are no .a4-page-sheet wrappers, clean and paginate
   const cleanRootHtml = cleanHtmlPageContent(htmlContent);
-  return paginateHtmlByA4Height(cleanRootHtml, 680);
+  const paginated = paginateHtmlByA4Height(cleanRootHtml, 680);
+  const filtered = paginated.filter((p, idx) => idx === 0 || !isPageEmpty(p));
+  return filtered.length > 0 ? filtered : defaultPagesFallback;
 }
 
 /**

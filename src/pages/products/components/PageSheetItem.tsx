@@ -390,11 +390,11 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
       )}
 
       {/* Floating Header Actions on Page Sheet */}
-      <div className="absolute -top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-800 text-white rounded-md shadow-lg px-2 py-1 flex items-center gap-1 z-10 select-none">
+      <div className="absolute top-2.5 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-900/90 backdrop-blur-md text-white border border-zinc-700/80 rounded-md shadow-2xl px-2 py-1 flex items-center gap-1 z-20 select-none">
         <span className="text-[11px] font-bold px-1.5 text-zinc-300">
           {pageIndex === 0 ? "Portada" : `Pág. ${pageIndex} de ${totalPages - 1}`}
         </span>
-        <div className="h-3 w-px bg-zinc-600 mx-0.5" />
+        <div className="h-3 w-px bg-zinc-700 mx-0.5" />
         <Button
           type="button"
           variant="ghost"
@@ -403,7 +403,7 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
             e.stopPropagation();
             onAddBelow();
           }}
-          className="h-6 px-2 text-[10px] text-white hover:bg-zinc-700 hover:text-white gap-1"
+          className="h-6 px-2 text-[10px] text-white hover:bg-zinc-800 hover:text-white gap-1"
         >
           <Plus className="h-3 w-3" />
           <span>Agregar debajo</span>
@@ -417,7 +417,7 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
             onDuplicate();
           }}
           title="Duplicar página"
-          className="h-6 w-6 text-zinc-300 hover:text-white hover:bg-zinc-700"
+          className="h-6 w-6 text-zinc-300 hover:text-white hover:bg-zinc-800"
         >
           <Copy className="h-3 w-3" />
         </Button>
@@ -430,7 +430,7 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
             onDelete();
           }}
           title={totalPages > 1 ? "Eliminar esta página" : "Vaciar esta página"}
-          className="h-6 w-6 text-red-400 hover:text-red-300 hover:bg-red-950"
+          className="h-6 w-6 text-red-400 hover:text-red-300 hover:bg-red-950/60"
         >
           <Trash2 className="h-3 w-3" />
         </Button>

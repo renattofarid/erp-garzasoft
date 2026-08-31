@@ -53,18 +53,35 @@ const contractBaseObject = z.object({
 
 const eq = (n: number) => Math.round(n * 100) / 100;
 
+export const calculateMonthsBetween = (
+  fechaInicio?: string,
+  fechaFin?: string
+): number => {
+  if (!fechaInicio || !fechaFin) return 1;
+  const start = new Date(`${fechaInicio}T00:00:00`);
+  const end = new Date(`${fechaFin}T00:00:00`);
+  if (
+    Number.isNaN(start.getTime()) ||
+    Number.isNaN(end.getTime()) ||
+    end < start
+  ) {
+    return 1;
+  }
+
+  const diffDays =
+    Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  return Math.max(1, Math.round(diffDays / 30.4375));
+};
+
 const validateContract = (
   data: z.infer<typeof contractBaseObject>,
   ctx: z.RefinementCtx
 ) => {
+  const months = calculateMonthsBetween(data.fecha_inicio, data.fecha_fin);
   const billingPeriods =
     data.periodicidad_cuota === "anual"
-      ? data.vigencia_contrato === "anual"
-        ? Math.max(data.duracion_anios || 1, 1)
-        : 1
-      : data.vigencia_contrato === "anual"
-      ? Math.max((data.duracion_anios || 1) * 12, 1)
-      : 6;
+      ? Math.max(1, Math.round(months / 12))
+      : Math.max(1, months);
 
   if (data.fecha_inicio && data.fecha_fin) {
     const ini = new Date(data.fecha_inicio);

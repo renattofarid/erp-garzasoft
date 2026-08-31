@@ -5,11 +5,11 @@ import type { z } from "zod";
 import {
   addMonths,
   addYears,
-  differenceInMonths,
   format,
   parseISO,
 } from "date-fns";
 import {
+  calculateMonthsBetween,
   contractCreateSchema,
   contractUpdateSchema,
 } from "@/pages/contract/lib/contract.schema";
@@ -134,16 +134,12 @@ export const useContractForm = ({
   );
 
   const getBillingPeriods = useCallback(() => {
+    const months = calculateMonthsBetween(fechaInicio, fechaFin);
     if (paymentPeriodicity === "anual") {
-      return vigenciaContrato === "anual" ? Math.max(duracionAnios || 1, 1) : 1;
+      return Math.max(1, Math.round(months / 12));
     }
-
-    if (vigenciaContrato === "anual") {
-      return Math.max((duracionAnios || 1) * 12, 1);
-    }
-
-    return 6;
-  }, [duracionAnios, paymentPeriodicity, vigenciaContrato]);
+    return Math.max(1, months);
+  }, [fechaInicio, fechaFin, paymentPeriodicity]);
 
   const isInstallmentsUnbalanced =
     paymentMethod === "parcial" &&
@@ -163,30 +159,25 @@ export const useContractForm = ({
 
     const dates: string[] = [];
     const installmentCount = Math.max(numberOfInstallments || 1, 1);
-    const totalMonths = Math.max(differenceInMonths(endDate, startDate), 1);
-    const intervalMonths =
-      paymentPeriodicity === "anual"
-        ? Math.max(
-            1,
-            vigenciaContrato === "anual"
-              ? Math.max(Math.round((duracionAnios || 1) * 12 / installmentCount), 1)
-              : Math.max(Math.round(6 / installmentCount), 1)
-          )
-        : Math.max(Math.round(totalMonths / installmentCount), 1);
 
     for (let index = 0; index < installmentCount; index++) {
-      const nextDate = addMonths(startDate, intervalMonths * index);
+      let nextDate: Date;
+      if (installmentCount === 1) {
+        nextDate = startDate;
+      } else if (paymentPeriodicity === "anual") {
+        nextDate = addYears(startDate, index);
+      } else {
+        nextDate = addMonths(startDate, index);
+      }
       dates.push(format(nextDate > endDate ? endDate : nextDate, "yyyy-MM-dd"));
     }
 
     return dates;
   }, [
-    duracionAnios,
     fechaFin,
     fechaInicio,
     numberOfInstallments,
     paymentPeriodicity,
-    vigenciaContrato,
   ]);
 
   const adjustExistingInstallments = () => {

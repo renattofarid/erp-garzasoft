@@ -619,7 +619,7 @@ export async function parseDocxFileToHtml(
 
   if (fullBodyHtml.includes('<hr class="page-break"') || fullBodyHtml.includes("<hr")) {
     const explicitPages = fullBodyHtml
-      .split(/<hr(?:\s+class="page-break")?\s*\/?>/i)
+      .split(/(?:<p[^>]*>\s*)?<hr[^>]*>(?:\s*<\/p>)?/i)
       .map((p) => p.trim())
       .filter((p) => p.length > 0);
 
@@ -632,7 +632,7 @@ export async function parseDocxFileToHtml(
   for (const sec of rawSections) {
     const cleanSec = cleanHtmlPageContent(sec);
     if (!cleanSec || isPageEmpty(cleanSec)) continue;
-    const subPages = paginateHtmlByA4Height(cleanSec, 680);
+    const subPages = paginateHtmlByA4Height(cleanSec, 920);
     for (const subPage of subPages) {
       const cleanSub = cleanHtmlPageContent(subPage);
       if (cleanSub && !isPageEmpty(cleanSub)) {

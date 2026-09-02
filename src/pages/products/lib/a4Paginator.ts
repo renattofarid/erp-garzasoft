@@ -101,18 +101,18 @@ export function extractPagesFromCombinedHtml(
 
   // If there are no .a4-page-sheet wrappers, clean and paginate
   const cleanRootHtml = cleanHtmlPageContent(htmlContent);
-  const paginated = paginateHtmlByA4Height(cleanRootHtml, 680);
+  const paginated = paginateHtmlByA4Height(cleanRootHtml, 920);
   const filtered = paginated.filter((p, idx) => idx === 0 || !isPageEmpty(p));
   return filtered.length > 0 ? filtered : defaultPagesFallback;
 }
 
 /**
  * Slices arbitrary HTML into individual A4 pages based on real rendered DOM height.
- * Inner printable A4 height is ~680px (1123px - top/bottom margins - header/footer).
+ * Inner printable A4 height is ~920px (1123px - top/bottom margins - header/footer).
  */
 export function paginateHtmlByA4Height(
   htmlContent: string,
-  maxPageHeight: number = 680
+  maxPageHeight: number = 920
 ): string[] {
   if (!htmlContent || htmlContent.trim() === "") {
     return ["<p></p>"];
@@ -125,7 +125,7 @@ export function paginateHtmlByA4Height(
   measureContainer.style.position = "fixed";
   measureContainer.style.left = "-9999px";
   measureContainer.style.top = "-9999px";
-  measureContainer.style.width = "690px"; // Inner printable width of A4
+  measureContainer.style.width = "704px"; // Inner printable width of A4 (794 - 45 - 45 = 704px)
   measureContainer.style.fontSize = "12.5px";
   measureContainer.style.lineHeight = "1.55";
   measureContainer.style.fontFamily = "Arial, Helvetica, sans-serif";

@@ -72,18 +72,22 @@ export function isPageEmpty(html: string): boolean {
 }
 
 /**
- * Parses saved combined HTML or raw document HTML into an array of clean A4 pages
+/**
+ * Parses saved combined HTML or raw document HTML into an array of clean pages and detects paper size
  */
-export function extractPagesFromCombinedHtml(
+export function extractPagesAndPaperSizeFromCombinedHtml(
   htmlContent?: string,
   defaultPagesFallback: string[] = []
-): string[] {
+): { pages: string[]; paperSize: "letter" | "a4" } {
   if (!htmlContent || htmlContent.trim() === "") {
-    return defaultPagesFallback;
+    return { pages: defaultPagesFallback, paperSize: "letter" };
   }
 
   const container = document.createElement("div");
   container.innerHTML = htmlContent;
+
+  const firstSheet = container.querySelector(".a4-page-sheet");
+  const detectedPaperSize = (firstSheet?.getAttribute("data-paper-size") as "letter" | "a4") || "letter";
 
   const pageSheets = Array.from(container.querySelectorAll(".a4-page-sheet"));
   if (pageSheets.length > 0) {
@@ -96,23 +100,37 @@ export function extractPagesFromCombinedHtml(
     const filtered = rawPages.filter(
       (p, idx) => idx === 0 || !isPageEmpty(p)
     );
-    return filtered.length > 0 ? filtered : defaultPagesFallback;
+    return {
+      pages: filtered.length > 0 ? filtered : defaultPagesFallback,
+      paperSize: detectedPaperSize,
+    };
   }
 
   // If there are no .a4-page-sheet wrappers, clean and paginate
   const cleanRootHtml = cleanHtmlPageContent(htmlContent);
-  const paginated = paginateHtmlByA4Height(cleanRootHtml, 920);
+  const paginated = paginateHtmlByA4Height(cleanRootHtml, 850, "letter");
   const filtered = paginated.filter((p, idx) => idx === 0 || !isPageEmpty(p));
-  return filtered.length > 0 ? filtered : defaultPagesFallback;
+  return {
+    pages: filtered.length > 0 ? filtered : defaultPagesFallback,
+    paperSize: "letter",
+  };
+}
+
+export function extractPagesFromCombinedHtml(
+  htmlContent?: string,
+  defaultPagesFallback: string[] = []
+): string[] {
+  return extractPagesAndPaperSizeFromCombinedHtml(htmlContent, defaultPagesFallback).pages;
 }
 
 /**
- * Slices arbitrary HTML into individual A4 pages based on real rendered DOM height.
- * Inner printable A4 height is ~920px (1123px - top/bottom margins - header/footer).
+ * Slices arbitrary HTML into individual pages based on real rendered DOM height.
+ * Printable height: ~850px for Letter (1056px total) / ~920px for A4 (1123px total).
  */
 export function paginateHtmlByA4Height(
   htmlContent: string,
-  maxPageHeight: number = 920
+  maxPageHeight: number = 850,
+  paperSize: "letter" | "a4" = "letter"
 ): string[] {
   if (!htmlContent || htmlContent.trim() === "") {
     return ["<p></p>"];
@@ -120,12 +138,16 @@ export function paginateHtmlByA4Height(
 
   const cleanHtml = cleanHtmlPageContent(htmlContent);
 
-  // 1. Create in-DOM measurement sandbox with exact A4 sheet printable width
+  // Set printable width and height limit based on paper size
+  const printableWidth = paperSize === "a4" ? "704px" : "726px";
+  const heightLimit = maxPageHeight || (paperSize === "a4" ? 920 : 850);
+
+  // 1. Create in-DOM measurement sandbox with exact sheet printable width
   const measureContainer = document.createElement("div");
   measureContainer.style.position = "fixed";
   measureContainer.style.left = "-9999px";
   measureContainer.style.top = "-9999px";
-  measureContainer.style.width = "704px"; // Inner printable width of A4 (794 - 45 - 45 = 704px)
+  measureContainer.style.width = printableWidth;
   measureContainer.style.fontSize = "12.5px";
   measureContainer.style.lineHeight = "1.55";
   measureContainer.style.fontFamily = "Arial, Helvetica, sans-serif";
@@ -182,7 +204,7 @@ export function paginateHtmlByA4Height(
         tbodyRows.forEach((row) => {
           const rowHeight = (row as HTMLElement).offsetHeight || 36;
           if (
-            currentAccumulatedHeight + chunkHeight + rowHeight > maxPageHeight &&
+            currentAccumulatedHeight + chunkHeight + rowHeight > heightLimit &&
             (chunkRows.length > 0 || currentPageElements.length > 0)
           ) {
             if (chunkRows.length > 0) {
@@ -216,7 +238,7 @@ export function paginateHtmlByA4Height(
     const h = el.offsetHeight || 30;
 
     // Check if adding this element exceeds page boundary
-    if (currentAccumulatedHeight + h > maxPageHeight && currentPageElements.length > 0) {
+    if (currentAccumulatedHeight + h > heightLimit && currentPageElements.length > 0) {
       pages.push(currentPageElements.join("\n"));
       currentPageElements = [el.outerHTML];
       currentAccumulatedHeight = h;

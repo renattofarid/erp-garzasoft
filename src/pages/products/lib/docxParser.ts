@@ -201,7 +201,7 @@ function createA4CoverBackground(watermarkSrc: string): Promise<string> {
 export async function parseDocxFileToHtml(
   file: File,
   productName: string = "GESREST"
-): Promise<string[]> {
+): Promise<{ pages: string[]; paperSize: "letter" | "a4" }> {
   const arrayBuffer = await file.arrayBuffer();
 
   // 1. Extract all images, paragraph alignments, colors, bullets, and table cell shading from Word ZIP
@@ -210,6 +210,7 @@ export async function parseDocxFileToHtml(
   const rightTexts = new Set<string>();
   const bulletTexts = new Set<string>();
   const tableMetaList: CellMeta[][][] = [];
+  let detectedPaperSize: "letter" | "a4" = "letter";
 
   try {
     const zip = await JSZip.loadAsync(arrayBuffer);
@@ -232,10 +233,23 @@ export async function parseDocxFileToHtml(
       zipImages.push(`data:${mime};base64,${base64}`);
     }
 
-    // Extract exact paragraph properties and table cell structures from word/document.xml
+    // Extract exact paragraph properties, paper size and table cell structures from word/document.xml
     const docXmlStr = await zip.files["word/document.xml"]?.async("text");
     if (docXmlStr) {
       const xmlDoc = new DOMParser().parseFromString(docXmlStr, "application/xml");
+
+      // Paper Size (w:pgSz) detection
+      const pgSzElements = xmlDoc.getElementsByTagName("w:pgSz");
+      if (pgSzElements.length > 0) {
+        const pgSz = pgSzElements[0];
+        const wVal = parseInt(pgSz.getAttribute("w:w") || "0", 10);
+        const hVal = parseInt(pgSz.getAttribute("w:h") || "0", 10);
+        if (wVal >= 12100 || (hVal > 0 && hVal <= 16000)) {
+          detectedPaperSize = "letter";
+        } else if (hVal > 16500) {
+          detectedPaperSize = "a4";
+        }
+      }
 
       // Paragraph alignments & bullets
       const pElements = xmlDoc.getElementsByTagName("w:p");
@@ -629,10 +643,11 @@ export async function parseDocxFileToHtml(
   }
 
   const finalBodyPages: string[] = [];
+  const heightThreshold = detectedPaperSize === "a4" ? 920 : 850;
   for (const sec of rawSections) {
     const cleanSec = cleanHtmlPageContent(sec);
     if (!cleanSec || isPageEmpty(cleanSec)) continue;
-    const subPages = paginateHtmlByA4Height(cleanSec, 920);
+    const subPages = paginateHtmlByA4Height(cleanSec, heightThreshold, detectedPaperSize);
     for (const subPage of subPages) {
       const cleanSub = cleanHtmlPageContent(subPage);
       if (cleanSub && !isPageEmpty(cleanSub)) {
@@ -645,5 +660,5 @@ export async function parseDocxFileToHtml(
     (p, idx) => idx === 0 || !isPageEmpty(p)
   );
 
-  return allPages;
+  return { pages: allPages, paperSize: detectedPaperSize };
 }

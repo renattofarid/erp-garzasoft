@@ -22,6 +22,7 @@ interface PageSheetItemProps {
   totalPages: number;
   content: string;
   isActive: boolean;
+  paperSize?: "letter" | "a4";
   onFocus: () => void;
   onChange: (html: string) => void;
   onAddBelow: () => void;
@@ -34,6 +35,7 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
   totalPages,
   content,
   isActive,
+  paperSize = "letter",
   onFocus,
   onChange,
   onAddBelow,
@@ -231,13 +233,25 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
     e.target.value = "";
   };
 
+  const isLetter = paperSize === "letter";
+  const sheetWidth = isLetter ? 816 : 794;
+  const sheetHeight = isLetter ? 1056 : 1123;
+  const editableMinHeight = isLetter ? 860 : 920;
+
   return (
     <div
       id={`page-sheet-${pageIndex}`}
-      className={`w-[794px] h-[1123px] min-w-[794px] max-w-[794px] min-h-[1123px] max-h-[1123px] bg-white text-zinc-900 rounded-none shadow-2xl relative mb-10 transition-all group overflow-hidden ${
+      data-paper-size={paperSize}
+      className={`bg-white text-zinc-900 rounded-none shadow-2xl relative mb-10 transition-all group overflow-hidden ${
         isActive ? "ring-2 ring-primary/70" : "hover:shadow-3xl"
       }`}
       style={{
+        width: `${sheetWidth}px`,
+        height: `${sheetHeight}px`,
+        minWidth: `${sheetWidth}px`,
+        maxWidth: `${sheetWidth}px`,
+        minHeight: `${sheetHeight}px`,
+        maxHeight: `${sheetHeight}px`,
         boxShadow: "0 12px 36px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.2)",
         padding: pageIndex === 0 ? "0" : "35px 45px 50px 45px",
         boxSizing: "border-box",
@@ -440,7 +454,7 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
       <style>{`
         #page-sheet-${pageIndex} .word-page-editable {
           outline: none;
-          min-height: 920px;
+          min-height: ${editableMinHeight}px;
           font-family: Arial, Helvetica, sans-serif;
           font-size: 13px;
           line-height: 1.6;

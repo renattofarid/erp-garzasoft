@@ -50,7 +50,7 @@ import { parseDocxFileToHtml } from "../lib/docxParser";
 import { parsePdfFileToPages } from "../lib/pdfParser";
 import {
   cleanHtmlPageContent,
-  extractPagesFromCombinedHtml,
+  extractPagesAndPaperSizeFromCombinedHtml,
 } from "../lib/a4Paginator";
 import { PageSheetItem } from "./PageSheetItem";
 
@@ -70,17 +70,10 @@ export default function ProductWordEditorModal({
   const [importingDocx, setImportingDocx] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Array of individual A4 pages
+  // Array of individual pages and paper size ('letter' | 'a4')
   const [pages, setPages] = useState<string[]>([]);
+  const [paperSize, setPaperSize] = useState<"letter" | "a4">("letter");
   const [activePageIndex, setActivePageIndex] = useState(0);
-
-  // Extract pages from raw saved html or use defaults
-  const extractPagesFromHtml = (htmlContent?: string): string[] => {
-    return extractPagesFromCombinedHtml(
-      htmlContent,
-      getDefaultGesrestPages(product?.nombre || "GESREST")
-    );
-  };
 
   useEffect(() => {
     if (open && product) {
@@ -88,13 +81,21 @@ export default function ProductWordEditorModal({
       getProductFormatoAlta(product.id)
         .then((res) => {
           const rawFormato = res?.data?.formato_alta;
-          const initialPages = extractPagesFromHtml(rawFormato?.html_content);
+          const { pages: initialPages, paperSize: detectedSize } =
+            extractPagesAndPaperSizeFromCombinedHtml(
+              rawFormato?.html_content,
+              getDefaultGesrestPages(product?.nombre || "GESREST")
+            );
+          const finalPaperSize =
+            rawFormato?.paper_size || detectedSize || "letter";
+          setPaperSize(finalPaperSize);
           setPages(initialPages);
           setActivePageIndex(0);
         })
         .catch(() => {
           const defaultPages = getDefaultGesrestPages(product.nombre);
           setPages(defaultPages);
+          setPaperSize("letter");
           setActivePageIndex(0);
         })
         .finally(() => setLoading(false));
@@ -204,13 +205,20 @@ export default function ProductWordEditorModal({
 
       if (isPdf) {
         parsedPages = await parsePdfFileToPages(file);
+        setPaperSize("letter");
         successToast(
-          `Documento PDF importado: ${parsedPages.length} página(s) A4 generadas con fidelidad visual 100%.`
+          `Documento PDF importado: ${parsedPages.length} página(s) generadas con fidelidad visual 100%.`
         );
       } else {
-        parsedPages = await parseDocxFileToHtml(file, product.nombre);
+        const docxResult = await parseDocxFileToHtml(file, product.nombre);
+        parsedPages = docxResult.pages;
+        setPaperSize(docxResult.paperSize);
+        const paperLabel =
+          docxResult.paperSize === "letter"
+            ? "Carta (21.59 × 27.94 cm)"
+            : "A4 (21.0 × 29.7 cm)";
         successToast(
-          `Documento Word importado: ${parsedPages.length} página(s) A4 generadas con todas las imágenes y tablas.`
+          `Documento Word importado: ${parsedPages.length} página(s) generadas en tamaño ${paperLabel}.`
         );
       }
 
@@ -232,6 +240,7 @@ export default function ProductWordEditorModal({
     if (confirm("¿Deseas restablecer la plantilla con las 8 páginas originales de Gesrest?")) {
       const defaultPages = getDefaultGesrestPages(product.nombre);
       setPages(defaultPages);
+      setPaperSize("letter");
       setActivePageIndex(0);
       setTimeout(() => scrollToPage(0), 100);
       successToast("Plantilla base de 8 páginas restablecida.");
@@ -244,7 +253,7 @@ export default function ProductWordEditorModal({
     try {
       const total = pages.length;
 
-      // Wrap all pages into .a4-page-sheet containers for DomPDF backend
+      // Wrap all pages into .a4-page-sheet containers with paper-size metadata for DomPDF backend
       const combinedHtml = pages
         .map((content, idx) => {
           const isCover = idx === 0;
@@ -262,7 +271,7 @@ export default function ProductWordEditorModal({
           const pagePadding = isCover ? "padding: 0;" : "padding: 30px 38px 30px 38px;";
 
           return `
-<div class="a4-page-sheet" style="position: relative; ${pagePadding} background: #ffffff; box-sizing: border-box;">
+<div class="a4-page-sheet" data-paper-size="${paperSize}" style="position: relative; ${pagePadding} background: #ffffff; box-sizing: border-box;">
   <div class="page-content" style="font-size: 11.5px; line-height: 1.5; color: #111827; position: relative; z-index: 1;">
     ${cleanContent}
   </div>
@@ -273,6 +282,7 @@ export default function ProductWordEditorModal({
 
       await updateProductFormatoAlta(product.id, {
         html_content: combinedHtml,
+        paper_size: paperSize,
       });
       successToast("Formato de alta guardado exitosamente.");
     } catch {
@@ -368,6 +378,56 @@ export default function ProductWordEditorModal({
           </div>
 
           <div className="flex items-center gap-2 pr-6">
+            {/* Selector de Tamaño de Hoja (Carta vs A4) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs gap-1.5 h-8 font-semibold shadow-2xs text-foreground border-border hover:bg-muted"
+                  title="Cambiar formato del papel (Carta vs A4)"
+                >
+                  <FileText className="h-3.5 w-3.5 text-primary" />
+                  <span>
+                    {paperSize === "letter"
+                      ? "Carta (21.59 × 27.94 cm)"
+                      : "A4 (21.0 × 29.7 cm)"}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="p-1.5 w-56">
+                <button
+                  type="button"
+                  onClick={() => setPaperSize("letter")}
+                  className={`w-full text-left px-2.5 py-1.5 rounded text-xs flex flex-col gap-0.5 hover:bg-muted ${
+                    paperSize === "letter"
+                      ? "font-bold text-primary bg-primary/10"
+                      : ""
+                  }`}
+                >
+                  <span>📄 Tamaño Carta</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    21.59 cm × 27.94 cm (Estándar Word)
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaperSize("a4")}
+                  className={`w-full text-left px-2.5 py-1.5 rounded text-xs flex flex-col gap-0.5 hover:bg-muted ${
+                    paperSize === "a4"
+                      ? "font-bold text-primary bg-primary/10"
+                      : ""
+                  }`}
+                >
+                  <span>📄 Tamaño A4</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    21.00 cm × 29.70 cm
+                  </span>
+                </button>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button
               type="button"
               variant="outline"
@@ -785,6 +845,7 @@ export default function ProductWordEditorModal({
                   totalPages={pages.length}
                   content={content}
                   isActive={idx === activePageIndex}
+                  paperSize={paperSize}
                   onFocus={() => setActivePageIndex(idx)}
                   onChange={(newHtml) => handlePageChange(idx, newHtml)}
                   onAddBelow={() => handleAddPageBelow(idx)}

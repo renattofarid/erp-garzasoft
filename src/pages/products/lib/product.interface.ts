@@ -85,6 +85,8 @@ export interface FormatoAltaTutoriales {
 }
 
 export interface FormatoAltaConfig {
+  paper_size?: "letter" | "a4";
+  html_content?: string;
   portada?: FormatoAltaPortada;
   presentacion?: FormatoAltaPresentacion;
   acceso?: FormatoAltaAcceso;

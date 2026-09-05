@@ -49,6 +49,9 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
   const [selectedImg, setSelectedImg] = useState<HTMLImageElement | null>(null);
   const [imgToolbarPos, setImgToolbarPos] = useState<{ top: number; left: number } | null>(null);
 
+  const [selectedCell, setSelectedCell] = useState<HTMLTableCellElement | null>(null);
+  const [tableToolbarPos, setTableToolbarPos] = useState<{ top: number; left: number } | null>(null);
+
   // Synchronize incoming content from parent
   useEffect(() => {
     if (contentRef.current && contentRef.current.innerHTML !== content) {
@@ -233,6 +236,115 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
     e.target.value = "";
   };
 
+  // Table manipulation handlers
+  const updateTableToolbarPos = (cell: HTMLTableCellElement) => {
+    const sheetEl = document.getElementById(`page-sheet-${pageIndex}`);
+    if (!sheetEl) return;
+    const sheetRect = sheetEl.getBoundingClientRect();
+    const cellRect = cell.getBoundingClientRect();
+
+    setTableToolbarPos({
+      top: Math.max(10, cellRect.top - sheetRect.top - 44),
+      left: Math.max(
+        10,
+        Math.min(sheetRect.width - 420, cellRect.left - sheetRect.left + cellRect.width / 2 - 210)
+      ),
+    });
+  };
+
+  const handleAddRowBelow = () => {
+    if (!selectedCell) return;
+    const tr = selectedCell.closest("tr");
+    if (!tr) return;
+    const newTr = document.createElement("tr");
+    Array.from(tr.cells).forEach((c) => {
+      const isTh = c.tagName.toLowerCase() === "th";
+      const newCell = document.createElement(isTh ? "td" : c.tagName);
+      newCell.style.cssText = c.style.cssText;
+      newCell.style.color = "#111827";
+      newCell.style.backgroundColor = "";
+      newCell.innerHTML = "<br>";
+      newTr.appendChild(newCell);
+    });
+    tr.parentNode?.insertBefore(newTr, tr.nextSibling);
+    handleInput();
+    const firstCell = newTr.cells[0] as HTMLTableCellElement;
+    if (firstCell) {
+      setSelectedCell(firstCell);
+      updateTableToolbarPos(firstCell);
+    }
+  };
+
+  const handleAddRowAbove = () => {
+    if (!selectedCell) return;
+    const tr = selectedCell.closest("tr");
+    if (!tr) return;
+    const newTr = document.createElement("tr");
+    Array.from(tr.cells).forEach((c) => {
+      const isTh = c.tagName.toLowerCase() === "th";
+      const newCell = document.createElement(isTh ? "td" : c.tagName);
+      newCell.style.cssText = c.style.cssText;
+      newCell.style.color = "#111827";
+      newCell.style.backgroundColor = "";
+      newCell.innerHTML = "<br>";
+      newTr.appendChild(newCell);
+    });
+    tr.parentNode?.insertBefore(newTr, tr);
+    handleInput();
+    const firstCell = newTr.cells[0] as HTMLTableCellElement;
+    if (firstCell) {
+      setSelectedCell(firstCell);
+      updateTableToolbarPos(firstCell);
+    }
+  };
+
+  const handleAddColRight = () => {
+    if (!selectedCell) return;
+    const colIdx = selectedCell.cellIndex;
+    const table = selectedCell.closest("table");
+    if (!table) return;
+    Array.from(table.rows).forEach((r) => {
+      const target = r.cells[colIdx];
+      if (target) {
+        const isHeader = target.tagName.toLowerCase() === "th";
+        const newCell = document.createElement(isHeader ? "th" : "td");
+        newCell.style.cssText = target.style.cssText;
+        newCell.innerHTML = isHeader ? "Nueva Col" : "<br>";
+        r.insertBefore(newCell, target.nextSibling);
+      }
+    });
+    handleInput();
+    updateTableToolbarPos(selectedCell);
+  };
+
+  const handleDeleteRow = () => {
+    if (!selectedCell) return;
+    const tr = selectedCell.closest("tr");
+    const table = selectedCell.closest("table");
+    if (!tr || !table) return;
+    if (table.rows.length <= 1) {
+      table.remove();
+      setSelectedCell(null);
+      setTableToolbarPos(null);
+    } else {
+      tr.remove();
+      setSelectedCell(null);
+      setTableToolbarPos(null);
+    }
+    handleInput();
+  };
+
+  const handleDeleteTable = () => {
+    if (!selectedCell) return;
+    const table = selectedCell.closest("table");
+    if (table) {
+      table.remove();
+      setSelectedCell(null);
+      setTableToolbarPos(null);
+      handleInput();
+    }
+  };
+
   const isLetter = paperSize === "letter";
   const sheetWidth = isLetter ? 816 : 794;
   const sheetHeight = isLetter ? 1056 : 1123;
@@ -256,10 +368,28 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
         padding: pageIndex === 0 ? "0" : "35px 45px 50px 45px",
         boxSizing: "border-box",
       }}
-      onClick={() => {
+      onClick={(e) => {
         onFocus();
-        setSelectedImg(null);
-        setImgToolbarPos(null);
+        const target = e.target as HTMLElement;
+
+        if (target.tagName.toLowerCase() === "a") {
+          e.preventDefault();
+        }
+
+        const cell = target.closest("td, th") as HTMLTableCellElement | null;
+        if (cell) {
+          setSelectedCell(cell);
+          updateTableToolbarPos(cell);
+          setSelectedImg(null);
+          setImgToolbarPos(null);
+        } else {
+          setSelectedCell(null);
+          setTableToolbarPos(null);
+          if (!target.closest("img")) {
+            setSelectedImg(null);
+            setImgToolbarPos(null);
+          }
+        }
       }}
     >
       <input
@@ -403,6 +533,74 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
         </div>
       )}
 
+      {/* Floating Table Action Toolbar */}
+      {selectedCell && tableToolbarPos && (
+        <div
+          className="absolute bg-zinc-900/95 backdrop-blur-md text-white rounded-lg shadow-2xl px-2.5 py-1 flex items-center gap-1 z-30 border border-zinc-700 animate-in fade-in zoom-in-95 select-none"
+          style={{ top: `${tableToolbarPos.top}px`, left: `${tableToolbarPos.left}px` }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span className="text-[10px] font-bold text-emerald-400 px-1 flex items-center gap-1">
+            📊 Tabla
+          </span>
+          <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleAddRowBelow}
+            title="Agregar nueva fila abajo"
+            className="h-6.5 px-2 text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 hover:bg-zinc-800 gap-1"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>Fila Abajo</span>
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleAddRowAbove}
+            title="Agregar fila arriba"
+            className="h-6.5 px-2 text-[11px] font-medium text-zinc-200 hover:text-white hover:bg-zinc-800 gap-1"
+          >
+            <Plus className="h-3.5 w-3.5 text-zinc-400" />
+            <span>Fila Arriba</span>
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleAddColRight}
+            title="Agregar columna a la derecha"
+            className="h-6.5 px-2 text-[11px] font-medium text-zinc-200 hover:text-white hover:bg-zinc-800 gap-1"
+          >
+            <Plus className="h-3.5 w-3.5 text-zinc-400" />
+            <span>Columna</span>
+          </Button>
+          <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={handleDeleteRow}
+            title="Eliminar esta fila"
+            className="h-6.5 w-6.5 text-amber-400 hover:text-amber-300 hover:bg-zinc-800"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={handleDeleteTable}
+            title="Eliminar toda la tabla"
+            className="h-6.5 w-6.5 text-red-400 hover:text-red-300 hover:bg-zinc-800"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
+
       {/* Floating Header Actions on Page Sheet */}
       <div className="absolute top-2.5 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-900/90 backdrop-blur-md text-white border border-zinc-700/80 rounded-md shadow-2xl px-2 py-1 flex items-center gap-1 z-20 select-none">
         <span className="text-[11px] font-bold px-1.5 text-zinc-300">
@@ -471,6 +669,18 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
           padding: 8px 12px;
           vertical-align: middle;
           font-size: 12px;
+          min-width: 45px;
+          word-break: break-word;
+          overflow-wrap: break-word;
+        }
+        #page-sheet-${pageIndex} .word-page-editable tr:hover {
+          background-color: rgba(235, 84, 84, 0.02);
+        }
+        #page-sheet-${pageIndex} .word-page-editable td:focus,
+        #page-sheet-${pageIndex} .word-page-editable th:focus {
+          outline: 2px solid #eb5454;
+          outline-offset: -2px;
+          background-color: rgba(235, 84, 84, 0.04);
         }
         #page-sheet-${pageIndex} .word-page-editable th {
           font-weight: bold;
@@ -534,6 +744,20 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
         contentEditable
         suppressContentEditableWarning
         onInput={handleInput}
+        onKeyDown={(e) => {
+          if (e.key === "Tab" && selectedCell) {
+            const tr = selectedCell.closest("tr");
+            const table = selectedCell.closest("table");
+            if (tr && table) {
+              const isLastRow = tr === table.rows[table.rows.length - 1];
+              const isLastCell = selectedCell === tr.cells[tr.cells.length - 1];
+              if (isLastRow && isLastCell && !e.shiftKey) {
+                e.preventDefault();
+                handleAddRowBelow();
+              }
+            }
+          }
+        }}
       />
 
       {/* Institutional Printable Footer (Only on body pages, NOT on cover) */}

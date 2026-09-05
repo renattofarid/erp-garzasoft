@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toJpeg, toPng } from "html-to-image";
 import {
   AlignCenter,
   AlignJustify,
@@ -30,7 +31,7 @@ import {
   Undo,
   UploadCloud,
 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -253,26 +254,75 @@ export default function ProductWordEditorModal({
     try {
       const total = pages.length;
 
-      // Wrap all pages into .a4-page-sheet containers with paper-size metadata for DomPDF backend
+      // 1. Capturar cada hoja renderizada en el DOM como imagen JPEG optimizada
+      const pageImages: string[] = [];
+      for (let idx = 0; idx < total; idx++) {
+        const sheetEl = document.getElementById(`page-sheet-${idx}`);
+        if (sheetEl) {
+          try {
+            const imgData = await toJpeg(sheetEl, {
+              quality: 0.85,
+              pixelRatio: 1.4,
+              skipFonts: true,
+              cacheBust: true,
+              filter: (node) => {
+                if (node instanceof HTMLElement) {
+                  if (
+                    node.classList.contains("group-hover:opacity-100") ||
+                    node.classList.contains("animate-in") ||
+                    node.tagName.toLowerCase() === "button" ||
+                    node.getAttribute("type") === "file"
+                  ) {
+                    return false;
+                  }
+                }
+                return true;
+              },
+            });
+            pageImages.push(imgData);
+          } catch (err) {
+            console.warn(`Failed to capture sheet ${idx} image`, err);
+            pageImages.push("");
+          }
+        } else {
+          pageImages.push("");
+        }
+      }
+
+      // 2. Construir HTML combinado con la imagen exacta de la hoja y el contenido HTML editable oculto
       const combinedHtml = pages
         .map((content, idx) => {
-          const isCover = idx === 0;
           const cleanContent = cleanHtmlPageContent(content);
+          const imgUrl = pageImages[idx];
+          const isLast = idx === total - 1;
+          const pageBreakRule = isLast ? "page-break-after: avoid;" : "page-break-after: always;";
+
+          if (imgUrl) {
+            return `
+<div class="a4-page-sheet" data-paper-size="${paperSize}" style="position: relative; width: 100%; height: ${paperSize === "a4" ? "297mm" : "279.4mm"}; max-height: ${paperSize === "a4" ? "297mm" : "279.4mm"}; ${pageBreakRule} overflow: hidden; background: #ffffff; padding: 0; margin: 0; box-sizing: border-box;">
+  <img src="${imgUrl}" style="width: 100%; height: 100%; display: block; object-fit: contain; border: none; margin: 0; padding: 0;" />
+  <div class="page-content" style="display: none;">${cleanContent}</div>
+</div>`;
+          }
+
+          const isCover = idx === 0;
           const footerHtml = isCover
             ? ""
             : `
-  <table class="page-footer-table" style="width: 100%; border: none; border-collapse: collapse; border-top: 1px solid #e5e7eb; margin-top: 15px; font-size: 9.5px; color: #9ca3af; font-family: Arial, sans-serif;">
-    <tr>
-      <td style="border: none; text-align: left; padding: 4px 0; color: #9ca3af; font-size: 9.5px;">Un producto de Mr. Soft</td>
-      <td style="border: none; text-align: right; padding: 4px 0; color: #9ca3af; font-size: 9.5px;">Página ${idx} de ${total - 1}</td>
-    </tr>
-  </table>`;
+  <div class="page-footer-container" style="position: absolute; bottom: 20px; left: 38px; right: 38px; font-size: 9.5px; color: #9ca3af; font-family: Arial, sans-serif;">
+    <table class="page-footer-table" style="width: 100%; border: none; border-collapse: collapse; border-top: 1px solid #e5e7eb; font-size: 9.5px; color: #9ca3af; font-family: Arial, sans-serif;">
+      <tr>
+        <td style="border: none; text-align: left; padding: 4px 0; color: #9ca3af; font-size: 9.5px;">Un producto de Mr. Soft</td>
+        <td style="border: none; text-align: right; padding: 4px 0; color: #9ca3af; font-size: 9.5px;">Página ${idx} de ${total - 1}</td>
+      </tr>
+    </table>
+  </div>`;
 
-          const pagePadding = isCover ? "padding: 0;" : "padding: 30px 38px 30px 38px;";
+          const pagePadding = isCover ? "padding: 0;" : "padding: 30px 38px 45px 38px;";
 
           return `
-<div class="a4-page-sheet" data-paper-size="${paperSize}" style="position: relative; ${pagePadding} background: #ffffff; box-sizing: border-box;">
-  <div class="page-content" style="font-size: 11.5px; line-height: 1.5; color: #111827; position: relative; z-index: 1;">
+<div class="a4-page-sheet" data-paper-size="${paperSize}" style="position: relative; width: 100%; height: ${paperSize === "a4" ? "297mm" : "279.4mm"}; max-height: ${paperSize === "a4" ? "297mm" : "279.4mm"}; page-break-after: always; overflow: hidden; ${pagePadding} background: #ffffff; box-sizing: border-box;">
+  <div class="page-content" style="font-size: 11.5px; line-height: 1.45; color: #111827; position: relative; z-index: 1;">
     ${cleanContent}
   </div>
   ${footerHtml}
@@ -371,9 +421,9 @@ export default function ProductWordEditorModal({
               <DialogTitle className="text-base font-bold flex items-center gap-2">
                 <span>Editor de Formato de Alta: {product?.nombre}</span>
               </DialogTitle>
-              <p className="text-xs text-muted-foreground">
+              <DialogDescription className="text-xs text-muted-foreground">
                 Vista de impresión vertical continua en hojas Carta (Letter) / A4 con herramientas de Microsoft Word.
-              </p>
+              </DialogDescription>
             </div>
           </div>
 

@@ -30,6 +30,7 @@ export function cleanHtmlPageContent(htmlContent: string): string {
         el.tagName.toLowerCase() === "table" ||
         el.classList.contains("page-footer") ||
         el.classList.contains("page-footer-table") ||
+        el.classList.contains("page-footer-container") ||
         text.length < 90
       ) {
         el.remove();

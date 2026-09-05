@@ -58,6 +58,8 @@ export const ContractForm = ({
     removeCuota,
     numberOfInstallments,
     setNumberOfInstallments,
+    dueDayType,
+    setDueDayType,
     setInstallmentsTouched,
     generateInstallments,
     adjustExistingInstallments,
@@ -120,6 +122,8 @@ export const ContractForm = ({
               cuotaFields={cuotaFields}
               numberOfInstallments={numberOfInstallments}
               setNumberOfInstallments={setNumberOfInstallments}
+              dueDayType={dueDayType}
+              setDueDayType={setDueDayType}
               setInstallmentsTouched={setInstallmentsTouched}
               generateInstallments={generateInstallments}
               appendCuota={appendCuota}

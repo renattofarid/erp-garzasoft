@@ -372,7 +372,7 @@ export default function ProductWordEditorModal({
                 <span>Editor de Formato de Alta: {product?.nombre}</span>
               </DialogTitle>
               <p className="text-xs text-muted-foreground">
-                Vista de impresión vertical continua en hojas A4 con herramientas de Microsoft Word.
+                Vista de impresión vertical continua en hojas Carta (Letter) / A4 con herramientas de Microsoft Word.
               </p>
             </div>
           </div>

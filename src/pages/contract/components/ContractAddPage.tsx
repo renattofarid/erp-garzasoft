@@ -96,7 +96,7 @@ export default function ContractAddPage() {
           fecha_fin: "",
           cliente_padre_id: undefined as unknown as number,
           cliente_id: 0,
-          forma_pago: "unico",
+          forma_pago: "parcial",
           periodicidad_cuota: "mensual",
           costo_instalacion: 100,
           tipo_contrato: "saas",

@@ -140,21 +140,21 @@ export const ContractBasicInfo = ({
           <FileText className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h2 className="text-xl font-semibold">Informacion del Contrato</h2>
+          <h2 className="text-xl font-semibold">Información del Contrato</h2>
           <p className="text-sm text-muted-foreground">
-            Datos basicos y cliente final
+            Datos básicos y cliente final
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 rounded-lg border bg-modal p-6 shadow-sm md:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-4 rounded-xl border bg-modal/70 p-6 shadow-xs md:grid-cols-2">
         <FormField
           control={control}
           name="numero"
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                <RequiredLabel>Numero de Contrato</RequiredLabel>
+                <RequiredLabel>Número de Contrato</RequiredLabel>
               </FormLabel>
               <FormControl>
                 <Input
@@ -169,9 +169,9 @@ export const ContractBasicInfo = ({
 
         <FormSelect
           control={control}
-          label="Cliente"
+          label="Cliente (Empresa / Corporación)"
           name="cliente_padre_id"
-          placeholder="Selecciona una corporacion, empresa o local"
+          placeholder="Selecciona una corporación, empresa o local"
           options={rootOptions.map((client) => ({
             label: getClientDisplayName(client),
             value: client.id.toString(),
@@ -181,7 +181,7 @@ export const ContractBasicInfo = ({
 
         <FormSelect
           control={control}
-          label="Local"
+          label="Local / Sucursal Final"
           name="cliente_id"
           placeholder={
             selectedParentClient
@@ -208,7 +208,7 @@ export const ContractBasicInfo = ({
 
         <FormSelect
           control={control}
-          label="Vigencia del contrato"
+          label="Vigencia del Contrato"
           name="vigencia_contrato"
           placeholder="Selecciona una vigencia"
           options={[
@@ -224,7 +224,7 @@ export const ContractBasicInfo = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                  <RequiredLabel>Cantidad de años</RequiredLabel>
+                  <RequiredLabel>Cantidad de Años</RequiredLabel>
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -248,7 +248,7 @@ export const ContractBasicInfo = ({
           name="fecha_fin"
           captionLayout="dropdown"
           dateFormat="dd/MM/yyyy"
-          label="Fecha de Finalizacion"
+          label="Fecha de Finalización"
           placeholder="Selecciona una fecha"
           disabledRange={
             {
@@ -273,18 +273,18 @@ export const ContractBasicInfo = ({
 
         <FormSelect
           control={control}
-          label="Forma de cobro"
+          label="Forma de Cobro"
           name="forma_pago"
-          placeholder="Selecciona una forma de pago"
+          placeholder="Selecciona una forma de cobro"
           options={[
             { label: "Pago Parcial (Cuotas)", value: "parcial" },
-            { label: "Pago Unico", value: "unico" },
+            { label: "Pago Único", value: "unico" },
           ]}
         />
 
         <FormSelect
           control={control}
-          label="Tipo de pago"
+          label="Tipo de Pago"
           name="periodicidad_cuota"
           placeholder="Selecciona un tipo"
           options={
@@ -306,7 +306,7 @@ export const ContractBasicInfo = ({
                 <FormLabel>Costo de Instalación (S/.)</FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">
                       S/.
                     </span>
                     <Input
@@ -325,7 +325,7 @@ export const ContractBasicInfo = ({
                   </div>
                 </FormControl>
                 <p className="text-xs text-muted-foreground">
-                  Cobro único agregado al 1er mes (por defecto S/ 100.00)
+                  Cobro adelantado de instalación (si las cuotas son a fin de mes, se programa al inicio)
                 </p>
                 <FormMessage />
               </FormItem>
@@ -338,10 +338,10 @@ export const ContractBasicInfo = ({
           name="total"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Precio Total</FormLabel>
+              <FormLabel>Precio Total (S/.)</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">
                     S/.
                   </span>
                   <Input
@@ -359,15 +359,7 @@ export const ContractBasicInfo = ({
         />
       </div>
 
-      <div className="rounded-lg border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-        El contrato se asigna al local final seleccionado. Si el cliente
-        elegido no tiene hijos, se usara ese mismo registro. La vigencia{" "}
-        {vigenciaContrato === "semestral"
-          ? "semestral"
-          : `anual de ${duracionAnios || 1} año(s)`}{" "}
-        propone la fecha
-        de finalizacion automaticamente, pero puedes cambiarla manualmente.
-      </div>
+    
     </div>
   );
 };

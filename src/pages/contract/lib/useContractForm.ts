@@ -6,7 +6,9 @@ import {
   addMonths,
   addYears,
   format,
+  lastDayOfMonth,
   parseISO,
+  startOfMonth,
 } from "date-fns";
 import {
   calculateMonthsBetween,
@@ -54,7 +56,7 @@ export const useContractForm = ({
       vigencia_contrato: "anual",
       duracion_anios: 1,
       total: 0,
-      forma_pago: "unico",
+      forma_pago: "parcial",
       periodicidad_cuota: "mensual",
       productos_modulos: [],
       cuotas: [],
@@ -89,6 +91,7 @@ export const useContractForm = ({
 
   const [open, setOpen] = useState(false);
   const [numberOfInstallments, setNumberOfInstallments] = useState<number>(1);
+  const [dueDayType, setDueDayType] = useState<"fin_mes" | "inicio_mes">("fin_mes");
   const [manualSum, setManualSum] = useState<number>(0);
   const [installmentsTouched, setInstallmentsTouched] = useState(false);
   const previousAutoDateState = useRef<{
@@ -161,19 +164,27 @@ export const useContractForm = ({
     const installmentCount = Math.max(numberOfInstallments || 1, 1);
 
     for (let index = 0; index < installmentCount; index++) {
-      let nextDate: Date;
-      if (installmentCount === 1) {
-        nextDate = startDate;
-      } else if (paymentPeriodicity === "anual") {
-        nextDate = addYears(startDate, index);
+      let targetMonthDate: Date;
+      if (paymentPeriodicity === "anual") {
+        targetMonthDate = addYears(startDate, index);
       } else {
-        nextDate = addMonths(startDate, index);
+        targetMonthDate = addMonths(startDate, index);
       }
-      dates.push(format(nextDate > endDate ? endDate : nextDate, "yyyy-MM-dd"));
+
+      let nextDate: Date;
+      if (dueDayType === "inicio_mes") {
+        nextDate = startOfMonth(targetMonthDate);
+      } else {
+        nextDate = lastDayOfMonth(targetMonthDate);
+      }
+
+      const finalDate = nextDate > endDate ? endDate : nextDate;
+      dates.push(format(finalDate, "yyyy-MM-dd"));
     }
 
     return dates;
   }, [
+    dueDayType,
     fechaFin,
     fechaInicio,
     numberOfInstallments,
@@ -188,79 +199,157 @@ export const useContractForm = ({
       paymentPeriodicity === "mensual"
         ? Number(costoInstalacion ?? 0)
         : 0;
-    const baseTotal = Math.max(0, total - instalacion);
-    const baseInstallment = Math.round((baseTotal / count) * 100) / 100;
 
-    const updatedCuotas = cuotaFields.map((cuota, index) => {
-      if (index === 0) {
-        const firstAmount =
-          count === 1
-            ? total
-            : Math.round((baseInstallment + instalacion) * 100) / 100;
+    if (dueDayType === "fin_mes" && instalacion > 0 && count > 1) {
+      const baseTotal = Math.max(0, total - instalacion);
+      const regularCount = count - 1;
+      const baseInstallment = Math.round((baseTotal / regularCount) * 100) / 100;
+      let cumulativeBase = 0;
+
+      const updatedCuotas = cuotaFields.map((cuota, index) => {
+        if (index === 0) {
+          return {
+            monto: Math.round(instalacion * 100) / 100,
+            fecha_vencimiento: cuota.fecha_vencimiento,
+          };
+        }
+        if (index === count - 1) {
+          const lastAmount = Math.round((baseTotal - cumulativeBase) * 100) / 100;
+          return {
+            monto: lastAmount,
+            fecha_vencimiento: cuota.fecha_vencimiento,
+          };
+        }
+        cumulativeBase += baseInstallment;
         return {
-          monto: firstAmount,
+          monto: baseInstallment,
           fecha_vencimiento: cuota.fecha_vencimiento,
         };
-      }
-      if (index === count - 1) {
-        const sumPrevious =
-          baseInstallment + instalacion + baseInstallment * (count - 2);
-        const lastAmount = Math.round((total - sumPrevious) * 100) / 100;
+      });
+
+      replaceCuotas(updatedCuotas);
+    } else {
+      const baseTotal = Math.max(0, total - instalacion);
+      const baseInstallment = Math.round((baseTotal / count) * 100) / 100;
+      let cumulativeSum = 0;
+
+      const updatedCuotas = cuotaFields.map((cuota, index) => {
+        if (index === 0) {
+          const firstAmount =
+            count === 1
+              ? total
+              : Math.round((baseInstallment + instalacion) * 100) / 100;
+          cumulativeSum += firstAmount;
+          return {
+            monto: firstAmount,
+            fecha_vencimiento: cuota.fecha_vencimiento,
+          };
+        }
+        if (index === count - 1) {
+          const lastAmount = Math.round((total - cumulativeSum) * 100) / 100;
+          return {
+            monto: lastAmount,
+            fecha_vencimiento: cuota.fecha_vencimiento,
+          };
+        }
+        cumulativeSum += baseInstallment;
         return {
-          monto: lastAmount,
+          monto: baseInstallment,
           fecha_vencimiento: cuota.fecha_vencimiento,
         };
-      }
-      return {
-        monto: baseInstallment,
-        fecha_vencimiento: cuota.fecha_vencimiento,
-      };
-    });
+      });
 
-    replaceCuotas(updatedCuotas);
+      replaceCuotas(updatedCuotas);
+    }
+
     setTimeout(() => form.trigger("cuotas"), 0);
   };
 
   const generateInstallments = () => {
-    const suggestedDates = getSuggestedInstallmentDates();
+    if (!total || !fechaInicio || !fechaFin) return;
 
-    if (!total || suggestedDates.length === 0) {
+    const startDate = parseISO(`${fechaInicio}T00:00:00`);
+    const endDate = parseISO(`${fechaFin}T00:00:00`);
+
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
       return;
     }
 
-    const count = suggestedDates.length;
+    const count = Math.max(numberOfInstallments || 1, 1);
     const instalacion =
       paymentPeriodicity === "mensual"
         ? Number(costoInstalacion ?? 0)
         : 0;
-    const baseTotal = Math.max(0, total - instalacion);
-    const baseInstallment = Math.round((baseTotal / count) * 100) / 100;
 
-    const newCuotas = suggestedDates.map((fecha, index) => {
-      if (index === 0) {
-        const firstAmount =
-          count === 1
-            ? total
-            : Math.round((baseInstallment + instalacion) * 100) / 100;
-        return {
-          monto: firstAmount,
-          fecha_vencimiento: fecha,
-        };
+    const newCuotas: { monto: number; fecha_vencimiento: string }[] = [];
+
+    if (dueDayType === "fin_mes" && instalacion > 0) {
+      const installationDate = startOfMonth(startDate);
+      newCuotas.push({
+        monto: Math.round(instalacion * 100) / 100,
+        fecha_vencimiento: format(installationDate, "yyyy-MM-dd"),
+      });
+
+      const baseTotal = Math.max(0, total - instalacion);
+      const baseInstallment = Math.round((baseTotal / count) * 100) / 100;
+      let cumulativeBase = 0;
+
+      for (let index = 0; index < count; index++) {
+        const targetMonthDate =
+          paymentPeriodicity === "anual"
+            ? addYears(startDate, index)
+            : addMonths(startDate, index);
+
+        const nextDate = lastDayOfMonth(targetMonthDate);
+        const finalDate = nextDate > endDate ? endDate : nextDate;
+
+        let amount: number;
+        if (index === count - 1) {
+          amount = Math.round((baseTotal - cumulativeBase) * 100) / 100;
+        } else {
+          amount = baseInstallment;
+          cumulativeBase += baseInstallment;
+        }
+
+        newCuotas.push({
+          monto: amount,
+          fecha_vencimiento: format(finalDate, "yyyy-MM-dd"),
+        });
       }
-      if (index === count - 1) {
-        const sumPrevious =
-          baseInstallment + instalacion + baseInstallment * (count - 2);
-        const lastAmount = Math.round((total - sumPrevious) * 100) / 100;
-        return {
-          monto: lastAmount,
-          fecha_vencimiento: fecha,
-        };
-      }
-      return {
-        monto: baseInstallment,
-        fecha_vencimiento: fecha,
-      };
-    });
+    } else {
+      const suggestedDates = getSuggestedInstallmentDates();
+      if (suggestedDates.length === 0) return;
+
+      const baseTotal = Math.max(0, total - instalacion);
+      const baseInstallment = Math.round((baseTotal / count) * 100) / 100;
+      let cumulativeSum = 0;
+
+      suggestedDates.forEach((fecha, index) => {
+        if (index === 0) {
+          const firstAmount =
+            count === 1
+              ? total
+              : Math.round((baseInstallment + instalacion) * 100) / 100;
+          cumulativeSum += firstAmount;
+          newCuotas.push({
+            monto: firstAmount,
+            fecha_vencimiento: fecha,
+          });
+        } else if (index === count - 1) {
+          const lastAmount = Math.round((total - cumulativeSum) * 100) / 100;
+          newCuotas.push({
+            monto: lastAmount,
+            fecha_vencimiento: fecha,
+          });
+        } else {
+          cumulativeSum += baseInstallment;
+          newCuotas.push({
+            monto: baseInstallment,
+            fecha_vencimiento: fecha,
+          });
+        }
+      });
+    }
 
     replaceCuotas(newCuotas);
     setTimeout(() => form.trigger("cuotas"), 0);
@@ -332,10 +421,10 @@ export const useContractForm = ({
     const startDate = parseISO(`${fechaInicio}T00:00:00`);
     if (Number.isNaN(startDate.getTime())) return;
 
-    const nextEndDate =
-      vigenciaContrato === "anual"
-        ? addYears(startDate, currentDuration)
-        : addMonths(startDate, 6);
+    const totalMonths =
+      vigenciaContrato === "anual" ? (duracionAnios || 1) * 12 : 6;
+    const targetMonthDate = addMonths(startDate, totalMonths - 1);
+    const nextEndDate = lastDayOfMonth(targetMonthDate);
 
     const formattedEndDate = format(nextEndDate, "yyyy-MM-dd");
 
@@ -410,6 +499,8 @@ export const useContractForm = ({
     replaceCuotas,
     numberOfInstallments,
     setNumberOfInstallments,
+    dueDayType,
+    setDueDayType,
     setInstallmentsTouched,
     generateInstallments,
     adjustExistingInstallments,

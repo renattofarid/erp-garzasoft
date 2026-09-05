@@ -29,6 +29,7 @@ function ContractActionsCell({
   onDownloadWord,
   onViewInstallments,
   onSignature,
+  onGenerateActa,
 }: {
   contract: ContractResource;
   overduePaymentCount: number;
@@ -38,6 +39,7 @@ function ContractActionsCell({
   onDownloadWord: (id: number, numero?: string) => void;
   onViewInstallments: (contract: ContractResource) => void;
   onSignature: (contract: ContractResource) => void;
+  onGenerateActa?: (contract: ContractResource) => void;
 }) {
   const router = useNavigate();
   const id = contract.id;
@@ -48,6 +50,11 @@ function ContractActionsCell({
         <DropdownMenuItem onClick={() => router(`/contratos/editar/${id}`)}>
           Editar
         </DropdownMenuItem>
+        {onGenerateActa && (
+          <DropdownMenuItem onSelect={() => onGenerateActa(contract)}>
+            📄 Acta / Formato de Alta (Variables)
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onSelect={() => onSignature(contract)}>
           Firmar
         </DropdownMenuItem>
@@ -80,6 +87,7 @@ export const ContractColumns = ({
   onDownloadWord,
   onViewInstallments,
   onSignature,
+  onGenerateActa,
 }: {
   onDelete: (id: number) => void;
   onNotification: (id: number) => void;
@@ -87,6 +95,7 @@ export const ContractColumns = ({
   onDownloadWord: (id: number, numero?: string) => void;
   onViewInstallments: (contract: ContractResource) => void;
   onSignature: (contract: ContractResource) => void;
+  onGenerateActa?: (contract: ContractResource) => void;
 }): ColumnDef<ContractResource>[] => [
   {
     accessorKey: "numero",
@@ -221,6 +230,7 @@ export const ContractColumns = ({
           onDownloadWord={onDownloadWord}
           onViewInstallments={onViewInstallments}
           onSignature={onSignature}
+          onGenerateActa={onGenerateActa}
         />
       );
     },

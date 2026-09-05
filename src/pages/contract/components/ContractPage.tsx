@@ -18,6 +18,7 @@ import { ContractCancelDialog } from "./ContractCancelDialog.tsx";
 import { ContractResource } from "../lib/contract.interface.ts";
 import { ContractInstallmentsDialog } from "./ContractInstallmentsDialog.tsx";
 import { ContractSignatureDialog } from "./ContractSignatureDialog.tsx";
+import ContractActaModal from "./ContractActaModal.tsx";
 
 const initialFilters: ContractFiltersState = {
   search: "",
@@ -38,6 +39,8 @@ export default function ContractPage() {
   const [installmentsContract, setInstallmentsContract] =
     useState<ContractResource | null>(null);
   const [signatureContract, setSignatureContract] =
+    useState<ContractResource | null>(null);
+  const [actaContract, setActaContract] =
     useState<ContractResource | null>(null);
 
   const { data, meta, isLoading, refetch } = useContracts();
@@ -121,6 +124,7 @@ export default function ContractPage() {
         },
         onViewInstallments: setInstallmentsContract,
         onSignature: setSignatureContract,
+        onGenerateActa: setActaContract,
       }),
     []
   );
@@ -179,6 +183,11 @@ export default function ContractPage() {
         onOpenChange={(open) => !open && setSignatureContract(null)}
         contract={signatureContract}
         onSuccess={() => refetch()}
+      />
+      <ContractActaModal
+        open={actaContract !== null}
+        onOpenChange={(open) => !open && setActaContract(null)}
+        contract={actaContract}
       />
     </div>
   );

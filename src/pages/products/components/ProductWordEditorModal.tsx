@@ -6,6 +6,7 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  Braces,
   Eye,
   FileSpreadsheet,
   FileText,
@@ -25,8 +26,10 @@ import {
   RefreshCw,
   RemoveFormatting,
   Save,
+  Sparkles,
   Strikethrough,
   Table as TableIcon,
+  Tag,
   Underline as UnderlineIcon,
   Undo,
   UploadCloud,
@@ -48,6 +51,12 @@ import {
 import { ProductResource } from "../lib/product.interface";
 import { getDefaultGesrestPages } from "../lib/defaultGesrestHtml";
 import { parseDocxFileToHtml } from "../lib/docxParser";
+import {
+  SYSTEM_VARIABLES,
+  createVariableChipHtml,
+  normalizeVariableKey,
+} from "../lib/docVariables";
+import ContractActaModal from "@/pages/contract/components/ContractActaModal";
 import { parsePdfFileToPages } from "../lib/pdfParser";
 import {
   cleanHtmlPageContent,
@@ -395,6 +404,29 @@ export default function ProductWordEditorModal({
       </table>
     `;
     exec("insertHTML", tableHtml);
+  };
+
+  const insertVariableTag = (key: string) => {
+    const chipHtml = createVariableChipHtml(key);
+    exec("insertHTML", chipHtml);
+    successToast(`Variable {${normalizeVariableKey(key)}} insertada.`);
+  };
+
+  const handleMarkSelectionAsVariable = () => {
+    const selection = window.getSelection();
+    const selectedText = selection?.toString().trim();
+    const defaultKey = selectedText
+      ? normalizeVariableKey(selectedText)
+      : "NUEVA_VARIABLE";
+
+    const inputKey = window.prompt(
+      "Ingresa el nombre o clave de la variable:",
+      defaultKey
+    );
+
+    if (inputKey) {
+      insertVariableTag(inputKey);
+    }
   };
 
   if (!open) return null;
@@ -799,6 +831,77 @@ export default function ProductWordEditorModal({
               <TableIcon className="h-3.5 w-3.5 text-primary" />
               <span>+ Insertar Tabla</span>
             </Button>
+          </div>
+
+          {/* Variables Dinámicas ({x}) */}
+          <div className="flex items-center gap-1 pr-2 border-r border-border">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2.5 text-xs gap-1.5 font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900 border border-purple-200 dark:border-purple-800 shadow-2xs"
+                >
+                  <Braces className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                  <span>+ Insertar Variable</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="p-2 w-72 max-h-96 overflow-y-auto flex flex-col gap-1 select-none">
+                <div className="px-2 py-1.5 text-[11px] font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider bg-purple-50 dark:bg-purple-950 rounded mb-1 flex items-center justify-between">
+                  <span>Variables de Contrato / Cliente</span>
+                  <Braces className="h-3.5 w-3.5" />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleMarkSelectionAsVariable}
+                  className="w-full text-left px-2.5 py-1.5 rounded text-xs flex items-center gap-2 font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 border border-amber-500/30 mb-1 transition-colors"
+                >
+                  <Tag className="h-3.5 w-3.5 text-amber-600" />
+                  <span>Marcar Selección como Variable</span>
+                </button>
+
+                <div className="text-[10px] font-semibold text-muted-foreground px-2 py-0.5">
+                  Variables Estándar Disponibles:
+                </div>
+
+                {SYSTEM_VARIABLES.map((v) => (
+                  <button
+                    key={v.key}
+                    type="button"
+                    onClick={() => insertVariableTag(v.key)}
+                    className="w-full text-left px-2 py-1.5 rounded text-xs flex flex-col gap-0.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 group transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-foreground group-hover:text-purple-700 dark:group-hover:text-purple-300">
+                        {v.label}
+                      </span>
+                      <span className="font-mono text-[10px] font-bold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/60 px-1.5 py-0.5 rounded">
+                        {`{${v.key}}`}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground line-clamp-1">
+                      {v.description}
+                    </span>
+                  </button>
+                ))}
+
+                <div className="border-t border-border pt-1 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const customKey = window.prompt("Ingresa la clave de la variable personalizada (ej: CLAVE_WIFI):");
+                      if (customKey) insertVariableTag(customKey);
+                    }}
+                    className="w-full text-left px-2 py-1.5 rounded text-xs font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-50 flex items-center gap-1.5"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>+ Crear Variable Personalizada</span>
+                  </button>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Elementos & Enlaces */}

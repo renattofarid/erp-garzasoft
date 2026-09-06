@@ -175,17 +175,34 @@ export const ContractColumns = ({
       const typeLabel = castContractType(contractType);
       const displayLabel = productName ? `${typeLabel} - ${productName}` : typeLabel;
 
-      const customBadgeStyle = productColor
-        ? { backgroundColor: productColor, color: "#ffffff", border: "none" }
-        : {};
+      // Resolve effective color from custom product.color or default product brand color
+      const lowerName = (productName || displayLabel).toLowerCase();
+      let effectiveColor = productColor;
+
+      if (!effectiveColor) {
+        if (lowerName.includes("gesrest")) {
+          effectiveColor = "#eb5454";
+        } else if (lowerName.includes("hotel") || lowerName.includes("hub")) {
+          effectiveColor = "#00a3cc";
+        } else if (lowerName.includes("360")) {
+          effectiveColor = "#7c3aed";
+        } else {
+          effectiveColor = "#2563eb";
+        }
+      }
+
+      const customBadgeStyle: React.CSSProperties = {
+        backgroundColor: effectiveColor,
+        color: "#ffffff",
+        borderColor: "transparent",
+      };
 
       return (
         <Badge
-          className="flex items-center gap-1.5 font-semibold px-2.5 py-1 text-xs shadow-2xs transition-transform"
-          variant="default"
+          className="flex items-center gap-1.5 font-semibold px-2.5 py-1 text-xs shadow-2xs transition-transform border-0 text-white"
           style={customBadgeStyle}
         >
-          {IconComponent && <IconComponent className="h-3.5 w-3.5 shrink-0" />}
+          {IconComponent && <IconComponent className="h-3.5 w-3.5 shrink-0 text-white" />}
           <span>{displayLabel}</span>
         </Badge>
       );

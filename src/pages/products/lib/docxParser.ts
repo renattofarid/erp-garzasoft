@@ -200,23 +200,27 @@ function createHotelhubA4CoverBackground(watermarkSrc?: string): Promise<string>
       img.crossOrigin = "anonymous";
       img.onload = () => {
         try {
-          const canvas = document.createElement("canvas");
-          canvas.width = 794;
-          canvas.height = 1123;
-          const ctx = canvas.getContext("2d");
-          if (!ctx) {
-            resolve(watermarkSrc);
-            return;
+          const w = img.naturalWidth || 1;
+          const h = img.naturalHeight || 1;
+          // Only use extracted image if it's a true high-res tall background graphic (h >= 400 & aspect < 1.1)
+          if (h >= 400 && w / h < 1.1) {
+            const canvas = document.createElement("canvas");
+            canvas.width = 794;
+            canvas.height = 1123;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              const aspect = w / h;
+              const drawHeight = 1123;
+              const drawWidth = drawHeight * aspect;
+              const drawX = -130;
+              ctx.drawImage(img, drawX, 0, drawWidth, drawHeight);
+              resolve(canvas.toDataURL("image/png"));
+              return;
+            }
           }
-          const aspect = (img.naturalWidth || 1) / (img.naturalHeight || 1);
-          const drawHeight = 1123;
-          const drawWidth = drawHeight * aspect;
-          // Shift cyan H watermark to left (-130px) so left loop bleeds off left edge of A4 cover
-          const drawX = -130;
-          ctx.drawImage(img, drawX, 0, drawWidth, drawHeight);
-          resolve(canvas.toDataURL("image/png"));
+          resolve(createHotelhubHWatermarkCanvas());
         } catch {
-          resolve(watermarkSrc);
+          resolve(createHotelhubHWatermarkCanvas());
         }
       };
       img.onerror = () => resolve(createHotelhubHWatermarkCanvas());
@@ -228,7 +232,7 @@ function createHotelhubA4CoverBackground(watermarkSrc?: string): Promise<string>
 }
 
 /**
- * Generates smooth cyan H watermark canvas for HotelHUB cover
+ * Generates smooth cyan H watermark canvas for HotelHUB cover matching Word template
  */
 function createHotelhubHWatermarkCanvas(): string {
   try {
@@ -238,23 +242,34 @@ function createHotelhubHWatermarkCanvas(): string {
     const ctx = canvas.getContext("2d");
     if (!ctx) return "";
 
-    const grad = ctx.createLinearGradient(0, 0, 480, 1123);
-    grad.addColorStop(0, "rgba(6, 182, 212, 0.40)");
-    grad.addColorStop(0.5, "rgba(14, 165, 233, 0.30)");
+    const grad = ctx.createLinearGradient(0, 0, 520, 1123);
+    grad.addColorStop(0, "rgba(6, 182, 212, 0.35)");
+    grad.addColorStop(0.5, "rgba(14, 165, 233, 0.28)");
     grad.addColorStop(1, "rgba(2, 132, 199, 0.12)");
 
     ctx.strokeStyle = grad;
-    ctx.lineWidth = 60;
+    ctx.lineWidth = 64;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
+    // Left main vertical stem
     ctx.beginPath();
-    ctx.moveTo(150, 80);
-    ctx.lineTo(150, 1020);
-    ctx.moveTo(390, 180);
-    ctx.lineTo(390, 940);
-    ctx.moveTo(150, 520);
-    ctx.lineTo(390, 520);
+    ctx.moveTo(200, 40);
+    ctx.lineTo(200, 930);
+    ctx.arcTo(200, 980, 250, 980, 50);
+    ctx.lineTo(510, 980);
+    ctx.stroke();
+
+    // Upper left arc
+    ctx.beginPath();
+    ctx.moveTo(200, 420);
+    ctx.arcTo(0, 420, 0, 560, 180);
+    ctx.stroke();
+
+    // Right vertical stem
+    ctx.beginPath();
+    ctx.moveTo(510, 540);
+    ctx.lineTo(510, 880);
     ctx.stroke();
 
     return canvas.toDataURL("image/png");

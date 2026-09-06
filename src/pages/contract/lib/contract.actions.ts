@@ -1,8 +1,10 @@
 import { AxiosRequestConfig } from "axios";
 
 import { api } from "@/lib/config";
+import { openPdfFromFetcher } from "@/lib/pdf";
 import {
   getContractProps,
+  ContractMutationResponse,
   ContractResourceById,
   ContractResponse,
 } from "./contract.interface.ts";
@@ -15,8 +17,8 @@ export async function getContract({
 }: getContractProps): Promise<ContractResponse> {
   const config: AxiosRequestConfig = {
     params: {
-      ...params,
       per_page,
+      ...params,
     },
   };
   const { data } = await api.get<ContractResponse>(ENDPOINT, config);
@@ -42,20 +44,105 @@ export async function findContractById(
   return response.data;
 }
 
-export async function storeContract(data: any): Promise<ContractResponse> {
-  const response = await api.post<ContractResponse>(ENDPOINT, data);
+export async function storeContract(data: any): Promise<ContractMutationResponse> {
+  const response = await api.post<ContractMutationResponse>(ENDPOINT, data);
   return response.data;
 }
 
 export async function updateContract(
   id: number,
   data: any
-): Promise<ContractResponse> {
-  const response = await api.put<ContractResponse>(`${ENDPOINT}/${id}`, data);
+): Promise<ContractMutationResponse> {
+  const response = await api.put<ContractMutationResponse>(`${ENDPOINT}/${id}`, data);
   return response.data;
 }
 
-export async function deleteContract(id: number): Promise<any> {
-  const { data } = await api.delete<any>(`${ENDPOINT}/${id}`);
+export async function deleteContract(
+  id: number,
+  payload?: { motivo_anulacion?: string; fecha_anulacion: string }
+): Promise<any> {
+  const { data } = await api.delete<any>(`${ENDPOINT}/${id}`, {
+    data: payload,
+  });
   return data;
+}
+
+export async function getContractPdf(id: number): Promise<Blob> {
+  const response = await api.get(`${ENDPOINT}/${id}/pdf`, {
+    responseType: "blob",
+  });
+
+  return response.data;
+}
+
+export async function openContractPdf(id: number): Promise<void> {
+  return openPdfFromFetcher(
+    () => getContractPdf(id),
+    "Generando PDF del Contrato..."
+  );
+}
+
+export async function getContractWord(id: number): Promise<Blob> {
+  const response = await api.get(`${ENDPOINT}/${id}/word`, {
+    responseType: "blob",
+  });
+
+  return response.data;
+}
+
+export async function downloadContractWord(
+  id: number,
+  numero = "contrato"
+): Promise<void> {
+  const blob = await getContractWord(id);
+  const cleanNumber = numero.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const filename = `contrato-${cleanNumber}.docx`;
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+}
+
+export async function getNextContractNumber(
+  yearOrParams?: number | string | { year?: number | string; fecha_inicio?: string }
+): Promise<string> {
+  const params =
+    typeof yearOrParams === "object"
+      ? yearOrParams
+      : yearOrParams
+      ? { year: yearOrParams }
+      : {};
+
+  const response = await api.get<{ status: number; data: { numero: string } }>(
+    `${ENDPOINT}/siguiente-numero`,
+    { params }
+  );
+
+  return response.data.data.numero;
+}
+
+export async function saveContractSignatures(
+  id: number,
+  payload: {
+    firma_arrendador?: string | null;
+    firma_cliente?: string | null;
+    guardar_como_default_arrendador?: boolean;
+  }
+): Promise<ContractMutationResponse> {
+  const { data } = await api.post<ContractMutationResponse>(
+    `${ENDPOINT}/${id}/firmas`,
+    payload
+  );
+  return data;
+}
+
+export async function getFacturadorActivo(): Promise<any> {
+  const { data } = await api.get<{ status: number; data: any }>(
+    "facturadores/activo"
+  );
+  return data.data;
 }

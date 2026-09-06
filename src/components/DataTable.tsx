@@ -59,10 +59,12 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="flex flex-col gap-2 w-full items-end">
-      <div className="grid md:flex md:flex-wrap gap-2 md:justify-between w-full">
-        {children}
-        <DataTableColumnFilter table={table} />
+    <div className="flex flex-col gap-3 w-full">
+      <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-3 w-full">
+        <div className="flex-1 min-w-0">{children}</div>
+        <div className="shrink-0 self-end xl:self-start">
+          <DataTableColumnFilter table={table} />
+        </div>
       </div>
       <div className="overflow-hidden w-full">
         <div className="overflow-x-auto w-full">

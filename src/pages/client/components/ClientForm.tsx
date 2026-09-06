@@ -19,6 +19,7 @@ import axios from "axios";
 import { lookupClientByDni, lookupClientByRuc } from "../lib/client.actions";
 import {
   ClientFormNode,
+  LocalKind,
   ClientTypeUi,
   createEmptyClientNode,
 } from "../lib/client.interface";
@@ -29,6 +30,8 @@ import {
 } from "../lib/client.schema";
 import { Building2, Loader2, Plus, Search, Trash2, UsersRound } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { getAllLocalTypes } from "@/pages/local-types/lib/localType.actions";
+import { LocalTypeResource } from "@/pages/local-types/lib/localType.interface";
 
 interface ClientFormProps {
   defaultValues: Partial<ClientSchema>;
@@ -49,6 +52,8 @@ const emptyContact = {
   nombre: "",
   celular: "",
   email: "",
+  es_dueno: false,
+  es_vendedor: false,
 };
 
 const RequiredMark = () => <span className="ml-1 text-red-500">*</span>;
@@ -91,12 +96,16 @@ const stripNode = (node: ClientFormNode, isRoot = false): ClientSchema => {
     nombre: contacto?.nombre ?? "",
     celular: contacto?.celular ?? "",
     email: contacto?.email ?? "",
+    es_dueno: contacto?.es_dueno ?? false,
+    es_vendedor: contacto?.es_vendedor ?? false,
   }));
   const contactoPrincipal = normalizedContacts[0] ?? {
     dni: "",
     nombre: "",
     celular: "",
     email: "",
+    es_dueno: false,
+    es_vendedor: false,
   };
 
   return {
@@ -105,6 +114,7 @@ const stripNode = (node: ClientFormNode, isRoot = false): ClientSchema => {
     razon_social: node.razon_social,
     nombre_comercial: node.nombre_comercial,
     direccion: node.direccion,
+    tipos_local: node.tipos_local ?? [],
     contacto: contactoPrincipal,
     contactos: isRoot ? normalizedContacts : [],
     contacto_igual_empresa: node.contacto_igual_empresa ?? false,
@@ -118,6 +128,7 @@ function ClientNodeSection({
   title,
   onLookupRuc,
   onLookupDni,
+  localTypeOptions,
   lookupLoadingPath,
 }: {
   control: Control<any>;
@@ -125,6 +136,7 @@ function ClientNodeSection({
   title: string;
   onLookupRuc: (path: string) => Promise<void>;
   onLookupDni: (path: string) => Promise<void>;
+  localTypeOptions: LocalTypeResource[];
   lookupLoadingPath?: string | null;
 }) {
   const { setValue } = useFormContext<ClientSchema>();
@@ -133,10 +145,15 @@ function ClientNodeSection({
     name: joinPath(basePath, "tipo") as Path<any>,
   }) as ClientTypeUi | undefined;
   const sameCompanyContactPath = joinPath(basePath, "contacto_igual_empresa");
+  const localTypesPath = joinPath(basePath, "tipos_local");
   const sameCompanyContact = useWatch({
     control,
     name: sameCompanyContactPath as Path<any>,
   }) as boolean | undefined;
+  const selectedLocalTypes = useWatch({
+    control,
+    name: localTypesPath as Path<any>,
+  }) as LocalKind[] | undefined;
 
   const childTypes: ClientTypeUi[] =
     tipo === "corporacion" ? ["empresa"] : tipo === "empresa" ? ["local"] : [];
@@ -199,6 +216,8 @@ function ClientNodeSection({
       nombre: companyContact?.nombre ?? "",
       celular: companyContact?.celular ?? "",
       email: companyContact?.email ?? "",
+      es_dueno: companyContact?.es_dueno ?? false,
+      es_vendedor: companyContact?.es_vendedor ?? false,
     };
 
     setValue(targetPath as Path<ClientSchema>, contactToCopy as any, {
@@ -256,22 +275,30 @@ function ClientNodeSection({
           </div>
         )}
 
-        {(isCorporacion || isEmpresa) && (
+        {(isCorporacion || isEmpresa || isLocal) && (
           <>
             <FormField
               control={control}
               name={joinPath(basePath, "ruc") as Path<any>}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>RUC</FormLabel>
+                  <FormLabel>
+                    {isLocal ? "RUC (Opcional)" : "RUC"}
+                  </FormLabel>
                   <FormControl>
                     <div className="flex gap-2">
-                      <Input maxLength={11} placeholder="20123456789" {...field} value={field.value ?? ""} />
+                      <Input
+                        maxLength={11}
+                        placeholder={isLocal ? "10123456789 (Opcional)" : "20123456789"}
+                        {...field}
+                        value={field.value ?? ""}
+                      />
                       <Button
                         type="button"
                         variant="outline"
                         disabled={Boolean(lookupLoadingPath)}
                         onClick={() => onLookupRuc(rucPath)}
+                        title="Buscar en SUNAT"
                       >
                         {lookupLoadingPath === rucPath ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -291,9 +318,15 @@ function ClientNodeSection({
               name={joinPath(basePath, "razon_social") as Path<any>}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Razón social</FormLabel>
+                  <FormLabel>
+                    {isLocal ? "Razón social / Titular (Opcional)" : "Razón social"}
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder="Razón social" {...field} value={field.value ?? ""} />
+                    <Input
+                      placeholder={isLocal ? "Razón social o nombre del titular" : "Razón social"}
+                      {...field}
+                      value={field.value ?? ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -338,6 +371,43 @@ function ClientNodeSection({
           )}
         </div>
       </div>
+
+      {isLocal && (
+        <FormField
+          control={control}
+          name={localTypesPath as Path<any>}
+          render={() => (
+            <FormItem>
+              <FormLabel>
+                <RequiredLabel>Tipos de local</RequiredLabel>
+              </FormLabel>
+              <div className="flex flex-wrap gap-4 rounded-lg border bg-background/30 px-4 py-3">
+                {localTypeOptions.map((option) => (
+                  <label key={option.codigo} className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={selectedLocalTypes?.includes(option.codigo) ?? false}
+                      onCheckedChange={(checked) => {
+                        const current = selectedLocalTypes ?? [];
+                        const next =
+                          checked === true
+                            ? Array.from(new Set([...current, option.codigo]))
+                            : current.filter((item) => item !== option.codigo);
+
+                        setValue(localTypesPath as Path<ClientSchema>, next as any, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
+                      }}
+                    />
+                    <span>{option.nombre}</span>
+                  </label>
+                ))}
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
 
       <div className="rounded-xl border p-4">
         <div className="flex items-center justify-between gap-3">
@@ -476,6 +546,40 @@ function ClientNodeSection({
             )}
           />
           </div>
+          <div className="mt-4 flex flex-wrap gap-4 rounded-lg border bg-background/30 px-4 py-3">
+            <FormField
+              control={control}
+              name={joinPath(joinPath(basePath, "contacto"), "es_dueno") as Path<any>}
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-2 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value === true}
+                      disabled={sameCompanyContact === true}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="font-normal">Es dueño</FormLabel>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name={joinPath(joinPath(basePath, "contacto"), "es_vendedor") as Path<any>}
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-2 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value === true}
+                      disabled={sameCompanyContact === true}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="font-normal">Vendedor / referido</FormLabel>
+                </FormItem>
+              )}
+            />
+          </div>
           </>
         )}
 
@@ -582,6 +686,38 @@ function ClientNodeSection({
                       )}
                     />
                   </div>
+                  <div className="mt-4 flex flex-wrap gap-4 rounded-lg border bg-background/30 px-4 py-3">
+                    <FormField
+                      control={control}
+                      name={joinPath(contactBasePath, "es_dueno") as Path<any>}
+                      render={({ field }) => (
+                        <FormItem className="flex items-center gap-2 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value === true}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormLabel className="font-normal">Es dueño</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={control}
+                      name={joinPath(contactBasePath, "es_vendedor") as Path<any>}
+                      render={({ field }) => (
+                        <FormItem className="flex items-center gap-2 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value === true}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormLabel className="font-normal">Vendedor / referido</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
               );
             })}
@@ -627,6 +763,7 @@ function ClientNodeSection({
                     title={`${childTypes[0] === "empresa" ? "Empresa" : "Local"} ${index + 1}`}
                     onLookupRuc={onLookupRuc}
                     onLookupDni={onLookupDni}
+                    localTypeOptions={localTypeOptions}
                     lookupLoadingPath={lookupLoadingPath}
                   />
                   <div className="flex justify-end pt-3">
@@ -653,6 +790,7 @@ export const ClientForm = ({
   mode = "create",
 }: ClientFormProps) => {
   const [lookupLoadingPath, setLookupLoadingPath] = useState<string | null>(null);
+  const [localTypeOptions, setLocalTypeOptions] = useState<LocalTypeResource[]>([]);
   const form = useForm<ClientSchema>({
     resolver: zodResolver(
       mode === "create" ? clientSchemaCreate : clientSchemaUpdate
@@ -672,6 +810,14 @@ export const ClientForm = ({
       )
     );
   }, [defaultValues, form]);
+
+  useEffect(() => {
+    getAllLocalTypes()
+      .then(setLocalTypeOptions)
+      .catch(() => {
+        errorToast("No se pudieron cargar los tipos de local.");
+      });
+  }, []);
 
   const handleLookupRuc = async (path: string) => {
     const ruc = form.getValues(path as Path<ClientSchema>)?.trim();
@@ -708,6 +854,13 @@ export const ClientForm = ({
         form.setValue(joinPath(basePath, "nombre_comercial") as Path<ClientSchema>, data.nombre_comercial, {
           shouldValidate: true,
         });
+      } else {
+        const currentName = form.getValues(joinPath(basePath, "nombre_comercial") as Path<ClientSchema>);
+        if (!currentName && razonSocial) {
+          form.setValue(joinPath(basePath, "nombre_comercial") as Path<ClientSchema>, razonSocial, {
+            shouldValidate: true,
+          });
+        }
       }
       successToast("Busqueda de RUC completada.", razonSocial || "Datos obtenidos correctamente.");
     } catch (error: unknown) {
@@ -771,6 +924,7 @@ export const ClientForm = ({
           title="Datos del cliente"
           onLookupRuc={handleLookupRuc}
           onLookupDni={handleLookupDni}
+          localTypeOptions={localTypeOptions}
           lookupLoadingPath={lookupLoadingPath}
         />
 

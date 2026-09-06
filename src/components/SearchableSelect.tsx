@@ -57,7 +57,7 @@ export function SearchableSelect({
           variant="outline"
           type="button"
           className={cn(
-            "flex h-9 md:w-fit w-full items-center justify-between rounded-md border px-3 text-sm",
+            "flex h-9 w-full items-center justify-between rounded-md border px-3 text-sm font-normal",
             selected && "text-primary",
             className
           )}

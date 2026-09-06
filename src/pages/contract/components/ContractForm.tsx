@@ -39,7 +39,6 @@ export const ContractForm = ({
     form,
     control,
     handleSubmit,
-    isValid,
 
     // Products
     fields,
@@ -59,6 +58,9 @@ export const ContractForm = ({
     removeCuota,
     numberOfInstallments,
     setNumberOfInstallments,
+    dueDayType,
+    setDueDayType,
+    setInstallmentsTouched,
     generateInstallments,
     adjustExistingInstallments,
     currentInstallmentsSum,
@@ -66,11 +68,15 @@ export const ContractForm = ({
 
     // Watch values
     paymentMethod,
+    contractType,
+    vigenciaContrato,
+    duracionAnios,
     total,
     fechaInicio,
     fechaFin,
   } = useContractForm({ defaultValues, mode });
 
+  // Eliminamos la sobreescritura forzada de precios para respetar los montos personalizados y los guardados en el contrato
   if (isLoading || !clients) return <FormSkeleton />;
 
   console.log(currentInstallmentsSum);
@@ -87,34 +93,38 @@ export const ContractForm = ({
               fechaInicio={fechaInicio}
               control={control}
               clients={clients}
+              vigenciaContrato={vigenciaContrato}
+              duracionAnios={duracionAnios}
+              contractType={contractType}
             />
 
-            <ProductsSection
-              control={control}
-              fields={fields}
-              append={append}
-              remove={remove}
-              open={open}
-              setOpen={setOpen}
-              products={productData || []}
-              sum={sum}
-              manualSum={manualSum}
-              recalculateSum={recalculateSum}
-            />
+            {contractType === "saas" && (
+              <ProductsSection
+                control={control}
+                fields={fields}
+                append={append}
+                remove={remove}
+                open={open}
+                setOpen={setOpen}
+                products={productData || []}
+                sum={sum}
+                manualSum={manualSum}
+                recalculateSum={recalculateSum}
+              />
+            )}
           </div>
 
           {/* Columna Derecha - Todo lo relacionado con Pagos */}
           <div className="xl:col-span-2 xl:col-start-4 xl:px-6 xl:border-l h-full space-y-4">
             <PaymentSidebar
-              control={control}
               paymentMethod={paymentMethod}
               total={total}
-              fieldsLength={fields.length}
-              sum={sum}
-              manualSum={manualSum}
               cuotaFields={cuotaFields}
               numberOfInstallments={numberOfInstallments}
               setNumberOfInstallments={setNumberOfInstallments}
+              dueDayType={dueDayType}
+              setDueDayType={setDueDayType}
+              setInstallmentsTouched={setInstallmentsTouched}
               generateInstallments={generateInstallments}
               appendCuota={appendCuota}
               adjustExistingInstallments={adjustExistingInstallments}
@@ -153,7 +163,7 @@ export const ContractForm = ({
 
           <Button
             type="submit"
-            disabled={isSubmitting || !isValid}
+            disabled={isSubmitting}
             className="w-full sm:w-auto"
           >
             <Loader

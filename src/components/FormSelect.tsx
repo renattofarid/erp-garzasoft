@@ -71,15 +71,17 @@ export function FormSelect({
               <PopoverTrigger asChild>
                 <FormControl>
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     role="combobox"
                     className={cn(
-                      "w-full justify-between min-h-8 shadow truncate",
+                      "w-full justify-between h-9 px-3 py-2 font-normal border bg-background hover:bg-accent/50 shadow-2xs",
                       !field.value && "text-muted-foreground"
                     )}
                   >
-                    {selected ? selected.label : placeholder}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    <span className="truncate text-left flex-1 min-w-0 mr-2 font-normal">
+                      {selected ? selected.label : placeholder}
+                    </span>
+                    <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </FormControl>
               </PopoverTrigger>

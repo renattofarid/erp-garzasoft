@@ -2,9 +2,9 @@ import axios from "axios";
 import { errorToast } from "./core.function";
 
 const defaultApiUrl =
-  "http://localhost/Garzasoft/ERPMRSOFT/erp-mrsoft-backend/public/api/";
+  "https://develop.garzasoft.com:83/erp-mrsoft-backend/public/api/";
 const defaultAssetUrl =
-  "http://localhost/Garzasoft/ERPMRSOFT/erp-mrsoft-backend/public/";
+  "https://develop.garzasoft.com:83/erp-mrsoft-backend/public/";
 
 const normalizeUrl = (url: string) => (url.endsWith("/") ? url : `${url}/`);
 

@@ -4,6 +4,8 @@ import {
 } from "./client.schema.ts";
 import {
   ClientDniLookupResponse,
+  ClientPortalUserPayload,
+  ClientPortalUserResponse,
   getClientProps,
   ClientLookupResponse,
   ClientResource,
@@ -74,5 +76,25 @@ export async function updateClient(
 
 export async function deleteClient(id: number): Promise<unknown> {
   const { data } = await api.delete<unknown>(`${ENDPOINT}/${id}`);
+  return data;
+}
+
+export async function getClientPortalUser(
+  id: number
+): Promise<ClientPortalUserResponse> {
+  const { data } = await api.get<ClientPortalUserResponse>(
+    `${ENDPOINT}/${id}/portal-user`
+  );
+  return data;
+}
+
+export async function saveClientPortalUser(
+  id: number,
+  payload: ClientPortalUserPayload
+): Promise<ClientPortalUserResponse> {
+  const { data } = await api.put<ClientPortalUserResponse>(
+    `${ENDPOINT}/${id}/portal-user`,
+    payload
+  );
   return data;
 }

@@ -11,16 +11,18 @@ import { per_page } from "@/lib/core.function";
 
 const ENDPOINT = "productos";
 
+export type ProductCollectionResponse = ProductResponse | ProductResource[];
+
 export async function getProduct({
   params,
-}: getProductProps): Promise<ProductResponse> {
+}: getProductProps): Promise<ProductCollectionResponse> {
   const config: AxiosRequestConfig = {
     params: {
       ...params,
       per_page,
     },
   };
-  const { data } = await api.get<ProductResponse>(ENDPOINT, config);
+  const { data } = await api.get<ProductCollectionResponse>(ENDPOINT, config);
   return data;
 }
 
@@ -57,4 +59,30 @@ export async function updateProduct(
 export async function deleteProduct(id: number): Promise<any> {
   const { data } = await api.delete<any>(`${ENDPOINT}/${id}`);
   return data;
+}
+
+export async function getProductFormatoAlta(id: number): Promise<any> {
+  const { data } = await api.get<any>(`${ENDPOINT}/${id}/formato-alta`);
+  return data;
+}
+
+export async function updateProductFormatoAlta(
+  id: number,
+  formatoAlta: any
+): Promise<any> {
+  const { data } = await api.put<any>(`${ENDPOINT}/${id}/formato-alta`, {
+    formato_alta: formatoAlta,
+  });
+  return data;
+}
+
+export async function getFormatoAltaPdfBlob(
+  id: number,
+  params?: Record<string, any>
+): Promise<Blob> {
+  const response = await api.get(`${ENDPOINT}/${id}/formato-alta/pdf`, {
+    params,
+    responseType: "blob",
+  });
+  return response.data;
 }

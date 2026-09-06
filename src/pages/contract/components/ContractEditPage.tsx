@@ -64,15 +64,28 @@ export default function ContractEditPage() {
     cliente_padre_id: data.cliente.id,
     cliente_id: data.cliente.id,
     tipo_contrato: data.tipo_contrato,
+    vigencia_contrato: data.vigencia_contrato ?? "anual",
+    duracion_anios: data.duracion_anios ?? 1,
+    costo_instalacion:
+      data.costo_instalacion !== undefined && data.costo_instalacion !== null
+        ? Number(data.costo_instalacion)
+        : data.periodicidad_cuota === "anual"
+        ? 0
+        : 100,
     total: Number(data.total),
     forma_pago: data.forma_pago,
-    productos_modulos: data.contrato_producto_modulos.map((item) => ({
+    periodicidad_cuota: data.periodicidad_cuota ?? "mensual",
+    productos_modulos: (
+      data.contrato_producto_modulos ||
+      (data as any).contratoProductoModulos ||
+      []
+    ).map((item: any) => ({
       id: item.id,
       modulo_id: item.modulo_id,
       producto_id: item.producto_id,
       precio: Number(item.precio),
     })),
-    cuotas: data.cuotas.map((item) => ({
+    cuotas: (data.cuotas || []).map((item: any) => ({
       id: item.id,
       monto: Number(item.monto),
       fecha_vencimiento: format(

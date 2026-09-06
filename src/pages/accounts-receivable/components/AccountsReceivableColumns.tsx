@@ -21,10 +21,14 @@ export const CuentasPorCobrarColumns = ({
   onEdit,
   onDelete,
   onPay,
+  onResendInvoice,
+  onWhatsAppReminder,
 }: {
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
   onPay: (id: number) => void;
+  onResendInvoice: (row: CuentasPorCobrarResource) => void;
+  onWhatsAppReminder: (row: CuentasPorCobrarResource) => void;
 }): ColumnDef<CuentasPorCobrarResource>[] => [
   {
     accessorKey: "contrato.numero",
@@ -130,6 +134,12 @@ export const CuentasPorCobrarColumns = ({
                 Registrar Pago
               </DropdownMenuItem>
             )}
+            <DropdownMenuItem onClick={() => onResendInvoice(row.original)}>
+              Reenviar factura
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onWhatsAppReminder(row.original)}>
+              Recordatorio WhatsApp
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => onDelete(id)}>
               Eliminar
             </DropdownMenuItem>

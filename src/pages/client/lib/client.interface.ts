@@ -14,6 +14,7 @@ export const ClientDescriptionEdit =
 
 export type ClientTypeUi = "corporacion" | "empresa" | "local";
 export type ClientTypeDb = ClientTypeUi | "unico";
+export type LocalKind = string;
 
 export interface ClientResponse {
   data: ClientResource[];
@@ -26,6 +27,8 @@ export interface ClientContact {
   nombre: string;
   celular?: string | null;
   email?: string | null;
+  es_dueno?: boolean;
+  es_vendedor?: boolean;
 }
 
 export interface ClientResource {
@@ -37,6 +40,7 @@ export interface ClientResource {
   razon_social: string | null;
   nombre_comercial: string | null;
   direccion?: string | null;
+  tipos_local?: LocalKind[];
   nombre_cliente?: string | null;
   contacto_principal?: ClientContact | null;
   dueno_nombre: string | null;
@@ -109,6 +113,34 @@ export interface ClientResourceById {
   data: ClientResource;
 }
 
+export interface ClientPortalUser {
+  id: number;
+  nombres: string;
+  apellidos: string;
+  usuario: string;
+  tipo_usuario_id: number;
+  deleted_at?: string | null;
+}
+
+export interface ClientPortalUserResponse {
+  status: number;
+  message?: string;
+  data: {
+    cliente_id: number;
+    exists: boolean;
+    usuario: ClientPortalUser | null;
+    password_visible: string | null;
+    password_message: string;
+  };
+}
+
+export interface ClientPortalUserPayload {
+  usuario: string;
+  password?: string;
+  nombres?: string;
+  apellidos?: string;
+}
+
 export interface getClientProps {
   params?: Record<string, unknown>;
 }
@@ -120,6 +152,8 @@ export interface ContactosCliente {
   nombre: string;
   celular?: string | null;
   email?: string | null;
+  es_dueno?: boolean;
+  es_vendedor?: boolean;
   created_at?: string;
   updated_at?: string;
   deleted_at?: string | null;
@@ -144,6 +178,7 @@ export interface ClientFormNode {
   razon_social?: string;
   nombre_comercial?: string;
   direccion?: string;
+  tipos_local?: LocalKind[];
   contacto: ClientContact;
   contactos: ClientContact[];
   contacto_igual_empresa?: boolean;
@@ -159,11 +194,14 @@ export const createEmptyClientNode = (
   razon_social: "",
   nombre_comercial: "",
   direccion: "",
+  tipos_local: [],
   contacto: {
     dni: "",
     nombre: "",
     celular: "",
     email: "",
+    es_dueno: false,
+    es_vendedor: false,
   },
   contactos: [
     {
@@ -171,6 +209,8 @@ export const createEmptyClientNode = (
       nombre: "",
       celular: "",
       email: "",
+      es_dueno: false,
+      es_vendedor: false,
     },
   ],
   contacto_igual_empresa: false,

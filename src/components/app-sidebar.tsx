@@ -2,14 +2,17 @@
 
 import {
   BookOpen,
+  Building2,
   Box,
   Cog,
   FileText,
+  FolderOpen,
   LayoutGrid,
   MessageSquareText,
   ShieldUser,
   ShoppingBag,
   Signature,
+  Store,
   Users,
 } from "lucide-react";
 
@@ -37,6 +40,14 @@ import {
 } from "@/pages/client/lib/client.interface";
 import { CuentasPorCobrarRoute } from "@/pages/accounts-receivable/lib/accounts-receivable.interface";
 import { InvoicingRoute } from "@/pages/invoicing/lib/invoicing.interface";
+import {
+  LocalTypeRoute,
+  LocalTypeTitle,
+} from "@/pages/local-types/lib/localType.interface";
+import {
+  FacturadorRoute,
+  FacturadorTitle,
+} from "@/pages/facturador/lib/facturador.interface";
 
 const data = {
   navMain: [
@@ -78,6 +89,11 @@ const data = {
           icon: ClientIcon,
         },
         {
+          title: LocalTypeTitle,
+          url: LocalTypeRoute,
+          icon: Store,
+        },
+        {
           title: "Mensajes",
           url: "/notificaciones",
           icon: MessageSquareText,
@@ -104,6 +120,11 @@ const data = {
           url: InvoicingRoute,
           icon: FileText,
         },
+        {
+          title: FacturadorTitle,
+          url: FacturadorRoute,
+          icon: Building2,
+        },
       ],
     },
   ],
@@ -115,13 +136,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   if (!user) {
     return null; // or a loading state, or redirect to login
   }
+
+  const isClient = Boolean(user.cliente_id);
+  const items = isClient
+    ? [
+        {
+          title: "Mi portal",
+          url: "/inicio",
+          icon: FolderOpen,
+        },
+      ]
+    : data.navMain;
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={items} />
       </SidebarContent>
       <SidebarFooter className="flex md:hidden">
         <NavUser user={user} />

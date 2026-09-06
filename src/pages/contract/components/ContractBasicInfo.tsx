@@ -47,7 +47,7 @@ export const ContractBasicInfo = ({
   clients,
   fechaInicio,
   vigenciaContrato,
-  duracionAnios,
+  duracionAnios: _duracionAnios,
   contractType,
 }: ContractBasicInfoProps) => {
   const { setValue } = useFormContext();

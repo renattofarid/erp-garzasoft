@@ -152,7 +152,7 @@ export function replaceVariablesInHtml(
   // Reemplazar chips <span class="doc-variable-chip" data-variable-key="KEY"...>...</span>
   const chipRegex = /<span[^>]*class=["'][^"']*doc-variable-chip[^"']*["'][^>]*data-variable-key=["']([^"']+)["'][^>]*>[\s\S]*?<\/span>/gi;
 
-  result = result.replace(chipRegex, (fullMatch, rawKey) => {
+  result = result.replace(chipRegex, (_fullMatch, rawKey) => {
     const cleanKey = normalizeVariableKey(rawKey);
     const val = values[cleanKey] ?? values[rawKey] ?? `{${cleanKey}}`;
 

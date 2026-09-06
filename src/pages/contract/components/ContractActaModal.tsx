@@ -3,18 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Braces,
-  Check,
-  Download,
   Eye,
-  FileSpreadsheet,
-  FileText,
   Info,
   Loader2,
   Printer,
-  RefreshCw,
   Search,
   Sparkles,
-  User,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -22,9 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { errorToast, successToast } from "@/lib/core.function";
-import { openPdfFromFetcher } from "@/lib/pdf";
 import { ContractResource } from "../lib/contract.interface";
 import { getProductFormatoAlta } from "@/pages/products/lib/product.actions";
 import {
@@ -60,7 +52,10 @@ export default function ContractActaModal({
     if (open && contract) {
       setLoading(true);
 
-      const productId = contract.producto_id || (contract.productos && contract.productos[0]?.id);
+      const productId =
+        (contract as any).producto_id ||
+        ((contract as any).productos && (contract as any).productos[0]?.id) ||
+        (contract.contrato_producto_modulos && contract.contrato_producto_modulos[0]?.producto_id);
 
       if (!productId) {
         setLoading(false);
@@ -98,15 +93,15 @@ export default function ContractActaModal({
           // Valores por defecto
           const defaultsMap: Record<string, string> = {
             CLIENTE_NOMBRE: client ? getClientDisplayName(client) : "",
-            CLIENTE_RUC: client?.ruc || client?.dni || "",
-            CLIENTE_DIRECCION: client?.direccion || "",
-            CLIENTE_TELEFONO: client?.telefono || "",
-            CLIENTE_EMAIL: client?.email || "",
-            REPRESENTANTE_LEGAL: client?.representante_legal || getClientDisplayName(client),
+            CLIENTE_RUC: client?.ruc || (client as any)?.dni || "",
+            CLIENTE_DIRECCION: (client as any)?.direccion || "",
+            CLIENTE_TELEFONO: (client as any)?.telefono || "",
+            CLIENTE_EMAIL: (client as any)?.email || "",
+            REPRESENTANTE_LEGAL: (client as any)?.representante_legal || (client ? getClientDisplayName(client) : ""),
             FECHA_ALTA: formattedFechaAlta,
             NUMERO_CONTRATO: contract.numero || "",
-            COSTO_INSTALACION: contract.costo_instalacion !== undefined ? `S/ ${Number(contract.costo_instalacion).toFixed(2)}` : "",
-            MONTO_MENSUAL: contract.monto_mensual !== undefined ? `S/ ${Number(contract.monto_mensual).toFixed(2)}` : "",
+            COSTO_INSTALACION: contract.costo_instalacion !== undefined && contract.costo_instalacion !== null ? `S/ ${Number(contract.costo_instalacion).toFixed(2)}` : "",
+            MONTO_MENSUAL: (contract as any).monto_mensual !== undefined && (contract as any).monto_mensual !== null ? `S/ ${Number((contract as any).monto_mensual).toFixed(2)}` : "",
             CIUDAD: "Chiclayo, Perú",
           };
 

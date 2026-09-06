@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { toJpeg, toPng } from "html-to-image";
+import { toJpeg } from "html-to-image";
 import {
   AlignCenter,
   AlignJustify,
@@ -26,7 +26,6 @@ import {
   RefreshCw,
   RemoveFormatting,
   Save,
-  Sparkles,
   Strikethrough,
   Table as TableIcon,
   Tag,
@@ -56,7 +55,6 @@ import {
   createVariableChipHtml,
   normalizeVariableKey,
 } from "../lib/docVariables";
-import ContractActaModal from "@/pages/contract/components/ContractActaModal";
 import { parsePdfFileToPages } from "../lib/pdfParser";
 import {
   cleanHtmlPageContent,

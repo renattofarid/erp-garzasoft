@@ -99,6 +99,8 @@ export interface ProductResource {
   nombre: string;
   tipo: ProductType;
   descripcion: string | null;
+  color?: string | null;
+  logo?: string | null;
   modulos: Modulo[];
   avisos_saas: any[];
   formato_alta?: FormatoAltaConfig | null;

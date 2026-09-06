@@ -164,10 +164,29 @@ export const ContractColumns = ({
       const contractType = row.original.tipo_contrato as ContractType;
       const IconComponent = getIconByContractType(contractType);
 
+      const firstProduct =
+        (row.original as any).producto ||
+        (row.original as any).productos?.[0] ||
+        row.original.contrato_producto_modulos?.[0]?.producto;
+
+      const productName = firstProduct?.nombre || firstProduct?.name || "";
+      const productColor = firstProduct?.color || null;
+
+      const typeLabel = castContractType(contractType);
+      const displayLabel = productName ? `${typeLabel} - ${productName}` : typeLabel;
+
+      const customBadgeStyle = productColor
+        ? { backgroundColor: productColor, color: "#ffffff", border: "none" }
+        : {};
+
       return (
-        <Badge className="capitalize flex items-center gap-2" variant="default">
-          {IconComponent && <IconComponent className="min-w-4 min-h-4" />}
-          {castContractType(contractType)}
+        <Badge
+          className="flex items-center gap-1.5 font-semibold px-2.5 py-1 text-xs shadow-2xs transition-transform"
+          variant="default"
+          style={customBadgeStyle}
+        >
+          {IconComponent && <IconComponent className="h-3.5 w-3.5 shrink-0" />}
+          <span>{displayLabel}</span>
         </Badge>
       );
     },

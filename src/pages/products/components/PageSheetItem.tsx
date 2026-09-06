@@ -685,17 +685,13 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
         #page-sheet-${pageIndex} .word-page-editable th {
           font-weight: bold;
           text-align: center;
-          background-color: #eb5454;
-          color: #ffffff;
         }
         #page-sheet-${pageIndex} .word-page-editable a {
-          color: #eb5454;
           text-decoration: underline;
         }
         #page-sheet-${pageIndex} .word-page-editable h1,
         #page-sheet-${pageIndex} .word-page-editable h2,
         #page-sheet-${pageIndex} .word-page-editable h3 {
-          color: #eb5454;
           font-weight: 700;
         }
         #page-sheet-${pageIndex} .word-page-editable img {

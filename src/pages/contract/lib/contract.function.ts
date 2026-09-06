@@ -26,11 +26,11 @@ export function getIconByPaymentType(type: FormaPago) {
 export function castContractType(type: ContractType) {
   switch (type) {
     case "desarrollo":
-      return "Desarrollo de Software";
+      return "Desarrollo";
     case "saas":
-      return "Software as a Service"; 
+      return "SaaS";
     case "soporte":
-      return "Soporte Técnico";
+      return "Soporte";
     default:
       return type;
   }

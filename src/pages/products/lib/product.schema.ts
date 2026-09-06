@@ -22,6 +22,8 @@ export const productSchemaCreate = z.object({
     .max(255, { message: "Maximo 255 caracteres" }),
   tipo: productTypeSchema,
   descripcion: z.string().optional().nullable(),
+  color: z.string().optional().nullable(),
+  logo: z.string().optional().nullable(),
   modulos: z
     .array(conceptSchema)
     .min(1, { message: "Debe agregar al menos un concepto" })

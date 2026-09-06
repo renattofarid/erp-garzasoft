@@ -21,10 +21,36 @@ export const ProductColumns = ({
 }): ColumnDef<ProductResource>[] => [
   {
     accessorKey: "nombre",
-    header: "Nombre",
-    cell: ({ getValue }) => (
-      <span className="font-semibold">{getValue() as string}</span>
-    ),
+    header: "Nombre del Producto",
+    cell: ({ row }) => {
+      const product = row.original;
+      return (
+        <div className="flex items-center gap-2.5">
+          {product.logo ? (
+            <img
+              src={product.logo}
+              alt={product.nombre}
+              className="h-8 w-8 object-contain rounded-md border border-border/80 p-0.5 bg-background shadow-2xs shrink-0"
+            />
+          ) : (
+            <div className="h-8 w-8 rounded-md border border-border/60 bg-muted/40 flex items-center justify-center text-xs font-bold text-muted-foreground shrink-0">
+              {product.nombre.substring(0, 2).toUpperCase()}
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            {product.color && (
+              <span
+                className="h-3 w-3 rounded-full border border-black/20 shrink-0 shadow-2xs"
+                style={{ backgroundColor: product.color }}
+                title={`Color: ${product.color}`}
+              />
+            )}
+            <span className="font-semibold text-sm">{product.nombre}</span>
+          </div>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "tipo",

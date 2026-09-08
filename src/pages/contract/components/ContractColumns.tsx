@@ -33,7 +33,7 @@ function ContractActionsCell({
 }: {
   contract: ContractResource;
   overduePaymentCount: number;
-  onDelete: (id: number) => void;
+  onDelete: (contract: ContractResource) => void;
   onNotification: (id: number) => void;
   onPreview: (id: number) => void;
   onDownloadWord: (id: number, numero?: string) => void;
@@ -43,6 +43,7 @@ function ContractActionsCell({
 }) {
   const router = useNavigate();
   const id = contract.id;
+  const isAnulado = contract.estado === "anulado";
 
   return (
     <SelectActions>
@@ -72,8 +73,11 @@ function ContractActionsCell({
             Notificar <Badge className="rounded-full">{overduePaymentCount}</Badge>
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem onSelect={() => onDelete(id)}>
-          Anular
+        <DropdownMenuItem
+          className={isAnulado ? "text-destructive focus:text-destructive focus:bg-destructive/10 font-medium" : undefined}
+          onSelect={() => onDelete(contract)}
+        >
+          {isAnulado ? "Eliminar" : "Anular"}
         </DropdownMenuItem>
       </DropdownMenuGroup>
     </SelectActions>
@@ -89,7 +93,7 @@ export const ContractColumns = ({
   onSignature,
   onGenerateActa,
 }: {
-  onDelete: (id: number) => void;
+  onDelete: (contract: ContractResource) => void;
   onNotification: (id: number) => void;
   onPreview: (id: number) => void;
   onDownloadWord: (id: number, numero?: string) => void;

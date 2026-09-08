@@ -61,6 +61,29 @@ export const PaymentSidebar = ({
         </div>
       </div>
 
+      {paymentMethod === "unico" && (
+        <div className="p-4 bg-modal/70 border rounded-xl shadow-xs">
+          <div className="flex flex-col gap-3">
+            <div>
+              <h3 className="font-semibold mb-0 text-base">Pago Único</h3>
+              <p className="text-xs text-muted-foreground mb-0">
+                Se ha configurado 1 cuota por el monto total (S/. {total.toFixed(2)}). Revisa o edita la fecha de vencimiento a continuación.
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={generateInstallments}
+              className="w-full gap-2 shadow-2xs text-xs font-semibold"
+            >
+              <CalendarDays className="w-4 h-4 text-primary" />
+              <span>Sincronizar fecha con inicio ({fechaInicio || "Hoy"})</span>
+            </Button>
+          </div>
+        </div>
+      )}
+
       {paymentMethod === "parcial" && (
         <div className="p-4 bg-modal/70 border rounded-xl shadow-xs">
           <div className="flex flex-col gap-3">

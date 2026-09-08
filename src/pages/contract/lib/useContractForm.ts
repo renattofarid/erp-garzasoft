@@ -448,6 +448,35 @@ export const useContractForm = ({
     setNumberOfInstallments(getBillingPeriods());
   }, [getBillingPeriods, installmentsTouched]);
 
+  useEffect(() => {
+    if (paymentMethod !== "unico") return;
+
+    const currentCuotas = form.getValues("cuotas") || [];
+    const defaultDate = fechaInicio || format(new Date(), "yyyy-MM-dd");
+
+    if (currentCuotas.length === 0) {
+      replaceCuotas([
+        {
+          monto: total || 0,
+          fecha_vencimiento: defaultDate,
+        },
+      ]);
+    } else {
+      const existingDate = currentCuotas[0]?.fecha_vencimiento || defaultDate;
+      const currentMonto = currentCuotas[0]?.monto;
+      const targetMonto = total || 0;
+
+      if (currentMonto !== targetMonto || !currentCuotas[0]?.fecha_vencimiento || currentCuotas.length > 1) {
+        replaceCuotas([
+          {
+            monto: targetMonto,
+            fecha_vencimiento: existingDate,
+          },
+        ]);
+      }
+    }
+  }, [paymentMethod, total, fechaInicio, form, replaceCuotas]);
+
   const previousYearRef = useRef<number | null>(null);
 
   useEffect(() => {

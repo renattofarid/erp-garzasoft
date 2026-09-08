@@ -133,7 +133,7 @@ export const ContractForm = ({
               fechaInicio={fechaInicio}
               fechaFin={fechaFin}
             />
-            {paymentMethod === "parcial" && (
+            {(paymentMethod === "parcial" || paymentMethod === "unico") && (
               <InstallmentsTable
                 control={control}
                 cuotaFields={cuotaFields}

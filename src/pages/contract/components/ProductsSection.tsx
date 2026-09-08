@@ -125,16 +125,18 @@ export const ProductsSection = ({
                       </TableCell>
                       <TableCell className="font-medium">
                         {
-                          products?.find((p) => p.id === row.producto_id)
-                            ?.nombre
+                          products?.find((p) => String(p.id) === String(row.producto_id))?.nombre ||
+                          (row as any).producto?.nombre ||
+                          "Gesrest"
                         }
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="text-muted-foreground font-semibold">
                         {
                           products
-                            ?.find((p) => p.id === row.producto_id)
-                            ?.modulos.find((m) => m.id === row.modulo_id)
-                            ?.nombre
+                            ?.find((p) => String(p.id) === String(row.producto_id))
+                            ?.modulos?.find((m) => String(m.id) === String(row.modulo_id))?.nombre ||
+                          (row as any).modulo?.nombre ||
+                          "-"
                         }
                       </TableCell>
                       <TableCell>
@@ -207,20 +209,22 @@ export const ProductsSection = ({
                       <p className="text-xs text-muted-foreground">Producto</p>
                       <p className="font-medium text-sm">
                         {
-                          products?.find((p) => p.id === row.producto_id)
-                            ?.nombre
+                          products?.find((p) => String(p.id) === String(row.producto_id))?.nombre ||
+                          (row as any).producto?.nombre ||
+                          "Gesrest"
                         }
                       </p>
                     </div>
 
                     <div>
                       <p className="text-xs text-muted-foreground">Módulo</p>
-                      <p className="text-sm">
+                      <p className="text-sm font-semibold">
                         {
                           products
-                            ?.find((p) => p.id === row.producto_id)
-                            ?.modulos.find((m) => m.id === row.modulo_id)
-                            ?.nombre
+                            ?.find((p) => String(p.id) === String(row.producto_id))
+                            ?.modulos?.find((m) => String(m.id) === String(row.modulo_id))?.nombre ||
+                          (row as any).modulo?.nombre ||
+                          "-"
                         }
                       </p>
                     </div>

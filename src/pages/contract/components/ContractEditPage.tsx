@@ -81,9 +81,13 @@ export default function ContractEditPage() {
       []
     ).map((item: any) => ({
       id: item.id,
-      modulo_id: item.modulo_id,
-      producto_id: item.producto_id,
+      modulo_id: Number(item.modulo_id ?? item.modulo?.id),
+      producto_id: Number(
+        item.producto_id ?? item.producto?.id ?? item.modulo?.producto_id ?? 1
+      ),
       precio: Number(item.precio),
+      producto: item.producto,
+      modulo: item.modulo,
     })),
     cuotas: (data.cuotas || []).map((item: any) => ({
       id: item.id,

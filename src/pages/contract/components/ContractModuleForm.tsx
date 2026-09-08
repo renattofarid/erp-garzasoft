@@ -128,6 +128,8 @@ export default function ContractModuleForm({
         producto_id: selectedProduct.id,
         modulo_id: modulo.id,
         precio: Number(resolveModuloPrice(modulo).toFixed(2)),
+        producto: selectedProduct,
+        modulo: modulo,
       });
     });
 

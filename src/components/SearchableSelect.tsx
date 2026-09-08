@@ -88,20 +88,24 @@ export function SearchableSelect({
             <CommandEmpty className="py-4 text-center text-sm">
               No hay resultados.
             </CommandEmpty>
-            {options.map((option) => (
-              <CommandItem
-                key={option.value}
-                value={option.value}
-                onSelect={() => {
-                  if (value === option.value) {
-                    onChange("");
-                  } else {
-                    onChange(option.value);
-                  }
-                  setOpen(false);
-                }}
-                className="flex items-center cursor-pointer"
-              >
+            {options.map((option) => {
+              const labelStr = typeof option.label === "string" ? option.label : "";
+              const searchValue = `${option.value} ${labelStr} ${option.description || ""}`.trim();
+
+              return (
+                <CommandItem
+                  key={option.value}
+                  value={searchValue}
+                  onSelect={() => {
+                    if (value === option.value) {
+                      onChange("");
+                    } else {
+                      onChange(option.value);
+                    }
+                    setOpen(false);
+                  }}
+                  className="flex items-center cursor-pointer"
+                >
                 <Check
                   className={cn(
                     "mr-2 h-4 w-4 shrink-0",
@@ -121,7 +125,8 @@ export function SearchableSelect({
                   )}
                 </div>
               </CommandItem>
-            ))}
+            );
+          })}
           </CommandList>
         </Command>
       </PopoverContent>

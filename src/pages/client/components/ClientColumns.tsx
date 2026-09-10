@@ -1,8 +1,3 @@
-import {
-  DropdownMenuGroup,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import { SelectActions } from "@/components/SelectActions";
 import { ColumnDef } from "@tanstack/react-table";
 import {
   ClientEditRoute,
@@ -12,7 +7,14 @@ import {
 } from "../lib/client.interface.ts";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge.tsx";
-import { Building2, KeyRound, Mail, Phone, ReceiptText } from "lucide-react";
+import { Button } from "@/components/ui/button.tsx";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Building2, KeyRound, Mail, Pencil, Phone, ReceiptText, Trash2 } from "lucide-react";
 
 function ClientActionsCell({
   id,
@@ -26,20 +28,72 @@ function ClientActionsCell({
   const router = useNavigate();
 
   return (
-    <SelectActions>
-      <DropdownMenuGroup>
-        <DropdownMenuItem onClick={() => router(`${ClientEditRoute}/${id}`)}>
-          Editar
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => onCredentials(id)}>
-          <KeyRound className="mr-2 size-4" />
-          Usuario y clave
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => onDelete(id)}>
-          Eliminar
-        </DropdownMenuItem>
-      </DropdownMenuGroup>
-    </SelectActions>
+    <TooltipProvider delayDuration={100} disableHoverableContent>
+      <div className="flex items-center gap-1.5">
+        <Tooltip disableHoverableContent>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              className="size-8 rounded-full bg-[#1E88E5] hover:bg-[#1976D2] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+              aria-label="Editar cliente"
+              onMouseLeave={(e) => e.currentTarget.blur()}
+              onClick={(e) => {
+                e.currentTarget.blur();
+                router(`${ClientEditRoute}/${id}`);
+              }}
+            >
+              <Pencil className="size-4 text-white" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+            Editar
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip disableHoverableContent>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              className="size-8 rounded-full bg-[#8E24AA] hover:bg-[#7B1FA2] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+              aria-label="Usuario y contraseña"
+              onMouseLeave={(e) => e.currentTarget.blur()}
+              onClick={(e) => {
+                e.currentTarget.blur();
+                onCredentials(id);
+              }}
+            >
+              <KeyRound className="size-4 text-white" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+            Usuario y clave
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip disableHoverableContent>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              className="size-8 rounded-full bg-[#E53935] hover:bg-[#D32F2F] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+              aria-label="Eliminar cliente"
+              onMouseLeave={(e) => e.currentTarget.blur()}
+              onClick={(e) => {
+                e.currentTarget.blur();
+                onDelete(id);
+              }}
+            >
+              <Trash2 className="size-4 text-white" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+            Eliminar
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    </TooltipProvider>
   );
 }
 

@@ -1,14 +1,26 @@
-import {
-  DropdownMenuGroup,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import { SelectActions } from "@/components/SelectActions";
 import { ColumnDef } from "@tanstack/react-table";
 import {
   CuentasPorCobrarResource,
   SituacionCuota,
 } from "../lib/accounts-receivable.interface";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  AlertCircle,
+  DollarSign,
+  Eye,
+  Info,
+  RefreshCcw,
+  Send,
+  Trash2,
+} from "lucide-react";
+import { WhatsAppIcon, ZipIcon } from "@/components/icons/DocumentIcons";
 import { format, parse } from "date-fns";
 import {
   castSituacionCuota,
@@ -30,51 +42,30 @@ export const CuentasPorCobrarColumns = ({
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
   onPay: (id: number) => void;
-  onResendInvoice: (row: CuentasPorCobrarResource) => void;
-  onGenerateInvoice: (row: CuentasPorCobrarResource) => void;
-  onDownloadZip: (row: CuentasPorCobrarResource) => void;
-  onReviewInvoice: (row: CuentasPorCobrarResource) => void;
-  onWhatsAppReminder: (row: CuentasPorCobrarResource) => void;
+  onResendInvoice: (cuota: CuentasPorCobrarResource) => void;
+  onGenerateInvoice: (cuota: CuentasPorCobrarResource) => void;
+  onDownloadZip: (cuota: CuentasPorCobrarResource) => void;
+  onReviewInvoice: (cuota: CuentasPorCobrarResource) => void;
+  onWhatsAppReminder: (cuota: CuentasPorCobrarResource) => void;
 }): ColumnDef<CuentasPorCobrarResource>[] => [
   {
     accessorKey: "contrato.numero",
-    header: "Número de Contrato",
+    header: "Número Contrato",
     cell: ({ getValue }) => (
       <span className="font-semibold">{getValue() as string}</span>
     ),
   },
   {
-    accessorKey: "contrato.cliente.razon_social",
+    accessorKey: "contrato.cliente",
     header: "Cliente",
-    cell: ({ row }) => (
-      <span className="font-medium">
-        {getClientDisplayName(row.original.contrato?.cliente)}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "monto",
-    header: "Monto total",
-    cell: ({ row }) => (
-      <span className="font-semibold">S/. {Number(row.original.monto_total).toFixed(2)}</span>
-    ),
-  },
-  {
-    accessorKey: "monto_pagado",
-    header: "Monto pagado",
-    cell: ({ row }) => {
-    
-      return (
-        <span className="font-semibold">S/. {row.original.monto_pagado.toFixed(2)}</span>
-      );
-    },
+    cell: ({ row }) => getClientDisplayName(row.original.contrato.cliente),
   },
   {
     accessorKey: "monto_pendiente",
-    header: "Monto pendiente",
+    header: "Monto Pendiente",
     cell: ({ row }) => (
-      <span className={`font-semibold ${row.original.monto_pendiente > 0 ? "text-red-500" : "text-green-500"}`}>
-        S/. {row.original.monto_pendiente.toFixed(2)}
+      <span className="font-bold text-foreground">
+        S/. {Number(row.original.monto_pendiente).toFixed(2)}
       </span>
     ),
   },
@@ -82,25 +73,15 @@ export const CuentasPorCobrarColumns = ({
     accessorKey: "fecha_vencimiento",
     header: "Fecha de Vencimiento",
     cell: ({ getValue }) => {
-      const fecha = getValue() as string;
-      return (
-        <Badge variant="outline">
-          {format(parse(fecha, "yyyy-MM-dd", new Date()), "dd/MM/yyyy")}
-        </Badge>
+      const fechaVencimiento = format(
+        parse(
+          (getValue() as string).split("T").shift() || "",
+          "yyyy-MM-dd",
+          new Date()
+        ),
+        "dd/MM/yyyy"
       );
-    },
-  },
-  {
-    accessorKey: "fecha_pago",
-    header: "Fecha de Pago",
-    cell: ({ getValue }) => {
-      const fecha = getValue() as string | null;
-      if (!fecha) return <span className="text-muted-foreground">-</span>;
-      return (
-        <Badge variant="default">
-          {format(parse(fecha, "yyyy-MM-dd", new Date()), "dd/MM/yyyy")}
-        </Badge>
-      );
+      return <Badge variant="outline">{fechaVencimiento}</Badge>;
     },
   },
   {
@@ -123,52 +104,208 @@ export const CuentasPorCobrarColumns = ({
     id: "actions",
     header: "Acciones",
     cell: ({ row }) => {
-      const id = row.original.id;
-      const situacion = row.original.situacion;
+      const cuota = row.original;
+      const id = cuota.id;
+      const situacion = cuota.situacion;
+      const comprobante = cuota.comprobante;
 
       return (
-        <SelectActions>
-          <DropdownMenuGroup>
-            {/* {situacion === "pagado" && ( */}
-            <DropdownMenuItem onClick={() => onEdit(id)}>
-              {situacion === "pagado" ? "Ver Detalles" : "Editar Pago"}
-            </DropdownMenuItem>
-            {/* )
-           } */}
-            {situacion !== "pagado" && (
-              <DropdownMenuItem onClick={() => onPay(id)}>
-                Registrar Pago
-              </DropdownMenuItem>
+        <TooltipProvider delayDuration={100} disableHoverableContent>
+          <div className="flex items-center gap-1.5">
+            {/* 1. Registrar Pago (Verde) / Ver Detalles (Azul) */}
+            {situacion !== "pagado" ? (
+              <Tooltip disableHoverableContent>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="icon"
+                    className="size-8 rounded-full bg-[#10B981] hover:bg-[#059669] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+                    aria-label="Registrar pago"
+                    onMouseLeave={(e) => e.currentTarget.blur()}
+                    onClick={(e) => {
+                      e.currentTarget.blur();
+                      onPay(id);
+                    }}
+                  >
+                    <DollarSign className="size-4 text-white" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                  Registrar Pago
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Tooltip disableHoverableContent>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="icon"
+                    className="size-8 rounded-full bg-[#1E88E5] hover:bg-[#1976D2] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+                    aria-label="Ver detalles"
+                    onMouseLeave={(e) => e.currentTarget.blur()}
+                    onClick={(e) => {
+                      e.currentTarget.blur();
+                      onEdit(id);
+                    }}
+                  >
+                    <Eye className="size-4 text-white" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                  Ver Detalles
+                </TooltipContent>
+              </Tooltip>
             )}
-            {!row.original.comprobante ? (
-              <DropdownMenuItem onClick={() => onGenerateInvoice(row.original)}>
-                Generar factura
-              </DropdownMenuItem>
+
+            {/* 2. Facturación: Generar o Revisar / Reenviar / ZIP */}
+            {!comprobante ? (
+              <Tooltip disableHoverableContent>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="icon"
+                    className="size-8 rounded-full bg-[#FBC02D] hover:bg-[#F9A825] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+                    aria-label="Generar factura SUNAT"
+                    onMouseLeave={(e) => e.currentTarget.blur()}
+                    onClick={(e) => {
+                      e.currentTarget.blur();
+                      onGenerateInvoice(cuota);
+                    }}
+                  >
+                    <Send className="size-4 text-white" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                  Generar factura
+                </TooltipContent>
+              </Tooltip>
             ) : (
               <>
-                <DropdownMenuItem onClick={() => onReviewInvoice(row.original)}>
-                  {row.original.comprobante.estado === "X" ? "Ver error y corregir" : "Revisar factura"}
-                </DropdownMenuItem>
-                {!["M", "T"].includes(row.original.comprobante.estado) && (
-                  <DropdownMenuItem onClick={() => onResendInvoice(row.original)}>
-                    Reenviar factura
-                  </DropdownMenuItem>
+                {/* Revisar Factura / Estado / Error */}
+                <Tooltip disableHoverableContent>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      className={`size-8 rounded-full text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0 ${
+                        comprobante.estado === "X"
+                          ? "bg-[#D32F2F] hover:bg-[#B71C1C] animate-pulse ring-2 ring-red-400"
+                          : "bg-[#1E88E5] hover:bg-[#1976D2]"
+                      }`}
+                      aria-label={comprobante.estado === "X" ? "Ver error y corregir factura" : "Revisar factura"}
+                      onMouseLeave={(e) => e.currentTarget.blur()}
+                      onClick={(e) => {
+                        e.currentTarget.blur();
+                        onReviewInvoice(cuota);
+                      }}
+                    >
+                      {comprobante.estado === "X" ? (
+                        <AlertCircle className="size-4 text-white" />
+                      ) : (
+                        <Info className="size-4 text-white" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                    {comprobante.estado === "X" ? "Ver error y corregir" : "Revisar factura"}
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* Reenviar si falló */}
+                {!["M", "T"].includes(comprobante.estado) && (
+                  <Tooltip disableHoverableContent>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        size="icon"
+                        className="size-8 rounded-full bg-[#FBC02D] hover:bg-[#F9A825] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+                        aria-label="Reenviar factura"
+                        onMouseLeave={(e) => e.currentTarget.blur()}
+                        onClick={(e) => {
+                          e.currentTarget.blur();
+                          onResendInvoice(cuota);
+                        }}
+                      >
+                        <RefreshCcw className="size-4 text-white" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                      Reenviar factura
+                    </TooltipContent>
+                  </Tooltip>
                 )}
-                {(row.original.comprobante.zip_path || ["M", "T"].includes(row.original.comprobante.estado)) && (
-                  <DropdownMenuItem onClick={() => onDownloadZip(row.original)}>
-                    Descargar ZIP SUNAT
-                  </DropdownMenuItem>
+
+                {/* Descargar ZIP SUNAT */}
+                {(comprobante.zip_path || ["M", "T"].includes(comprobante.estado)) && (
+                  <Tooltip disableHoverableContent>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        size="icon"
+                        className="size-8 rounded-full bg-[#FB8C00] hover:bg-[#F57C00] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+                        aria-label="Descargar ZIP SUNAT"
+                        onMouseLeave={(e) => e.currentTarget.blur()}
+                        onClick={(e) => {
+                          e.currentTarget.blur();
+                          onDownloadZip(cuota);
+                        }}
+                      >
+                        <ZipIcon className="size-4 text-white" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                      Descargar ZIP SUNAT
+                    </TooltipContent>
+                  </Tooltip>
                 )}
               </>
             )}
-            <DropdownMenuItem onClick={() => onWhatsAppReminder(row.original)}>
-              Recordatorio WhatsApp
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onDelete(id)}>
-              Eliminar
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-        </SelectActions>
+
+            {/* 3. Recordatorio WhatsApp (Verde) */}
+            <Tooltip disableHoverableContent>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon"
+                  className="size-8 rounded-full bg-[#43A047] hover:bg-[#388E3C] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+                  aria-label="Recordatorio WhatsApp"
+                  onMouseLeave={(e) => e.currentTarget.blur()}
+                  onClick={(e) => {
+                    e.currentTarget.blur();
+                    onWhatsAppReminder(cuota);
+                  }}
+                >
+                  <WhatsAppIcon className="size-4 text-white" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                Recordatorio WhatsApp
+              </TooltipContent>
+            </Tooltip>
+
+            {/* 4. Eliminar (Rojo) */}
+            <Tooltip disableHoverableContent>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon"
+                  className="size-8 rounded-full bg-[#E53935] hover:bg-[#D32F2F] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+                  aria-label="Eliminar cuota"
+                  onMouseLeave={(e) => e.currentTarget.blur()}
+                  onClick={(e) => {
+                    e.currentTarget.blur();
+                    onDelete(id);
+                  }}
+                >
+                  <Trash2 className="size-4 text-white" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                Eliminar
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
       );
     },
   },

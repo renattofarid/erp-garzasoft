@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Send, RefreshCcw, Pencil, AlertCircle } from "lucide-react";
+import { Search, Send, RefreshCcw, AlertCircle, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { WhatsAppIcon, PdfIcon, ZipIcon } from "@/components/icons/DocumentIcons";
 import TitleComponent from "@/components/TitleComponent";
@@ -385,14 +385,14 @@ export default function InvoicingPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <TooltipProvider delayDuration={100} disableHoverableContent>
-                      <div className="flex justify-end gap-1.5">
+                      <div className="flex justify-end items-center gap-1.5">
+                        {/* 1. Ver PDF (Rojo) */}
                         <Tooltip disableHoverableContent>
                           <TooltipTrigger asChild>
                             <Button
                               type="button"
-                              variant="outline"
                               size="icon"
-                              className="size-8 hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 border-red-500/30 transition-all duration-150"
+                              className="size-8 rounded-full bg-[#E53935] hover:bg-[#D32F2F] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
                               aria-label="Ver y descargar PDF"
                               onMouseLeave={(e) => e.currentTarget.blur()}
                               onClick={(e) => {
@@ -400,7 +400,7 @@ export default function InvoicingPage() {
                                 handleOpenPdf(comprobante.id);
                               }}
                             >
-                              <PdfIcon className="size-4 text-red-600 dark:text-red-400" />
+                              <PdfIcon className="size-4.5" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
@@ -408,39 +408,13 @@ export default function InvoicingPage() {
                           </TooltipContent>
                         </Tooltip>
 
+                        {/* 2. Enviar por WhatsApp (Verde) */}
                         <Tooltip disableHoverableContent>
                           <TooltipTrigger asChild>
                             <Button
                               type="button"
-                              variant={comprobante.estado === "X" ? "destructive" : "outline"}
                               size="icon"
-                              className="size-8 transition-all duration-150"
-                              aria-label={comprobante.estado === "X" ? "Ver error y corregir factura" : "Revisar factura"}
-                              onMouseLeave={(e) => e.currentTarget.blur()}
-                              onClick={(e) => {
-                                e.currentTarget.blur();
-                                handleReview(comprobante);
-                              }}
-                            >
-                              {comprobante.estado === "X" ? (
-                                <AlertCircle className="size-4" />
-                              ) : (
-                                <Pencil className="size-4 text-foreground/80" />
-                              )}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
-                            {comprobante.estado === "X" ? "Ver error y corregir" : "Revisar factura"}
-                          </TooltipContent>
-                        </Tooltip>
-
-                        <Tooltip disableHoverableContent>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              className="size-8 hover:border-[#25D366] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border-emerald-500/30 transition-all duration-150"
+                              className="size-8 rounded-full bg-[#43A047] hover:bg-[#388E3C] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
                               aria-label="Enviar por WhatsApp"
                               onMouseLeave={(e) => e.currentTarget.blur()}
                               onClick={(e) => {
@@ -448,7 +422,7 @@ export default function InvoicingPage() {
                                 handleOpenWhatsAppModal(comprobante);
                               }}
                             >
-                              <WhatsAppIcon className="size-4 text-[#25D366]" />
+                              <WhatsAppIcon className="size-4 text-white" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
@@ -456,14 +430,44 @@ export default function InvoicingPage() {
                           </TooltipContent>
                         </Tooltip>
 
+                        {/* 3. Revisar / Detalle / Estado (Azul) o Error (Rojo carmesí) */}
+                        <Tooltip disableHoverableContent>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              size="icon"
+                              className={`size-8 rounded-full text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0 ${
+                                comprobante.estado === "X"
+                                  ? "bg-[#D32F2F] hover:bg-[#B71C1C] animate-pulse ring-2 ring-red-400"
+                                  : "bg-[#1E88E5] hover:bg-[#1976D2]"
+                              }`}
+                              aria-label={comprobante.estado === "X" ? "Ver error y corregir factura" : "Revisar factura y respuesta SUNAT"}
+                              onMouseLeave={(e) => e.currentTarget.blur()}
+                              onClick={(e) => {
+                                e.currentTarget.blur();
+                                handleReview(comprobante);
+                              }}
+                            >
+                              {comprobante.estado === "X" ? (
+                                <AlertCircle className="size-4 text-white" />
+                              ) : (
+                                <Info className="size-4 text-white" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                            {comprobante.estado === "X" ? "Ver error y corregir" : "Detalle y respuesta API"}
+                          </TooltipContent>
+                        </Tooltip>
+
+                        {/* 4. Descargar ZIP SUNAT (Naranja) */}
                         {(comprobante.zip_path || ["M", "T"].includes(comprobante.estado)) && (
                           <Tooltip disableHoverableContent>
                             <TooltipTrigger asChild>
                               <Button
                                 type="button"
-                                variant="outline"
                                 size="icon"
-                                className="size-8 hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40 border-amber-500/30 transition-all duration-150"
+                                className="size-8 rounded-full bg-[#FB8C00] hover:bg-[#F57C00] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
                                 aria-label="Descargar archivo ZIP firmado SUNAT"
                                 onMouseLeave={(e) => e.currentTarget.blur()}
                                 onClick={(e) => {
@@ -471,7 +475,7 @@ export default function InvoicingPage() {
                                   handleDownloadZip(comprobante);
                                 }}
                               >
-                                <ZipIcon className="size-4 text-amber-600 dark:text-amber-400" />
+                                <ZipIcon className="size-4 text-white" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">

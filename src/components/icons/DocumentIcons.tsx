@@ -12,16 +12,20 @@ export function WhatsAppIcon({ className = "size-4" }: { className?: string }) {
   );
 }
 
-export function PdfIcon({ className = "size-4" }: { className?: string }) {
+export function PdfIcon({ className = "size-4.5" }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
       width="24"
       height="24"
       className={className}
-      fill="currentColor"
+      xmlns="http://www.w3.org/2000/svg"
     >
-      <path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM8.5 11.5C8.5 11.8 8.2 12 7.9 12H6.8V13.5H5.8V9H7.9C8.2 9 8.5 9.2 8.5 9.5V11.5ZM13.5 12.5C13.5 13.1 13 13.5 12.4 13.5H10.2V9H12.4C13 9 13.5 9.4 13.5 10V12.5ZM18.2 10.1H16.1V11.2H17.8V12.2H16.1V13.5H15V9H18.2V10.1ZM6.8 11H7.5V10H6.8V11ZM11.2 12.5H12.4V10H11.2V12.5Z" />
+      <rect x="2.5" y="2.5" width="19" height="19" rx="4" fill="#FFFFFF" />
+      <path
+        fill="#E53935"
+        d="M4.5 7.5h2.5c1.2 0 1.9.7 1.9 1.9 0 1.2-.7 1.9-1.9 1.9H5.9v3.7H4.5V7.5zm1.4 2.5h1.1c.4 0 .6-.2.6-.6s-.2-.6-.6-.6H5.9v1.2zm4-2.5h2.4c1.6 0 2.6 1.1 2.6 3.7s-1 3.8-2.6 3.8H9.9V7.5zm1.4 6.1h1c.8 0 1.2-.7 1.2-2.3s-.4-2.3-1.2-2.3h-1v4.6zm4.7-6.1h3.5v1.4h-2.1v2.1h1.9v1.4h-1.9v2.6H16V7.5z"
+      />
     </svg>
   );
 }

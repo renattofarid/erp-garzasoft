@@ -1,8 +1,3 @@
-import {
-  DropdownMenuGroup,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import { SelectActions } from "@/components/SelectActions";
 import { ColumnDef } from "@tanstack/react-table";
 import {
   ContractResource,
@@ -11,6 +6,23 @@ import {
 } from "../lib/contract.interface.ts";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Bell,
+  CalendarDays,
+  FileSpreadsheet,
+  FileText,
+  Pencil,
+  PenTool,
+  Trash2,
+} from "lucide-react";
+import { PdfIcon } from "@/components/icons/DocumentIcons";
 import { format, parse } from "date-fns";
 import {
   castContractType,
@@ -46,41 +58,192 @@ function ContractActionsCell({
   const isAnulado = contract.estado === "anulado";
 
   return (
-    <SelectActions>
-      <DropdownMenuGroup>
-        <DropdownMenuItem onClick={() => router(`/contratos/editar/${id}`)}>
-          Editar
-        </DropdownMenuItem>
-        {onGenerateActa && (
-          <DropdownMenuItem onSelect={() => onGenerateActa(contract)}>
-            📄 Acta / Formato de Alta (Variables)
-          </DropdownMenuItem>
-        )}
-        <DropdownMenuItem onSelect={() => onSignature(contract)}>
-          Firmar
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => onPreview(id)}>
-          Ver PDF
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => onDownloadWord(id, contract.numero)}>
-          Descargar Word (.docx)
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => onViewInstallments(contract)}>
-          Ver cuotas
-        </DropdownMenuItem>
+    <TooltipProvider delayDuration={100} disableHoverableContent>
+      <div className="flex items-center gap-1.5 flex-wrap max-w-[280px]">
+        {/* 1. Ver PDF (Rojo) */}
+        <Tooltip disableHoverableContent>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              className="size-8 rounded-full bg-[#E53935] hover:bg-[#D32F2F] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+              aria-label="Ver PDF del contrato"
+              onMouseLeave={(e) => e.currentTarget.blur()}
+              onClick={(e) => {
+                e.currentTarget.blur();
+                onPreview(id);
+              }}
+            >
+              <PdfIcon className="size-4.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+            Ver PDF
+          </TooltipContent>
+        </Tooltip>
+
+        {/* 2. Descargar Word (Azul Marino) */}
+        <Tooltip disableHoverableContent>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              className="size-8 rounded-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+              aria-label="Descargar Word (.docx)"
+              onMouseLeave={(e) => e.currentTarget.blur()}
+              onClick={(e) => {
+                e.currentTarget.blur();
+                onDownloadWord(id, contract.numero);
+              }}
+            >
+              <FileText className="size-4 text-white" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+            Descargar Word (.docx)
+          </TooltipContent>
+        </Tooltip>
+
+        {/* 3. Firmar (Púrpura) */}
+        <Tooltip disableHoverableContent>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              className="size-8 rounded-full bg-[#8E24AA] hover:bg-[#7B1FA2] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+              aria-label="Firmar contrato"
+              onMouseLeave={(e) => e.currentTarget.blur()}
+              onClick={(e) => {
+                e.currentTarget.blur();
+                onSignature(contract);
+              }}
+            >
+              <PenTool className="size-4 text-white" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+            Firmar
+          </TooltipContent>
+        </Tooltip>
+
+        {/* 4. Ver Cuotas (Cyan) */}
+        <Tooltip disableHoverableContent>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              className="size-8 rounded-full bg-[#00ACC1] hover:bg-[#0097A7] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+              aria-label="Ver cuotas del contrato"
+              onMouseLeave={(e) => e.currentTarget.blur()}
+              onClick={(e) => {
+                e.currentTarget.blur();
+                onViewInstallments(contract);
+              }}
+            >
+              <CalendarDays className="size-4 text-white" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+            Ver cuotas
+          </TooltipContent>
+        </Tooltip>
+
+        {/* 5. Notificar Vencidos (Ámbar) */}
         {overduePaymentCount > 0 && (
-          <DropdownMenuItem onSelect={() => onNotification(id)}>
-            Notificar <Badge className="rounded-full">{overduePaymentCount}</Badge>
-          </DropdownMenuItem>
+          <Tooltip disableHoverableContent>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                size="icon"
+                className="size-8 rounded-full bg-[#FFA000] hover:bg-[#FF8F00] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0 relative"
+                aria-label={`Notificar ${overduePaymentCount} cuotas vencidas`}
+                onMouseLeave={(e) => e.currentTarget.blur()}
+                onClick={(e) => {
+                  e.currentTarget.blur();
+                  onNotification(id);
+                }}
+              >
+                <Bell className="size-4 text-white" />
+                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] font-extrabold size-4 rounded-full flex items-center justify-center border border-white">
+                  {overduePaymentCount}
+                </span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+              Notificar ({overduePaymentCount} vencidas)
+            </TooltipContent>
+          </Tooltip>
         )}
-        <DropdownMenuItem
-          className={isAnulado ? "text-destructive focus:text-destructive focus:bg-destructive/10 font-medium" : undefined}
-          onSelect={() => onDelete(contract)}
-        >
-          {isAnulado ? "Eliminar" : "Anular"}
-        </DropdownMenuItem>
-      </DropdownMenuGroup>
-    </SelectActions>
+
+        {/* 6. Formato de Alta (Verde) */}
+        {onGenerateActa && (
+          <Tooltip disableHoverableContent>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                size="icon"
+                className="size-8 rounded-full bg-[#059669] hover:bg-[#047857] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+                aria-label="Acta / Formato de Alta"
+                onMouseLeave={(e) => e.currentTarget.blur()}
+                onClick={(e) => {
+                  e.currentTarget.blur();
+                  onGenerateActa(contract);
+                }}
+              >
+                <FileSpreadsheet className="size-4 text-white" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+              Acta / Formato de Alta
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {/* 7. Editar (Azul) */}
+        <Tooltip disableHoverableContent>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              className="size-8 rounded-full bg-[#1E88E5] hover:bg-[#1976D2] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+              aria-label="Editar contrato"
+              onMouseLeave={(e) => e.currentTarget.blur()}
+              onClick={(e) => {
+                e.currentTarget.blur();
+                router(`/contratos/editar/${id}`);
+              }}
+            >
+              <Pencil className="size-4 text-white" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+            Editar
+          </TooltipContent>
+        </Tooltip>
+
+        {/* 8. Anular / Eliminar (Rojo) */}
+        <Tooltip disableHoverableContent>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              className="size-8 rounded-full bg-[#E53935] hover:bg-[#D32F2F] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+              aria-label={isAnulado ? "Eliminar contrato" : "Anular contrato"}
+              onMouseLeave={(e) => e.currentTarget.blur()}
+              onClick={(e) => {
+                e.currentTarget.blur();
+                onDelete(contract);
+              }}
+            >
+              <Trash2 className="size-4 text-white" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+            {isAnulado ? "Eliminar" : "Anular"}
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    </TooltipProvider>
   );
 }
 

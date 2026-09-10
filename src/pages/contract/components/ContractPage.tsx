@@ -19,6 +19,7 @@ import { ContractResource } from "../lib/contract.interface.ts";
 import { ContractInstallmentsDialog } from "./ContractInstallmentsDialog.tsx";
 import { ContractSignatureDialog } from "./ContractSignatureDialog.tsx";
 import ContractActaModal from "./ContractActaModal.tsx";
+import { SimpleDeleteDialog } from "@/components/SimpleDeleteDialog";
 
 const initialFilters: ContractFiltersState = {
   search: "",
@@ -34,7 +35,8 @@ const initialFilters: ContractFiltersState = {
 export default function ContractPage() {
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<ContractFiltersState>(initialFilters);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [cancelContract, setCancelContract] = useState<ContractResource | null>(null);
+  const [deleteContractItem, setDeleteContractItem] = useState<ContractResource | null>(null);
   const [notificationId, setNotificationId] = useState<number | null>(null);
   const [installmentsContract, setInstallmentsContract] =
     useState<ContractResource | null>(null);
@@ -91,26 +93,45 @@ export default function ContractPage() {
     setPage(1);
   }, []);
 
-  const handleDelete = async (payload: {
+  const handleCancelContract = async (payload: {
     motivo_anulacion?: string;
     fecha_anulacion: string;
   }) => {
-    if (!deleteId) return;
+    if (!cancelContract) return;
     try {
-      await deleteContract(deleteId, payload);
+      await deleteContract(cancelContract.id, payload);
       await refetch();
       successToast("Contrato anulado correctamente.");
     } catch {
       errorToast("Error al anular el Contrato.");
     } finally {
-      setDeleteId(null);
+      setCancelContract(null);
+    }
+  };
+
+  const handleDeleteContract = async () => {
+    if (!deleteContractItem) return;
+    try {
+      await deleteContract(deleteContractItem.id);
+      await refetch();
+      successToast("Contrato eliminado correctamente.");
+    } catch {
+      errorToast("Error al eliminar el Contrato.");
+    } finally {
+      setDeleteContractItem(null);
     }
   };
 
   const columns = useMemo(
     () =>
       ContractColumns({
-        onDelete: setDeleteId,
+        onDelete: (contract) => {
+          if (contract.estado === "anulado") {
+            setDeleteContractItem(contract);
+          } else {
+            setCancelContract(contract);
+          }
+        },
         onNotification: setNotificationId,
         onPreview: (id) => {
           openContractPdf(id).catch(() =>
@@ -166,11 +187,18 @@ export default function ContractPage() {
         />
       )}
       {/* Formularios */}
-      {deleteId !== null && (
+      {cancelContract !== null && (
         <ContractCancelDialog
           open={true}
-          onOpenChange={(open) => !open && setDeleteId(null)}
-          onConfirm={handleDelete}
+          onOpenChange={(open) => !open && setCancelContract(null)}
+          onConfirm={handleCancelContract}
+        />
+      )}
+      {deleteContractItem !== null && (
+        <SimpleDeleteDialog
+          open={true}
+          onOpenChange={(open) => !open && setDeleteContractItem(null)}
+          onConfirm={handleDeleteContract}
         />
       )}
       <ContractInstallmentsDialog

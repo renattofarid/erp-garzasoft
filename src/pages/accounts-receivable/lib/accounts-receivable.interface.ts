@@ -1,5 +1,6 @@
 import { Links, Meta } from "@/lib/pagination.interface";
 import { Calculator } from "lucide-react";
+import type { ComprobanteResource } from "@/pages/invoicing/lib/invoicing.interface";
 
 export const CuentasPorCobrarIcon = Calculator;
 export const CuentasPorCobrarRoute = "/cuentas-por-cobrar";
@@ -35,6 +36,7 @@ export interface CuentasPorCobrarResource {
   updated_at: string;
   contrato: Contrato;
   pagos_cuota?: PagoResource[]; // Para los pagos asociados
+  comprobante?: ComprobanteResource | null;
 }
 
 export interface Contrato {

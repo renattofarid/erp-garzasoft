@@ -61,7 +61,7 @@ export default function PagoModal({
           defaultValues={{
             cuota_id: cuotaId,
             fecha_pago: new Date().toISOString().split("T")[0],
-            monto_pagado: cuentaPorCobrar.monto_pagado,
+            monto_pagado: cuentaPorCobrar.monto_pendiente ?? cuentaPorCobrar.monto_total,
             pagos_cuota: cuentaPorCobrar.pagos_cuota,
             monto_pendiente: cuentaPorCobrar.monto_pendiente,
             monto_total: cuentaPorCobrar.monto_total,

@@ -2,6 +2,8 @@ import { AxiosRequestConfig } from "axios";
 import { api } from "@/lib/config";
 import { per_page } from "@/lib/core.function";
 import {
+  ActualizarComprobantePayload,
+  ComprobanteResource,
   ComprobanteResponse,
   EmisionMasivaPayload,
   EmisionMasivaResult,
@@ -39,7 +41,9 @@ export async function emitirMasivo(
   return data;
 }
 
-export async function reenviarPendientes(): Promise<unknown> {
+export async function reenviarPendientes(): Promise<{
+  data: Array<{ id: number; ok: boolean; message?: string | null }>;
+}> {
   const { data } = await api.post(`${ENDPOINT}/reenviar-pendientes`);
   return data;
 }
@@ -51,11 +55,33 @@ export async function getComprobantePdf(id: number): Promise<Blob> {
   return data;
 }
 
+export async function getComprobante(id: number): Promise<ComprobanteResource> {
+  const { data } = await api.get<{ data: ComprobanteResource }>(`${ENDPOINT}/${id}`);
+  return data.data;
+}
+
+export async function actualizarComprobante(
+  id: number,
+  payload: ActualizarComprobantePayload
+): Promise<ComprobanteResource> {
+  const { data } = await api.put<{ data: ComprobanteResource }>(`${ENDPOINT}/${id}`, payload);
+  return data.data;
+}
+
+export async function emitirComprobante(id: number): Promise<ComprobanteResource> {
+  const { data } = await api.post<{ data: ComprobanteResource }>(`${ENDPOINT}/${id}/emitir`);
+  return data.data;
+}
+
 export async function downloadComprobanteFile(
   id: number,
-  type: "xml" | "cdr"
+  type: "xml" | "cdr" | "zip"
 ): Promise<Blob> {
-  const suffix = type === "xml" ? "download-xml" : "download-cdr";
+  const suffix = {
+    xml: "download-xml",
+    cdr: "download-cdr",
+    zip: "download-zip",
+  }[type];
   const { data } = await api.get(`${ENDPOINT}/${id}/${suffix}`, {
     responseType: "blob",
   });

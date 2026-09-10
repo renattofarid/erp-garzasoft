@@ -1,12 +1,14 @@
-import {
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { SelectActions } from "@/components/SelectActions";
 import { ColumnDef } from "@tanstack/react-table";
 import { ProductResource, Modulo } from "../lib/product.interface";
-import { Edit, Eye, FileSpreadsheet, Trash2 } from "lucide-react";
+import { FileSpreadsheet, Pencil, Trash2 } from "lucide-react";
+import { PdfIcon } from "@/components/icons/DocumentIcons";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const ProductColumns = ({
   onEdit,
@@ -90,27 +92,97 @@ export const ProductColumns = ({
       const id = product.id;
 
       return (
-        <SelectActions>
-          <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => onFormatoAlta(product)} className="gap-2 cursor-pointer font-medium">
-              <FileSpreadsheet className="h-4 w-4 text-primary" />
-              <span>Formato de Alta</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onPreviewPdf(id, product.nombre)} className="gap-2 cursor-pointer">
-              <Eye className="h-4 w-4 text-muted-foreground" />
-              <span>Ver PDF Alta</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onEdit(id)} className="gap-2 cursor-pointer">
-              <Edit className="h-4 w-4 text-muted-foreground" />
-              <span>Editar</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onDelete(id)} className="gap-2 cursor-pointer text-destructive focus:text-destructive">
-              <Trash2 className="h-4 w-4" />
-              <span>Eliminar</span>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-        </SelectActions>
+        <TooltipProvider delayDuration={100} disableHoverableContent>
+          <div className="flex items-center gap-1.5">
+            {/* 1. Formato de Alta (Verde) */}
+            <Tooltip disableHoverableContent>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon"
+                  className="size-8 rounded-full bg-[#059669] hover:bg-[#047857] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+                  aria-label="Formato de alta"
+                  onMouseLeave={(e) => e.currentTarget.blur()}
+                  onClick={(e) => {
+                    e.currentTarget.blur();
+                    onFormatoAlta(product);
+                  }}
+                >
+                  <FileSpreadsheet className="size-4 text-white" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                Formato de Alta
+              </TooltipContent>
+            </Tooltip>
+
+            {/* 2. Ver PDF Alta (Rojo) */}
+            <Tooltip disableHoverableContent>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon"
+                  className="size-8 rounded-full bg-[#E53935] hover:bg-[#D32F2F] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+                  aria-label="Ver PDF de alta"
+                  onMouseLeave={(e) => e.currentTarget.blur()}
+                  onClick={(e) => {
+                    e.currentTarget.blur();
+                    onPreviewPdf(id, product.nombre);
+                  }}
+                >
+                  <PdfIcon className="size-4.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                Ver PDF Alta
+              </TooltipContent>
+            </Tooltip>
+
+            {/* 3. Editar (Azul) */}
+            <Tooltip disableHoverableContent>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon"
+                  className="size-8 rounded-full bg-[#1E88E5] hover:bg-[#1976D2] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+                  aria-label="Editar producto"
+                  onMouseLeave={(e) => e.currentTarget.blur()}
+                  onClick={(e) => {
+                    e.currentTarget.blur();
+                    onEdit(id);
+                  }}
+                >
+                  <Pencil className="size-4 text-white" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                Editar
+              </TooltipContent>
+            </Tooltip>
+
+            {/* 4. Eliminar (Rojo) */}
+            <Tooltip disableHoverableContent>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon"
+                  className="size-8 rounded-full bg-[#E53935] hover:bg-[#D32F2F] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+                  aria-label="Eliminar producto"
+                  onMouseLeave={(e) => e.currentTarget.blur()}
+                  onClick={(e) => {
+                    e.currentTarget.blur();
+                    onDelete(id);
+                  }}
+                >
+                  <Trash2 className="size-4 text-white" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                Eliminar
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
       );
     },
   },

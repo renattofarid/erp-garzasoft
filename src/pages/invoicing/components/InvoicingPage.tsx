@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Send, RefreshCcw, FileText, MessageSquare } from "lucide-react";
+import { Search, Send, RefreshCcw, Pencil, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { WhatsAppIcon, PdfIcon, ZipIcon } from "@/components/icons/DocumentIcons";
 import TitleComponent from "@/components/TitleComponent";
 import DataTablePagination from "@/components/DataTablePagination";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +42,7 @@ import {
   envioMasivoWhatsApp,
   getComprobantes,
   getComprobantePdf,
+  downloadComprobanteFile,
   reenviarPendientes,
 } from "../lib/invoicing.actions";
 import {
@@ -46,6 +54,7 @@ import {
   TipoDocumento,
 } from "../lib/invoicing.interface";
 import { WhatsAppComprobanteModal } from "./WhatsAppComprobanteModal";
+import { ComprobanteRecoveryDialog } from "./ComprobanteRecoveryDialog";
 
 const estadoColor: Record<string, string> = {
   E: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
@@ -66,6 +75,9 @@ export default function InvoicingPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false);
   const [whatsAppComprobante, setWhatsAppComprobante] =
+    useState<ComprobanteResource | null>(null);
+  const [recoveryOpen, setRecoveryOpen] = useState(false);
+  const [recoveryComprobante, setRecoveryComprobante] =
     useState<ComprobanteResource | null>(null);
 
   const [comprobantes, setComprobantes] = useState<ComprobanteResource[]>([]);
@@ -195,8 +207,16 @@ export default function InvoicingPage() {
 
   const handleReenviar = async () => {
     try {
-      await reenviarPendientes();
-      successToast("Pendientes reenviados.");
+      const response = await reenviarPendientes();
+      const fallidos = response.data.filter((item) => !item.ok);
+      if (fallidos.length > 0) {
+        errorToast(
+          `${fallidos.length} comprobante(s) continuaron con error.`,
+          fallidos[0]?.message || "Revisa la respuesta del facturador."
+        );
+      } else {
+        successToast("Pendientes reenviados correctamente.");
+      }
       await loadComprobantes();
     } catch {
       errorToast("No se pudieron reenviar los pendientes.");
@@ -232,6 +252,25 @@ export default function InvoicingPage() {
     setWhatsAppModalOpen(true);
   };
 
+  const handleReview = (comprobante: ComprobanteResource) => {
+    setRecoveryComprobante(comprobante);
+    setRecoveryOpen(true);
+  };
+
+  const handleDownloadZip = async (comprobante: ComprobanteResource) => {
+    try {
+      const blob = await downloadComprobanteFile(comprobante.id, "zip");
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${comprobante.numero}-SUNAT.zip`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      errorToast("No se pudo descargar el ZIP devuelto por el facturador.");
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -254,7 +293,7 @@ export default function InvoicingPage() {
             onClick={handleEnvioMasivoWhatsApp}
             disabled={bulkWhatsAppLoading}
           >
-            <MessageSquare className="size-4 text-emerald-500" />
+            <WhatsAppIcon className="size-4 text-[#25D366]" />
             {bulkWhatsAppLoading ? "Notificando..." : "Envío masivo WhatsApp"}
             {pendingWhatsAppCount > 0 && (
               <Badge className="bg-emerald-600 text-white rounded-full ml-1 px-1.5 py-0.2 text-[10px]">
@@ -293,20 +332,19 @@ export default function InvoicingPage() {
               <TableHead>Total</TableHead>
               <TableHead>Estado SUNAT</TableHead>
               <TableHead>Notificación WhatsApp</TableHead>
-              <TableHead>Error</TableHead>
-              <TableHead className="text-right">Accion</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   Cargando...
                 </TableCell>
               </TableRow>
             ) : comprobantes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   Sin comprobantes
                 </TableCell>
               </TableRow>
@@ -345,31 +383,104 @@ export default function InvoicingPage() {
                       {comprobante.estado_envio_cliente_label || "Pendiente de notificación"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="max-w-[200px] truncate text-red-400 text-xs">
-                    {comprobante.error_envio_cliente || comprobante.error_text || "-"}
-                  </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-1.5">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenPdf(comprobante.id)}
-                      >
-                        <FileText className="mr-1 size-3.5" />
-                        PDF
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 gap-1"
-                        onClick={() => handleOpenWhatsAppModal(comprobante)}
-                      >
-                        <MessageSquare className="size-3.5 text-emerald-500" />
-                        WhatsApp
-                      </Button>
-                    </div>
+                    <TooltipProvider delayDuration={100} disableHoverableContent>
+                      <div className="flex justify-end gap-1.5">
+                        <Tooltip disableHoverableContent>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="size-8 hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 border-red-500/30 transition-all duration-150"
+                              aria-label="Ver y descargar PDF"
+                              onMouseLeave={(e) => e.currentTarget.blur()}
+                              onClick={(e) => {
+                                e.currentTarget.blur();
+                                handleOpenPdf(comprobante.id);
+                              }}
+                            >
+                              <PdfIcon className="size-4 text-red-600 dark:text-red-400" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                            Ver PDF
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip disableHoverableContent>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant={comprobante.estado === "X" ? "destructive" : "outline"}
+                              size="icon"
+                              className="size-8 transition-all duration-150"
+                              aria-label={comprobante.estado === "X" ? "Ver error y corregir factura" : "Revisar factura"}
+                              onMouseLeave={(e) => e.currentTarget.blur()}
+                              onClick={(e) => {
+                                e.currentTarget.blur();
+                                handleReview(comprobante);
+                              }}
+                            >
+                              {comprobante.estado === "X" ? (
+                                <AlertCircle className="size-4" />
+                              ) : (
+                                <Pencil className="size-4 text-foreground/80" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                            {comprobante.estado === "X" ? "Ver error y corregir" : "Revisar factura"}
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip disableHoverableContent>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="size-8 hover:border-[#25D366] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border-emerald-500/30 transition-all duration-150"
+                              aria-label="Enviar por WhatsApp"
+                              onMouseLeave={(e) => e.currentTarget.blur()}
+                              onClick={(e) => {
+                                e.currentTarget.blur();
+                                handleOpenWhatsAppModal(comprobante);
+                              }}
+                            >
+                              <WhatsAppIcon className="size-4 text-[#25D366]" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                            Enviar WhatsApp
+                          </TooltipContent>
+                        </Tooltip>
+
+                        {(comprobante.zip_path || ["M", "T"].includes(comprobante.estado)) && (
+                          <Tooltip disableHoverableContent>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="size-8 hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40 border-amber-500/30 transition-all duration-150"
+                                aria-label="Descargar archivo ZIP firmado SUNAT"
+                                onMouseLeave={(e) => e.currentTarget.blur()}
+                                onClick={(e) => {
+                                  e.currentTarget.blur();
+                                  handleDownloadZip(comprobante);
+                                }}
+                              >
+                                <ZipIcon className="size-4 text-amber-600 dark:text-amber-400" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                              Descargar ZIP SUNAT
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
+                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))
@@ -388,6 +499,13 @@ export default function InvoicingPage() {
         open={whatsAppModalOpen}
         onOpenChange={setWhatsAppModalOpen}
         comprobante={whatsAppComprobante}
+        onSuccess={loadComprobantes}
+      />
+
+      <ComprobanteRecoveryDialog
+        open={recoveryOpen}
+        onOpenChange={setRecoveryOpen}
+        comprobante={recoveryComprobante}
         onSuccess={loadComprobantes}
       />
 
@@ -510,7 +628,7 @@ export default function InvoicingPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Precio unitario</Label>
+                  <Label>Precio unitario (IGV incluido)</Label>
                   <Input
                     type="number"
                     min="0"

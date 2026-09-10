@@ -22,12 +22,18 @@ export const CuentasPorCobrarColumns = ({
   onDelete,
   onPay,
   onResendInvoice,
+  onGenerateInvoice,
+  onDownloadZip,
+  onReviewInvoice,
   onWhatsAppReminder,
 }: {
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
   onPay: (id: number) => void;
   onResendInvoice: (row: CuentasPorCobrarResource) => void;
+  onGenerateInvoice: (row: CuentasPorCobrarResource) => void;
+  onDownloadZip: (row: CuentasPorCobrarResource) => void;
+  onReviewInvoice: (row: CuentasPorCobrarResource) => void;
   onWhatsAppReminder: (row: CuentasPorCobrarResource) => void;
 }): ColumnDef<CuentasPorCobrarResource>[] => [
   {
@@ -134,9 +140,27 @@ export const CuentasPorCobrarColumns = ({
                 Registrar Pago
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onClick={() => onResendInvoice(row.original)}>
-              Reenviar factura
-            </DropdownMenuItem>
+            {!row.original.comprobante ? (
+              <DropdownMenuItem onClick={() => onGenerateInvoice(row.original)}>
+                Generar factura
+              </DropdownMenuItem>
+            ) : (
+              <>
+                <DropdownMenuItem onClick={() => onReviewInvoice(row.original)}>
+                  {row.original.comprobante.estado === "X" ? "Ver error y corregir" : "Revisar factura"}
+                </DropdownMenuItem>
+                {!["M", "T"].includes(row.original.comprobante.estado) && (
+                  <DropdownMenuItem onClick={() => onResendInvoice(row.original)}>
+                    Reenviar factura
+                  </DropdownMenuItem>
+                )}
+                {(row.original.comprobante.zip_path || ["M", "T"].includes(row.original.comprobante.estado)) && (
+                  <DropdownMenuItem onClick={() => onDownloadZip(row.original)}>
+                    Descargar ZIP SUNAT
+                  </DropdownMenuItem>
+                )}
+              </>
+            )}
             <DropdownMenuItem onClick={() => onWhatsAppReminder(row.original)}>
               Recordatorio WhatsApp
             </DropdownMenuItem>

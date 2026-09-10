@@ -9,7 +9,12 @@ import {
   CuentasPorCobrarResource,
   CuentasPorCobrarTitle,
 } from "../lib/accounts-receivable.interface";
-import { deleteCuentaPorCobrar, reenviarFacturaCuota } from "../lib/accounts-receivable.actions";
+import {
+  deleteCuentaPorCobrar,
+  downloadFacturaZip,
+  generarFacturaCuota,
+  reenviarFacturaCuota,
+} from "../lib/accounts-receivable.actions";
 import { useCuentasPorCobrar } from "../lib/accounts-receivable.hook";
 import CuentasPorCobrarActions from "./AccountsReceivableActions";
 import CuentasPorCobrarTable from "./AccountsReceivableTable";
@@ -18,6 +23,8 @@ import CuentasPorCobrarOptions from "./AccountsReceivableOptions";
 import CuentasPorCobrarEditPage from "./AccountsReceivableEdit";
 import PagoModal from "./PaymentModal";
 import { AlertTriangle, CheckCircle2, Clock, DollarSign } from "lucide-react";
+import { ComprobanteRecoveryDialog } from "@/pages/invoicing/components/ComprobanteRecoveryDialog";
+import type { ComprobanteResource } from "@/pages/invoicing/lib/invoicing.interface";
 
 export default function CuentasPorCobrarPage() {
   const [page, setPage] = useState(1);
@@ -31,6 +38,7 @@ export default function CuentasPorCobrarPage() {
   const [editId, setEditId] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [payId, setPayId] = useState<number | null>(null);
+  const [recoveryComprobante, setRecoveryComprobante] = useState<ComprobanteResource | null>(null);
 
   const { data, meta, isLoading, refetch } = useCuentasPorCobrar();
 
@@ -72,8 +80,36 @@ export default function CuentasPorCobrarPage() {
     try {
       const response = await reenviarFacturaCuota(cuota.id);
       successToast(response?.message || "Factura reenviada correctamente.");
+      await refetch({ page });
     } catch (error: any) {
       errorToast(error?.response?.data?.message || "No se pudo reenviar la factura.");
+    }
+  };
+
+  const handleGenerateInvoice = async (cuota: CuentasPorCobrarResource) => {
+    try {
+      const response = await generarFacturaCuota(cuota.id);
+      successToast(response?.message || "Factura generada correctamente.");
+    } catch (error: any) {
+      errorToast(error?.response?.data?.message || "No se pudo generar la factura.");
+    } finally {
+      await refetch({ page });
+    }
+  };
+
+  const handleDownloadZip = async (cuota: CuentasPorCobrarResource) => {
+    if (!cuota.comprobante?.id) return;
+
+    try {
+      const blob = await downloadFacturaZip(cuota.comprobante.id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${cuota.comprobante.numero || `factura-${cuota.comprobante.id}`}-SUNAT.zip`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      errorToast("No se pudo descargar el ZIP devuelto por el facturador.");
     }
   };
 
@@ -189,7 +225,10 @@ export default function CuentasPorCobrarPage() {
           onEdit: setEditId,
           onDelete: setDeleteId,
           onPay: setPayId,
-          onResendInvoice: handleResendInvoice,
+           onResendInvoice: handleResendInvoice,
+           onGenerateInvoice: handleGenerateInvoice,
+           onDownloadZip: handleDownloadZip,
+           onReviewInvoice: (cuota) => setRecoveryComprobante(cuota.comprobante || null),
           onWhatsAppReminder: handleWhatsAppReminder,
         })}
         data={data || []}
@@ -261,6 +300,13 @@ export default function CuentasPorCobrarPage() {
           onConfirm={handleDelete}
         />
       )}
+
+      <ComprobanteRecoveryDialog
+        open={recoveryComprobante !== null}
+        onOpenChange={(open) => !open && setRecoveryComprobante(null)}
+        comprobante={recoveryComprobante}
+        onSuccess={() => refetch({ page })}
+      />
     </div>
   );
 }

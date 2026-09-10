@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { MessageSquare, Phone, Send } from "lucide-react";
+import { Phone, Send } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/DocumentIcons";
 import {
   Dialog,
   DialogContent,
@@ -77,8 +78,8 @@ export function WhatsAppComprobanteModal({
       <DialogContent className="max-w-md w-[95vw] sm:w-full p-6 gap-4">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              <MessageSquare className="w-6 h-6" />
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-[#25D366] border border-emerald-500/20">
+              <WhatsAppIcon className="w-6 h-6" />
             </div>
             <div>
               <DialogTitle className="text-lg font-bold">

@@ -41,10 +41,16 @@ export interface ComprobanteResource {
   nombre_documento?: string | null;
   xml_path?: string | null;
   cdr_path?: string | null;
+  zip_path?: string | null;
   pdf_path?: string | null;
   cuota_id?: number | null;
   contrato_id?: number | null;
   error_text?: string | null;
+  error_code?: string | null;
+  sunat_response?: Record<string, any> | null;
+  sunat_request?: Record<string, any> | null;
+  facturador_modo?: "simulacion" | "produccion" | null;
+  facturador_configurado?: boolean;
   estado_envio_cliente?: "pendiente" | "enviado" | "error";
   estado_envio_cliente_label?: string;
   fecha_envio_cliente?: string | null;
@@ -66,6 +72,17 @@ export interface EmisionMasivaPayload {
   moneda: string;
   forma_pago: "C" | "D";
   emitir: boolean;
+  detalles: ComprobanteDetalle[];
+}
+
+export interface ActualizarComprobantePayload {
+  cliente_id: number;
+  tipo_documento: TipoDocumento;
+  serie: string;
+  correlativo: number;
+  moneda: string;
+  forma_pago: "C" | "D";
+  fecha_emision: string;
   detalles: ComprobanteDetalle[];
 }
 

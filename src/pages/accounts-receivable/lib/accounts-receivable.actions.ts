@@ -85,6 +85,19 @@ export async function reenviarFacturaCuota(id: number): Promise<any> {
   return data;
 }
 
+export async function generarFacturaCuota(id: number): Promise<any> {
+  const { data } = await api.post<any>(`${ENDPOINT_CUOTAS}/${id}/generar-factura`);
+  return data;
+}
+
+export async function downloadFacturaZip(comprobanteId: number): Promise<Blob> {
+  const { data } = await api.get(
+    `comprobantes/${comprobanteId}/download-zip`,
+    { responseType: "blob" }
+  );
+  return data;
+}
+
 // PAGOS ENDPOINTS
 export async function getPagos(
   params?: Record<string, any>

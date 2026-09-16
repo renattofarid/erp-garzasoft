@@ -5,7 +5,6 @@ import {
   RotateCcw,
   Check,
   FileCheck,
-  Building2,
   Trash2,
   ShieldCheck,
 } from "lucide-react";
@@ -18,7 +17,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ContractResource } from "@/pages/contract/lib/contract.interface";
 import { signContractByClient } from "@/pages/contract/lib/contract.actions";
 import { errorToast, successToast } from "@/lib/core.function";

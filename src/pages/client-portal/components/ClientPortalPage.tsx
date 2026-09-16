@@ -28,9 +28,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
-  Info,
   Layers,
-  ShoppingBag,
 } from "lucide-react";
 import TitleComponent from "@/components/TitleComponent";
 import { Badge } from "@/components/ui/badge";
@@ -60,7 +58,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { errorToast, infoToast } from "@/lib/core.function";
+import { errorToast } from "@/lib/core.function";
 import { openPdfFromFetcher } from "@/lib/pdf";
 import { useAuthStore } from "@/pages/auth/lib/auth.store";
 import { getContract, openContractPdf } from "@/pages/contract/lib/contract.actions";
@@ -297,7 +295,7 @@ export default function ClientPortalPage() {
     const invoiceId = cuota.comprobante?.id || (invoices.find((i) => i.numero && cuota.comprobante?.numero === i.numero)?.id);
 
     if (!invoiceId && !cuota.comprobante) {
-      infoToast("Esta cuota aún no cuenta con una factura electrónica emitida.");
+      errorToast("Esta cuota aún no cuenta con una factura electrónica emitida.");
       return;
     }
 

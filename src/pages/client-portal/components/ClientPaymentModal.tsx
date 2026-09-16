@@ -1,12 +1,8 @@
-import React from "react";
 import {
   CreditCard,
   Building2,
-  QrCode,
-  CheckCircle2,
   Info,
   Copy,
-  ExternalLink,
 } from "lucide-react";
 import {
   Dialog,

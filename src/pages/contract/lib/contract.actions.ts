@@ -140,6 +140,17 @@ export async function saveContractSignatures(
   return data;
 }
 
+export async function signContractByClient(
+  id: number,
+  firma_cliente: string
+): Promise<ContractMutationResponse> {
+  const { data } = await api.post<ContractMutationResponse>(
+    `${ENDPOINT}/${id}/firmar-cliente`,
+    { firma_cliente }
+  );
+  return data;
+}
+
 export async function getFacturadorActivo(): Promise<any> {
   const { data } = await api.get<{ status: number; data: any }>(
     "facturadores/activo"

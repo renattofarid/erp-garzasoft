@@ -24,10 +24,13 @@ import {
   Award,
   CalendarDays,
   CheckCircle,
-  FileCode2,
-  Download,
   AlertCircle,
-  Filter,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Info,
+  Layers,
+  ShoppingBag,
 } from "lucide-react";
 import TitleComponent from "@/components/TitleComponent";
 import { Badge } from "@/components/ui/badge";
@@ -57,7 +60,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { errorToast } from "@/lib/core.function";
+import { errorToast, infoToast } from "@/lib/core.function";
 import { openPdfFromFetcher } from "@/lib/pdf";
 import { useAuthStore } from "@/pages/auth/lib/auth.store";
 import { getContract, openContractPdf } from "@/pages/contract/lib/contract.actions";
@@ -122,9 +125,32 @@ function formatDisplayDate(dateString?: string | null): string {
   }
 }
 
+/** Helper para obtener nombre representativo del producto/servicio (Gesrest, HotelHUB, 360sys, etc.) */
+function getContractProductName(contract: ContractResource): string {
+  const modulos = contract.contrato_producto_modulos || [];
+  const productNames = Array.from(
+    new Set(
+      modulos
+        .map((m) => m.producto?.nombre || (m.producto as any)?.name)
+        .filter(Boolean)
+    )
+  );
+
+  if (productNames.length > 0) {
+    return productNames.join(" + ");
+  }
+
+  if (contract.tipo_contrato === "saas") return "Gesrest / System SaaS";
+  if (contract.tipo_contrato === "desarrollo") return "Desarrollo a Medida";
+  if (contract.tipo_contrato === "soporte") return "Soporte Técnico";
+  return "Servicio ERP Garzasoft";
+}
+
 export default function ClientPortalPage() {
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<string>("installments");
+
   const [contracts, setContracts] = useState<ContractResource[]>([]);
   const [installments, setInstallments] = useState<CuentasPorCobrarResource[]>([]);
   const [invoices, setInvoices] = useState<ComprobanteResource[]>([]);
@@ -134,6 +160,10 @@ export default function ClientPortalPage() {
   const [installmentStatusFilter, setInstallmentStatusFilter] = useState<"todos" | "pendiente" | "vencido" | "pagado">("todos");
   const [installmentDateFrom, setInstallmentDateFrom] = useState<string>("");
   const [installmentDateTo, setInstallmentDateTo] = useState<string>("");
+
+  // Paginación Cronograma (20 en 20)
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize = 20;
 
   // Filtros Pestaña Contratos
   const [contractNumberFilter, setContractNumberFilter] = useState<string>("");
@@ -186,6 +216,11 @@ export default function ClientPortalPage() {
     return Math.min(100, Math.round((totals.paid / totals.total) * 100));
   }, [totals]);
 
+  // Reset de Paginación al cambiar cualquier filtro de Cronograma
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [installmentStatusFilter, installmentContractFilter, installmentDateFrom, installmentDateTo]);
+
   // Filtrado de Cronograma
   const filteredInstallments = useMemo(() => {
     return installments.filter((item) => {
@@ -208,6 +243,13 @@ export default function ClientPortalPage() {
       return true;
     });
   }, [installments, installmentStatusFilter, installmentContractFilter, installmentDateFrom, installmentDateTo]);
+
+  // Items Paginados para la Tabla de Cronograma
+  const totalPages = Math.ceil(filteredInstallments.length / pageSize) || 1;
+  const paginatedInstallments = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredInstallments.slice(start, start + pageSize);
+  }, [filteredInstallments, currentPage]);
 
   // Lista de Productos Únicos para el filtro de Contratos
   const availableProducts = useMemo(() => {
@@ -250,15 +292,19 @@ export default function ClientPortalPage() {
     });
   }, [contracts, contractNumberFilter, contractProductFilter, contractDateFrom, contractDateTo]);
 
-  const openInvoicePdf = async (invoiceId?: number) => {
-    if (!invoiceId) {
-      errorToast("No hay un comprobante electrónico vinculado a esta cuota.");
+  // Apertura del PDF de Factura
+  const openInvoicePdf = async (cuota: CuentasPorCobrarResource) => {
+    const invoiceId = cuota.comprobante?.id || (invoices.find((i) => i.numero && cuota.comprobante?.numero === i.numero)?.id);
+
+    if (!invoiceId && !cuota.comprobante) {
+      infoToast("Esta cuota aún no cuenta con una factura electrónica emitida.");
       return;
     }
+
     try {
       await openPdfFromFetcher(
-        () => getComprobantePdf(invoiceId),
-        "Generando comprobante..."
+        () => getComprobantePdf(invoiceId || cuota.comprobante!.id),
+        "Generando factura en PDF..."
       );
     } catch (err: any) {
       errorToast(err.message || "No se pudo abrir el PDF del comprobante.");
@@ -298,7 +344,7 @@ export default function ClientPortalPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <TitleComponent
           title="Portal del Cliente"
-          subtitle="Consulta tu estado de cuenta, cronograma de deuda, firmas de contrato y documentos de alta."
+          subtitle="Consulta tu estado de cuenta, cronograma de deuda, facturas asociadas y firmas de contrato."
           icon="FolderOpen"
         />
         <div className="flex items-center gap-2">
@@ -309,7 +355,7 @@ export default function ClientPortalPage() {
         </div>
       </div>
 
-      {/* PANEL 1 (ARRIBA): TARJETAS KPI DE RESUMEN FINANCIERO / DEUDA */}
+      {/* PANEL 1 (ARRIBA): TARJETAS KPI CLICKABLES DE RESUMEN FINANCIERO */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryKpiCard
           title="Total Contratado"
@@ -319,7 +365,12 @@ export default function ClientPortalPage() {
           gradient="from-blue-500/10 via-card to-card dark:from-blue-950/30 dark:via-zinc-900/90 dark:to-zinc-900/90"
           iconColor="text-blue-600 dark:text-blue-400"
           iconBg="bg-blue-500/15 dark:bg-blue-500/20"
+          onClick={() => {
+            setActiveTab("installments");
+            setInstallmentStatusFilter("todos");
+          }}
         />
+
         <SummaryKpiCard
           title="Total Pagado"
           value={currency.format(totals.paid)}
@@ -329,23 +380,36 @@ export default function ClientPortalPage() {
           iconColor="text-emerald-600 dark:text-emerald-400"
           iconBg="bg-emerald-500/15 dark:bg-emerald-500/20"
           progress={percentPaid}
+          onClick={() => {
+            setActiveTab("installments");
+            setInstallmentStatusFilter("pagado");
+          }}
         />
+
+        {/* CLICK EN SALDO PENDIENTE -> FILTRA CRONOGRAMA POR PENDIENTES */}
         <SummaryKpiCard
           title="Saldo Pendiente"
           value={currency.format(totals.pending)}
-          subtitle={`${installments.filter((i) => i.situacion === "pendiente").length} cuotas por vencer`}
+          subtitle={`${installments.filter((i) => i.situacion === "pendiente").length} cuotas por vencer (Clic para ver)`}
           icon={CalendarClock}
           gradient="from-amber-500/10 via-card to-card dark:from-amber-950/30 dark:via-zinc-900/90 dark:to-zinc-900/90"
           iconColor="text-amber-600 dark:text-amber-400"
           iconBg="bg-amber-500/15 dark:bg-amber-500/20"
+          isActiveFilter={activeTab === "installments" && installmentStatusFilter === "pendiente"}
+          onClick={() => {
+            setActiveTab("installments");
+            setInstallmentStatusFilter("pendiente");
+          }}
         />
+
+        {/* CLICK EN MONTO VENCIDO -> FILTRA CRONOGRAMA POR VENCIDAS */}
         <SummaryKpiCard
           title="Monto Vencido"
           value={currency.format(totals.overdue)}
           subtitle={
             totals.overdue > 0
-              ? `${installments.filter((i) => i.situacion === "vencido").length} cuotas pendientes de pago urgente`
-              : "Al día sin morosidad"
+              ? `${installments.filter((i) => i.situacion === "vencido").length} cuotas pendientes (Clic para ver)`
+              : "Al día sin morosidad (Clic para ver)"
           }
           icon={ReceiptText}
           gradient={
@@ -356,39 +420,41 @@ export default function ClientPortalPage() {
           iconColor={totals.overdue > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}
           iconBg={totals.overdue > 0 ? "bg-rose-500/20" : "bg-emerald-500/15 dark:bg-emerald-500/20"}
           alert={totals.overdue > 0}
+          isActiveFilter={activeTab === "installments" && installmentStatusFilter === "vencido"}
+          onClick={() => {
+            setActiveTab("installments");
+            setInstallmentStatusFilter("vencido");
+          }}
         />
       </div>
 
-      {/* PANEL 2 (CENTRO): PESTAÑAS PRINCIPALES (CRONOGRAMA PRIMERO) */}
-      <Tabs defaultValue="installments" className="space-y-6">
+      {/* PANEL 2 (CENTRO): PESTAÑAS PRINCIPALES */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3 max-w-xl h-11 p-1 bg-muted/80 dark:bg-zinc-800/80 border border-border/50">
-          {/* PESTAÑA 1: CRONOGRAMA */}
           <TabsTrigger value="installments" className="text-xs sm:text-sm font-bold gap-2">
             <CalendarClock className="h-4 w-4 text-primary" />
             <span>Cronograma ({installments.length})</span>
           </TabsTrigger>
-          {/* PESTAÑA 2: MIS CONTRATOS */}
           <TabsTrigger value="contracts" className="text-xs sm:text-sm font-bold gap-2">
             <FileText className="h-4 w-4 text-primary" />
             <span>Mis Contratos ({contracts.length})</span>
           </TabsTrigger>
-          {/* PESTAÑA 3: DOCUMENTOS */}
           <TabsTrigger value="documents" className="text-xs sm:text-sm font-bold gap-2">
             <FolderOpen className="h-4 w-4 text-primary" />
             <span>Documentos</span>
           </TabsTrigger>
         </TabsList>
 
-        {/* PESTAÑA 1: CRONOGRAMA DE PAGOS Y DEUDA */}
+        {/* PESTAÑA 1: CRONOGRAMA DE PAGOS Y DEUDA CON PAGINACIÓN Y FACTURA ASOCIADA */}
         <TabsContent value="installments" className="space-y-4 outline-none">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-card dark:bg-zinc-900/90 p-4 rounded-2xl border border-border/80 shadow-xs">
             <div>
               <h3 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
                 <CalendarClock className="h-5 w-5 text-primary" />
-                Cronograma de Pagos y Estado de Deuda
+                Cronograma de Pagos, Facturas y Deuda
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Revisa el detalle de cuotas de tus contratos, montos pendientes, fechas de vencimiento y realiza tu pago.
+                Revisa tus cuotas, la factura emitida asociada a cada una y su estado de vencimiento.
               </p>
             </div>
 
@@ -416,7 +482,7 @@ export default function ClientPortalPage() {
                 </Select>
               </div>
 
-              {/* Filtro por Rango de Fecha */}
+              {/* Filtro por Rango de Fechas */}
               <div className="flex items-center gap-1.5 w-full sm:w-auto">
                 <Input
                   type="date"
@@ -435,7 +501,7 @@ export default function ClientPortalPage() {
                 />
               </div>
 
-              {/* Botón de Limpieza de Filtros */}
+              {/* Botón Limpiar */}
               {(installmentContractFilter !== "todos" || installmentStatusFilter !== "todos" || installmentDateFrom || installmentDateTo) && (
                 <Button
                   variant="ghost"
@@ -455,41 +521,48 @@ export default function ClientPortalPage() {
           </div>
 
           {/* Filtros Rápidos por Estado */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              variant={installmentStatusFilter === "todos" ? "default" : "outline"}
-              size="sm"
-              className="h-8 text-xs font-semibold rounded-xl"
-              onClick={() => setInstallmentStatusFilter("todos")}
-            >
-              Todas las cuotas ({installments.length})
-            </Button>
-            <Button
-              variant={installmentStatusFilter === "pendiente" ? "default" : "outline"}
-              size="sm"
-              className="h-8 text-xs font-semibold rounded-xl"
-              onClick={() => setInstallmentStatusFilter("pendiente")}
-            >
-              Pendientes ({installments.filter((i) => i.situacion === "pendiente").length})
-            </Button>
-            <Button
-              variant={installmentStatusFilter === "vencido" ? "default" : "outline"}
-              size="sm"
-              className="h-8 text-xs font-semibold rounded-xl"
-              onClick={() => setInstallmentStatusFilter("vencido")}
-            >
-              Vencidas ({installments.filter((i) => i.situacion === "vencido").length})
-            </Button>
-            <Button
-              variant={installmentStatusFilter === "pagado" ? "default" : "outline"}
-              size="sm"
-              className="h-8 text-xs font-semibold rounded-xl"
-              onClick={() => setInstallmentStatusFilter("pagado")}
-            >
-              Pagadas ({installments.filter((i) => i.situacion === "pagado").length})
-            </Button>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                variant={installmentStatusFilter === "todos" ? "default" : "outline"}
+                size="sm"
+                className="h-8 text-xs font-semibold rounded-xl"
+                onClick={() => setInstallmentStatusFilter("todos")}
+              >
+                Todas las cuotas ({installments.length})
+              </Button>
+              <Button
+                variant={installmentStatusFilter === "pendiente" ? "default" : "outline"}
+                size="sm"
+                className="h-8 text-xs font-semibold rounded-xl"
+                onClick={() => setInstallmentStatusFilter("pendiente")}
+              >
+                Por Vencer / Pendientes ({installments.filter((i) => i.situacion === "pendiente").length})
+              </Button>
+              <Button
+                variant={installmentStatusFilter === "vencido" ? "default" : "outline"}
+                size="sm"
+                className="h-8 text-xs font-semibold rounded-xl"
+                onClick={() => setInstallmentStatusFilter("vencido")}
+              >
+                Vencidas ({installments.filter((i) => i.situacion === "vencido").length})
+              </Button>
+              <Button
+                variant={installmentStatusFilter === "pagado" ? "default" : "outline"}
+                size="sm"
+                className="h-8 text-xs font-semibold rounded-xl"
+                onClick={() => setInstallmentStatusFilter("pagado")}
+              >
+                Pagadas ({installments.filter((i) => i.situacion === "pagado").length})
+              </Button>
+            </div>
+
+            <div className="text-xs text-muted-foreground font-medium">
+              Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong> ({filteredInstallments.length} cuotas)
+            </div>
           </div>
 
+          {/* TABLA DE CRONOGRAMA */}
           <Card className="border-border/80 bg-card dark:bg-zinc-900/90 shadow-sm overflow-hidden">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -497,6 +570,7 @@ export default function ClientPortalPage() {
                   <TableHeader>
                     <TableRow className="bg-muted/60 dark:bg-zinc-800/60 hover:bg-muted/60">
                       <TableHead className="font-semibold text-xs text-foreground">Contrato</TableHead>
+                      <TableHead className="font-semibold text-xs text-foreground">Factura / Comprobante</TableHead>
                       <TableHead className="font-semibold text-xs text-foreground">Vencimiento</TableHead>
                       <TableHead className="font-semibold text-xs text-right text-foreground">Monto Cuota</TableHead>
                       <TableHead className="font-semibold text-xs text-right text-foreground">Pagado</TableHead>
@@ -506,40 +580,70 @@ export default function ClientPortalPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredInstallments.length === 0 ? (
+                    {paginatedInstallments.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="h-32 text-center text-muted-foreground text-sm">
+                        <TableCell colSpan={8} className="h-32 text-center text-muted-foreground text-sm">
                           No se encontraron cuotas para los filtros seleccionados.
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredInstallments.map((item) => {
+                      paginatedInstallments.map((item) => {
                         const variant = statusBadgeVariant[item.situacion] || {
                           bg: "bg-muted",
                           text: "text-muted-foreground",
                           border: "border-border",
                         };
 
+                        const factura = item.comprobante;
+
                         return (
                           <TableRow key={item.id} className="hover:bg-muted/30 dark:hover:bg-zinc-800/30">
+                            {/* N° Contrato */}
                             <TableCell className="font-semibold text-xs text-foreground">
                               {item.contrato?.numero || `ID #${item.contrato_id}`}
                             </TableCell>
+
+                            {/* FACTURA ASOCIADA A LA CUOTA */}
+                            <TableCell className="text-xs">
+                              {factura ? (
+                                <Badge
+                                  variant="outline"
+                                  className="font-mono font-bold text-[11px] bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30 gap-1 px-2 py-0.5"
+                                >
+                                  <Receipt className="h-3 w-3 text-sky-600" />
+                                  <span>{factura.numero}</span>
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[10px] font-medium bg-muted/50 text-muted-foreground border-border">
+                                  Sin Facturar
+                                </Badge>
+                              )}
+                            </TableCell>
+
+                            {/* Fecha Vencimiento */}
                             <TableCell className="text-xs">
                               <span className="font-medium text-foreground flex items-center gap-1.5">
                                 <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                                 {formatDisplayDate(item.fecha_vencimiento)}
                               </span>
                             </TableCell>
+
+                            {/* Monto Cuota */}
                             <TableCell className="text-xs text-right font-semibold font-mono text-foreground">
                               {currency.format(Number(item.monto_total || 0))}
                             </TableCell>
+
+                            {/* Monto Pagado */}
                             <TableCell className="text-xs text-right text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
                               {currency.format(Number(item.monto_pagado || 0))}
                             </TableCell>
+
+                            {/* Saldo Pendiente */}
                             <TableCell className="text-xs text-right font-bold font-mono text-foreground">
                               {currency.format(Number(item.monto_pendiente || 0))}
                             </TableCell>
+
+                            {/* Estado Cuota */}
                             <TableCell className="text-center">
                               <Badge
                                 variant="outline"
@@ -555,12 +659,16 @@ export default function ClientPortalPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => openInvoicePdf((item as any).comprobante_id || (invoices[0]?.id))}
-                                  className="h-7 px-2.5 text-xs font-semibold gap-1 hover:bg-primary hover:text-primary-foreground transition-colors"
-                                  title="Ver factura electrónica en PDF"
+                                  onClick={() => openInvoicePdf(item)}
+                                  className={
+                                    factura
+                                      ? "h-7 px-2.5 text-xs font-semibold gap-1 border-sky-500/40 text-sky-700 dark:text-sky-300 hover:bg-sky-500/10"
+                                      : "h-7 px-2.5 text-xs font-semibold gap-1 text-muted-foreground opacity-70"
+                                  }
+                                  title={factura ? `Ver factura ${factura.numero}` : "Cuota sin factura emitida"}
                                 >
                                   <FileText className="h-3.5 w-3.5" />
-                                  <span>VER FACTURA</span>
+                                  <span>{factura ? `VER FACTURA` : `VER FACTURA`}</span>
                                 </Button>
 
                                 <Button
@@ -589,11 +697,52 @@ export default function ClientPortalPage() {
                   </TableBody>
                 </Table>
               </div>
+
+              {/* PAGINACIÓN DE 20 EN 20 */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted/30">
+                  <div className="text-xs text-muted-foreground">
+                    Mostrando <strong>{(currentPage - 1) * pageSize + 1}</strong> a{" "}
+                    <strong>{Math.min(currentPage * pageSize, filteredInstallments.length)}</strong> de{" "}
+                    <strong>{filteredInstallments.length}</strong> cuotas
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="h-8 px-2.5 text-xs font-semibold"
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+                    </Button>
+
+                    <div className="flex items-center gap-1 px-2 text-xs font-semibold">
+                      <span>Página</span>
+                      <span className="font-mono bg-background border px-2 py-0.5 rounded text-foreground">
+                        {currentPage}
+                      </span>
+                      <span>de {totalPages}</span>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage >= totalPages}
+                      className="h-8 px-2.5 text-xs font-semibold"
+                    >
+                      Siguiente <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* PESTAÑA 2: CONTRATOS DEL CLIENTE */}
+        {/* PESTAÑA 2: CONTRATOS DEL CLIENTE CON NOMBRE DE PRODUCTO DESTACADO */}
         <TabsContent value="contracts" className="space-y-4 outline-none">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-card dark:bg-zinc-900/90 p-4 rounded-2xl border border-border/80 shadow-xs">
             <div>
@@ -602,13 +751,12 @@ export default function ClientPortalPage() {
                 Mis Contratos y Servicios
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Consulta tus contratos vigentes, módulos incluidos, firmas digitales y descarga el documento en PDF.
+                Identifica el servicio contratado (Gesrest, HotelHUB, 360sys, etc.), descarga el contrato y gestiona tu firma.
               </p>
             </div>
 
             {/* Filtros de Contratos */}
             <div className="flex flex-wrap items-center gap-2.5">
-              {/* Filtro por Número */}
               <div className="relative w-full sm:w-44">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -619,7 +767,6 @@ export default function ClientPortalPage() {
                 />
               </div>
 
-              {/* Filtro por Producto */}
               <div className="w-full sm:w-44">
                 <Select value={contractProductFilter} onValueChange={setContractProductFilter}>
                   <SelectTrigger className="h-9 text-xs bg-background dark:bg-zinc-800 border-border">
@@ -636,7 +783,6 @@ export default function ClientPortalPage() {
                 </Select>
               </div>
 
-              {/* Filtro por Rango de Fecha Inicio */}
               <div className="flex items-center gap-1.5 w-full sm:w-auto">
                 <Input
                   type="date"
@@ -685,15 +831,24 @@ export default function ClientPortalPage() {
                 const ContractIcon = getIconByContractType(contract.tipo_contrato) || FileText;
                 const PaymentIcon = getIconByPaymentType(contract.forma_pago) || ReceiptText;
                 const modulos = contract.contrato_producto_modulos || [];
+                const productName = getContractProductName(contract);
 
                 const tieneFirmaArrendador = !!contract.firma_arrendador;
                 const tieneFirmaCliente = !!contract.firma_cliente;
 
                 return (
                   <Card key={contract.id} className="relative overflow-hidden border border-border/80 bg-card dark:bg-zinc-900/90 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-primary" />
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-primary" />
                     <div>
                       <CardHeader className="pb-3 pt-5">
+                        {/* ETIQUETA DESTACADA DEL PRODUCTO / SERVICIO (GESREST, HOTELHUB, 360SYS, ETC.) */}
+                        <div className="mb-2">
+                          <Badge className="bg-primary/15 text-primary border-primary/30 text-xs font-extrabold uppercase tracking-wider px-3 py-1 gap-1.5 shadow-2xs">
+                            <Layers className="h-3.5 w-3.5" />
+                            <span>SERVICIO: {productName}</span>
+                          </Badge>
+                        </div>
+
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-3">
                             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary/20 text-primary border border-primary/20">
@@ -723,7 +878,7 @@ export default function ClientPortalPage() {
                             </div>
                           </div>
 
-                          {/* ACCIONES DEL CONTRATO (SIN BOTÓN WORD, CON BOTÓN VER PDF Y FIRMAR) */}
+                          {/* ACCIONES DEL CONTRATO (VER PDF Y FIRMAR) */}
                           <div className="flex items-center gap-2 shrink-0">
                             <Button
                               variant="outline"
@@ -863,7 +1018,7 @@ export default function ClientPortalPage() {
           )}
         </TabsContent>
 
-        {/* PESTAÑA 3: DOCUMENTOS (REEMPLAZA FACTURACIÓN CON DOCUMENTOS DE ALTA Y CERTIFICADO) */}
+        {/* PESTAÑA 3: DOCUMENTOS (DOCUMENTOS DE ALTA Y CERTIFICADO DIGITAL) */}
         <TabsContent value="documents" className="space-y-6 outline-none">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card dark:bg-zinc-900/90 p-4 rounded-2xl border border-border/80 shadow-xs">
             <div>
@@ -902,6 +1057,7 @@ export default function ClientPortalPage() {
 
                 {contracts.map((c) => {
                   const firstProduct = c.contrato_producto_modulos?.[0]?.producto_id || 1;
+                  const prodName = getContractProductName(c);
                   return (
                     <Button
                       key={c.id}
@@ -910,11 +1066,11 @@ export default function ClientPortalPage() {
                       onClick={() => openFormatoAltaPdf(firstProduct)}
                       className="w-full justify-between h-9 text-xs font-semibold border-border hover:bg-primary hover:text-primary-foreground"
                     >
-                      <span className="flex items-center gap-1.5">
-                        <Download className="h-3.5 w-3.5" />
-                        Formato Alta {c.numero}
+                      <span className="flex items-center gap-1.5 truncate">
+                        <Download className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">Alta {c.numero} ({prodName})</span>
                       </span>
-                      <Badge variant="secondary" className="text-[10px] font-mono">PDF</Badge>
+                      <Badge variant="secondary" className="text-[10px] font-mono shrink-0">PDF</Badge>
                     </Button>
                   );
                 })}
@@ -1102,6 +1258,8 @@ function SummaryKpiCard({
   iconBg,
   progress,
   alert,
+  onClick,
+  isActiveFilter,
 }: {
   title: string;
   value: string;
@@ -1112,9 +1270,16 @@ function SummaryKpiCard({
   iconBg: string;
   progress?: number;
   alert?: boolean;
+  onClick?: () => void;
+  isActiveFilter?: boolean;
 }) {
   return (
-    <Card className={`relative overflow-hidden border border-border/80 bg-gradient-to-br ${gradient} shadow-xs`}>
+    <Card
+      onClick={onClick}
+      className={`relative overflow-hidden border bg-gradient-to-br ${gradient} shadow-xs transition-all cursor-pointer hover:scale-[1.015] hover:shadow-md ${
+        isActiveFilter ? "border-primary ring-2 ring-primary/30" : "border-border/80"
+      }`}
+    >
       <CardContent className="p-5 space-y-3">
         <div className="flex items-start justify-between gap-2">
           <span className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">{title}</span>

@@ -111,3 +111,8 @@ export async function envioMasivoWhatsApp(): Promise<{
   }>(`${ENDPOINT}/envio-masivo-whatsapp`);
   return data;
 }
+
+export async function deleteComprobante(id: number): Promise<any> {
+  const { data } = await api.delete(`${ENDPOINT}/${id}`);
+  return data;
+}

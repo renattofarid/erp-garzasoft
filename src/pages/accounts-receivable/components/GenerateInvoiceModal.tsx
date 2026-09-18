@@ -3,14 +3,11 @@ import {
   FileText,
   Upload,
   Send,
-  CheckCircle2,
-  AlertCircle,
   FileCheck,
   ShieldCheck,
   Building2,
   Hash,
   Calendar,
-  DollarSign,
   Loader2,
 } from "lucide-react";
 import {

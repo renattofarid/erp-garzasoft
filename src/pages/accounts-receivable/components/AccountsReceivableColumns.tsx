@@ -37,6 +37,7 @@ export const CuentasPorCobrarColumns = ({
   onGenerateInvoice,
   onDownloadZip,
   onReviewInvoice,
+  onDeleteInvoice,
   onWhatsAppReminder,
 }: {
   onEdit: (id: number) => void;
@@ -46,6 +47,7 @@ export const CuentasPorCobrarColumns = ({
   onGenerateInvoice: (cuota: CuentasPorCobrarResource) => void;
   onDownloadZip: (cuota: CuentasPorCobrarResource) => void;
   onReviewInvoice: (cuota: CuentasPorCobrarResource) => void;
+  onDeleteInvoice?: (comprobante: any) => void;
   onWhatsAppReminder: (cuota: CuentasPorCobrarResource) => void;
 }): ColumnDef<CuentasPorCobrarResource>[] => [
   {
@@ -260,26 +262,51 @@ export const CuentasPorCobrarColumns = ({
 
                 {/* Reenviar si falló */}
                 {!["M", "T"].includes(comprobante.estado) && (
-                  <Tooltip disableHoverableContent>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        size="icon"
-                        className="size-8 rounded-full bg-[#FBC02D] hover:bg-[#F9A825] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
-                        aria-label="Reenviar factura"
-                        onMouseLeave={(e) => e.currentTarget.blur()}
-                        onClick={(e) => {
-                          e.currentTarget.blur();
-                          onResendInvoice(cuota);
-                        }}
-                      >
-                        <RefreshCcw className="size-4 text-white" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
-                      Reenviar factura
-                    </TooltipContent>
-                  </Tooltip>
+                  <>
+                    <Tooltip disableHoverableContent>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          size="icon"
+                          className="size-8 rounded-full bg-[#FBC02D] hover:bg-[#F9A825] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+                          aria-label="Reenviar factura"
+                          onMouseLeave={(e) => e.currentTarget.blur()}
+                          onClick={(e) => {
+                            e.currentTarget.blur();
+                            onResendInvoice(cuota);
+                          }}
+                        >
+                          <RefreshCcw className="size-4 text-white" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                        Reenviar factura
+                      </TooltipContent>
+                    </Tooltip>
+
+                    {onDeleteInvoice && (
+                      <Tooltip disableHoverableContent>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            size="icon"
+                            className="size-8 rounded-full bg-[#DC2626] hover:bg-[#B91C1C] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+                            aria-label="Eliminar factura con error"
+                            onMouseLeave={(e) => e.currentTarget.blur()}
+                            onClick={(e) => {
+                              e.currentTarget.blur();
+                              onDeleteInvoice(comprobante);
+                            }}
+                          >
+                            <Trash2 className="size-4 text-white" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+                          Eliminar factura con error
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </>
                 )}
 
                 {/* Descargar ZIP SUNAT */}

@@ -12,9 +12,9 @@ import {
 import {
   deleteCuentaPorCobrar,
   downloadFacturaZip,
-  generarFacturaCuota,
   reenviarFacturaCuota,
 } from "../lib/accounts-receivable.actions";
+import { deleteComprobante } from "@/pages/invoicing/lib/invoicing.actions";
 import { useCuentasPorCobrar } from "../lib/accounts-receivable.hook";
 import CuentasPorCobrarActions from "./AccountsReceivableActions";
 import CuentasPorCobrarTable from "./AccountsReceivableTable";
@@ -41,6 +41,7 @@ export default function CuentasPorCobrarPage() {
   const [payId, setPayId] = useState<number | null>(null);
   const [recoveryComprobante, setRecoveryComprobante] = useState<ComprobanteResource | null>(null);
   const [generateInvoiceCuota, setGenerateInvoiceCuota] = useState<CuentasPorCobrarResource | null>(null);
+  const [deleteInvoiceItem, setDeleteInvoiceItem] = useState<ComprobanteResource | null>(null);
 
   const { data, meta, isLoading, refetch } = useCuentasPorCobrar();
 
@@ -88,14 +89,16 @@ export default function CuentasPorCobrarPage() {
     }
   };
 
-  const handleGenerateInvoice = async (cuota: CuentasPorCobrarResource) => {
+  const handleDeleteInvoice = async () => {
+    if (!deleteInvoiceItem) return;
     try {
-      const response = await generarFacturaCuota(cuota.id);
-      successToast(response?.message || "Factura generada correctamente.");
-    } catch (error: any) {
-      errorToast(error?.response?.data?.message || "No se pudo generar la factura.");
-    } finally {
+      await deleteComprobante(deleteInvoiceItem.id);
+      successToast("Factura eliminada. La cuota quedó disponible para generar una nueva.");
       await refetch({ page });
+    } catch (error: any) {
+      errorToast(error?.response?.data?.message || "No se pudo eliminar la factura.");
+    } finally {
+      setDeleteInvoiceItem(null);
     }
   };
 
@@ -231,6 +234,7 @@ export default function CuentasPorCobrarPage() {
           onGenerateInvoice: (cuota) => setGenerateInvoiceCuota(cuota),
           onDownloadZip: handleDownloadZip,
           onReviewInvoice: (cuota) => setRecoveryComprobante(cuota.comprobante || null),
+          onDeleteInvoice: (comprobante) => setDeleteInvoiceItem(comprobante),
           onWhatsAppReminder: handleWhatsAppReminder,
         })}
         data={data || []}
@@ -300,6 +304,14 @@ export default function CuentasPorCobrarPage() {
           open={true}
           onOpenChange={(open) => !open && setDeleteId(null)}
           onConfirm={handleDelete}
+        />
+      )}
+
+      {deleteInvoiceItem !== null && (
+        <SimpleDeleteDialog
+          open={true}
+          onOpenChange={(open) => !open && setDeleteInvoiceItem(null)}
+          onConfirm={handleDeleteInvoice}
         />
       )}
 

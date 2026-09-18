@@ -52,6 +52,27 @@ export interface Contrato {
   updated_at: string;
   deleted_at: string | null;
   cliente: Cliente;
+  contrato_producto_modulos?: ContratoProductoModuloItem[];
+}
+
+export interface ContratoProductoModuloItem {
+  id: number;
+  precio: number;
+  producto_id: number;
+  modulo_id: number;
+  producto?: {
+    id: number;
+    nombre?: string;
+    name?: string;
+    color?: string | null;
+    logo?: string | null;
+  } | null;
+  modulo?: {
+    id: number;
+    nombre?: string;
+    precio_unitario?: number;
+    producto_id?: number;
+  } | null;
 }
 
 export interface Cliente {

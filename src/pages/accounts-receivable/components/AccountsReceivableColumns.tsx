@@ -58,7 +58,54 @@ export const CuentasPorCobrarColumns = ({
   {
     accessorKey: "contrato.cliente",
     header: "Cliente",
-    cell: ({ row }) => getClientDisplayName(row.original.contrato.cliente),
+    cell: ({ row }) => getClientDisplayName(row.original.contrato?.cliente),
+  },
+  {
+    id: "producto",
+    header: "Producto / Servicio",
+    cell: ({ row }) => {
+      const contrato = row.original.contrato;
+      const modulos = contrato?.contrato_producto_modulos || (contrato as any)?.contratoProductoModulos || [];
+      const productNames = Array.from(
+        new Set(
+          modulos
+            .map((m: any) => m.producto?.nombre || m.producto?.name)
+            .filter(Boolean)
+        )
+      ) as string[];
+
+      if (productNames.length > 0) {
+        return (
+          <div className="flex flex-wrap gap-1 max-w-[200px]">
+            {productNames.map((name) => (
+              <Badge
+                key={name}
+                variant="outline"
+                className="font-semibold text-[11px] px-2 py-0.5 bg-primary/10 text-primary border-primary/30"
+              >
+                {name}
+              </Badge>
+            ))}
+          </div>
+        );
+      }
+
+      const tipoContrato = contrato?.tipo_contrato;
+      let label = "Servicio ERP";
+      if (tipoContrato === "saas") label = "Gesrest / System SaaS";
+      else if (tipoContrato === "desarrollo") label = "Desarrollo a Medida";
+      else if (tipoContrato === "soporte") label = "Soporte Técnico";
+      else if (tipoContrato) label = tipoContrato;
+
+      return (
+        <Badge
+          variant="secondary"
+          className="font-semibold text-[11px] px-2 py-0.5 bg-muted text-muted-foreground border-border"
+        >
+          {label}
+        </Badge>
+      );
+    },
   },
   {
     accessorKey: "monto_pendiente",

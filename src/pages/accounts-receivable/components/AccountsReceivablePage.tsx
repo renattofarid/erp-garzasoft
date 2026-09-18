@@ -24,6 +24,7 @@ import CuentasPorCobrarEditPage from "./AccountsReceivableEdit";
 import PagoModal from "./PaymentModal";
 import { AlertTriangle, CheckCircle2, Clock, DollarSign } from "lucide-react";
 import { ComprobanteRecoveryDialog } from "@/pages/invoicing/components/ComprobanteRecoveryDialog";
+import { GenerateInvoiceModal } from "./GenerateInvoiceModal";
 import type { ComprobanteResource } from "@/pages/invoicing/lib/invoicing.interface";
 
 export default function CuentasPorCobrarPage() {
@@ -39,6 +40,7 @@ export default function CuentasPorCobrarPage() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [payId, setPayId] = useState<number | null>(null);
   const [recoveryComprobante, setRecoveryComprobante] = useState<ComprobanteResource | null>(null);
+  const [generateInvoiceCuota, setGenerateInvoiceCuota] = useState<CuentasPorCobrarResource | null>(null);
 
   const { data, meta, isLoading, refetch } = useCuentasPorCobrar();
 
@@ -225,10 +227,10 @@ export default function CuentasPorCobrarPage() {
           onEdit: setEditId,
           onDelete: setDeleteId,
           onPay: setPayId,
-           onResendInvoice: handleResendInvoice,
-           onGenerateInvoice: handleGenerateInvoice,
-           onDownloadZip: handleDownloadZip,
-           onReviewInvoice: (cuota) => setRecoveryComprobante(cuota.comprobante || null),
+          onResendInvoice: handleResendInvoice,
+          onGenerateInvoice: (cuota) => setGenerateInvoiceCuota(cuota),
+          onDownloadZip: handleDownloadZip,
+          onReviewInvoice: (cuota) => setRecoveryComprobante(cuota.comprobante || null),
           onWhatsAppReminder: handleWhatsAppReminder,
         })}
         data={data || []}
@@ -305,6 +307,13 @@ export default function CuentasPorCobrarPage() {
         open={recoveryComprobante !== null}
         onOpenChange={(open) => !open && setRecoveryComprobante(null)}
         comprobante={recoveryComprobante}
+        onSuccess={() => refetch({ page })}
+      />
+
+      <GenerateInvoiceModal
+        open={generateInvoiceCuota !== null}
+        onOpenChange={(open) => !open && setGenerateInvoiceCuota(null)}
+        cuota={generateInvoiceCuota}
         onSuccess={() => refetch({ page })}
       />
     </div>

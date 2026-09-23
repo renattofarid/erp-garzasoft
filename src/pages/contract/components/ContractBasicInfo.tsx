@@ -54,6 +54,18 @@ const RequiredLabel = ({ children }: { children: ReactNode }) => (
   </>
 );
 
+const sortClientsAlphabetically = (clientList: ClientResource[]) =>
+  [...clientList].sort((first, second) =>
+    getClientDisplayName(first).localeCompare(getClientDisplayName(second), "es", {
+      sensitivity: "base",
+    })
+  );
+
+const getClientOptionLabel = (client: ClientResource, name: string) => {
+  const ruc = client.ruc?.trim();
+  return ruc ? `${ruc} - ${name}` : name;
+};
+
 export const ContractBasicInfo = ({
   control,
   clients,
@@ -94,14 +106,15 @@ export const ContractBasicInfo = ({
   const leafClients = selectedParentClient
     ? getLeafClients(selectedParentClient)
     : [];
-  const localOptions =
+  const localOptions = sortClientsAlphabetically(
     leafClients.length > 0
       ? leafClients
       : selectedParentClient
       ? [selectedParentClient]
-      : [];
+      : []
+  );
 
-  const rootOptions = clients;
+  const rootOptions = sortClientsAlphabetically(clients);
 
   const syncParentAndClient = (parentId: string) => {
     const nextParentId = Number(parentId);
@@ -242,9 +255,11 @@ export const ContractBasicInfo = ({
           name="cliente_padre_id"
           placeholder="Selecciona una corporación, empresa o local"
           options={rootOptions.map((client) => ({
-            label: getClientDisplayName(client),
+            label: getClientOptionLabel(client, getClientDisplayName(client)),
             value: client.id.toString(),
-            keywords: client.ruc ? [client.ruc] : undefined,
+            keywords: [client.ruc, getClientDisplayName(client)].filter(
+              (value): value is string => Boolean(value)
+            ),
           }))}
           onChange={syncParentAndClient}
         />
@@ -261,9 +276,16 @@ export const ContractBasicInfo = ({
               : "Primero selecciona un cliente"
           }
           options={localOptions.map((client) => ({
-            label: getClientHierarchyLabel(clients, client.id),
+            label: getClientOptionLabel(
+              client,
+              getClientHierarchyLabel(clients, client.id)
+            ),
             value: client.id.toString(),
-            keywords: client.ruc ? [client.ruc] : undefined,
+            keywords: [
+              client.ruc,
+              getClientDisplayName(client),
+              getClientHierarchyLabel(clients, client.id),
+            ].filter((value): value is string => Boolean(value)),
           }))}
           onChange={syncClient}
         />

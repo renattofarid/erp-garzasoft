@@ -86,7 +86,7 @@ export function FormSelect({
                   </Button>
                 </FormControl>
               </PopoverTrigger>
-              <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
+              <PopoverContent className="w-(--radix-popover-trigger-width) max-h-none overflow-hidden p-0">
                 <Command>
                   <CommandInput placeholder="Buscar..." />
                   <CommandEmpty>No hay resultados.</CommandEmpty>

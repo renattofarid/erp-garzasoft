@@ -22,6 +22,7 @@ interface ContractFormProps {
   onCancel?: () => void;
   isSubmitting?: boolean;
   mode?: "create" | "update";
+  currentContractId?: number;
 }
 
 export const ContractForm = ({
@@ -30,6 +31,7 @@ export const ContractForm = ({
   onSubmit,
   isSubmitting = false,
   mode = "create",
+  currentContractId,
 }: ContractFormProps) => {
   const { data: clients, isLoading } = useAllClients();
   const { data: productData } = useAllProducts();
@@ -65,6 +67,7 @@ export const ContractForm = ({
     adjustExistingInstallments,
     currentInstallmentsSum,
     isInstallmentsUnbalanced,
+    recalculateTotalFromInstallments,
 
     // Watch values
     paymentMethod,
@@ -78,9 +81,6 @@ export const ContractForm = ({
 
   // Eliminamos la sobreescritura forzada de precios para respetar los montos personalizados y los guardados en el contrato
   if (isLoading || !clients) return <FormSkeleton />;
-
-  console.log(currentInstallmentsSum);
-  
 
   return (
     <Form {...form}>
@@ -96,6 +96,10 @@ export const ContractForm = ({
               vigenciaContrato={vigenciaContrato}
               duracionAnios={duracionAnios}
               contractType={contractType}
+              currentContractId={currentContractId}
+              installmentsTotal={currentInstallmentsSum || 0}
+              hasInstallments={cuotaFields.length > 0}
+              onRecalculateTotal={recalculateTotalFromInstallments}
             />
 
             {contractType === "saas" && (

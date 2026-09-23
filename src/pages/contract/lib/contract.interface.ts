@@ -27,6 +27,11 @@ export interface ContractMutationResponse {
   data: ContractResource;
 }
 
+export interface ActiveContractsResponse {
+  status: number;
+  data: ContractResource[];
+}
+
 export type ContractType = "desarrollo" | "saas" | "soporte";
 export type VigenciaContrato = "semestral" | "anual";
 export type SituacionCuota = "pendiente" | "pagado" | "vencido";

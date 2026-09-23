@@ -136,6 +136,16 @@ export const useContractForm = ({
     0
   );
 
+  const recalculateTotalFromInstallments = useCallback(() => {
+    const newTotal = Math.round((currentInstallmentsSum || 0) * 100) / 100;
+    setValue("total", newTotal, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+    setTimeout(() => form.trigger(["total", "cuotas"]), 0);
+  }, [currentInstallmentsSum, form, setValue]);
+
   const getBillingPeriods = useCallback(() => {
     const months = calculateMonthsBetween(fechaInicio, fechaFin);
     if (paymentPeriodicity === "anual") {
@@ -535,6 +545,7 @@ export const useContractForm = ({
     adjustExistingInstallments,
     currentInstallmentsSum,
     isInstallmentsUnbalanced,
+    recalculateTotalFromInstallments,
 
     paymentMethod,
     contractType,

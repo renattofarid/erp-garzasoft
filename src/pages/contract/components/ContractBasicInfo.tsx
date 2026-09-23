@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Control, useFormContext, useWatch } from "react-hook-form";
 import {
   FormControl,
@@ -8,11 +8,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { FileText } from "lucide-react";
+import { AlertTriangle, Calculator, CheckCircle2, ExternalLink, FileText, LoaderCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { DatePickerFormField } from "@/components/DatePickerFormField";
 import { FormSelect } from "@/components/FormSelect";
 import { Matcher } from "react-day-picker";
-import { parse } from "date-fns";
+import { format, parse, parseISO } from "date-fns";
 import {
   getClientDisplayName,
   type ClientResource,
@@ -23,6 +25,12 @@ import {
   getClientHierarchyLabel,
   getLeafClients,
 } from "../lib/contract.tree";
+import {
+  getActiveContractsByClient,
+  openContractPdf,
+} from "../lib/contract.actions";
+import type { ContractResource } from "../lib/contract.interface";
+import { errorToast } from "@/lib/core.function";
 
 interface ContractBasicInfoProps {
   control: Control<any>;
@@ -31,6 +39,10 @@ interface ContractBasicInfoProps {
   vigenciaContrato: string;
   duracionAnios: number;
   contractType: string;
+  currentContractId?: number;
+  installmentsTotal: number;
+  hasInstallments: boolean;
+  onRecalculateTotal: () => void;
 }
 
 const RequiredMark = () => <span className="ml-1 text-red-500">*</span>;
@@ -49,6 +61,10 @@ export const ContractBasicInfo = ({
   vigenciaContrato,
   duracionAnios: _duracionAnios,
   contractType,
+  currentContractId,
+  installmentsTotal,
+  hasInstallments,
+  onRecalculateTotal,
 }: ContractBasicInfoProps) => {
   const { setValue } = useFormContext();
   const selectedClientId = useWatch({
@@ -63,6 +79,10 @@ export const ContractBasicInfo = ({
     control,
     name: "periodicidad_cuota",
   }) as string | undefined;
+  const [activeContracts, setActiveContracts] = useState<ContractResource[]>([]);
+  const [isCheckingContracts, setIsCheckingContracts] = useState(false);
+  const [contractsCheckFailed, setContractsCheckFailed] = useState(false);
+  const [checkedClientId, setCheckedClientId] = useState<number>();
 
   const currentClientId = Number(selectedClientId) || undefined;
   const currentParentId = Number(selectedParentId) || undefined;
@@ -133,6 +153,55 @@ export const ContractBasicInfo = ({
     }
   }, [clients, currentClientId, currentParentId, setValue]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!currentClientId) {
+      setActiveContracts([]);
+      setContractsCheckFailed(false);
+      setCheckedClientId(undefined);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setIsCheckingContracts(true);
+    setContractsCheckFailed(false);
+    getActiveContractsByClient(currentClientId, currentContractId)
+      .then((response) => {
+        if (!cancelled) {
+          setActiveContracts(response.data);
+          setCheckedClientId(currentClientId);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setActiveContracts([]);
+          setContractsCheckFailed(true);
+          setCheckedClientId(currentClientId);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsCheckingContracts(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentClientId, currentContractId]);
+
+  const formatContractDate = (value: string) => {
+    try {
+      return format(parseISO(value), "dd/MM/yyyy");
+    } catch {
+      return value;
+    }
+  };
+
+  const isContractStatusPending =
+    Boolean(currentClientId) &&
+    (isCheckingContracts || checkedClientId !== currentClientId);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -175,6 +244,7 @@ export const ContractBasicInfo = ({
           options={rootOptions.map((client) => ({
             label: getClientDisplayName(client),
             value: client.id.toString(),
+            keywords: client.ruc ? [client.ruc] : undefined,
           }))}
           onChange={syncParentAndClient}
         />
@@ -193,6 +263,7 @@ export const ContractBasicInfo = ({
           options={localOptions.map((client) => ({
             label: getClientHierarchyLabel(clients, client.id),
             value: client.id.toString(),
+            keywords: client.ruc ? [client.ruc] : undefined,
           }))}
           onChange={syncClient}
         />
@@ -205,6 +276,77 @@ export const ContractBasicInfo = ({
           label="Fecha de Inicio"
           placeholder="Selecciona una fecha"
         />
+
+        {isContractStatusPending && (
+          <div className="md:col-span-2 flex items-center gap-2 rounded-lg border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+            <LoaderCircle className="h-4 w-4 animate-spin" />
+            Verificando contratos vigentes del local...
+          </div>
+        )}
+
+        {!isContractStatusPending && activeContracts.length > 0 && (
+          <Alert className="md:col-span-2 border-amber-400/70 bg-amber-50 text-amber-950 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100">
+            <AlertTriangle />
+            <AlertTitle>
+              Este local ya tiene {activeContracts.length} contrato{activeContracts.length !== 1 ? "s" : ""} vigente{activeContracts.length !== 1 ? "s" : ""}
+            </AlertTitle>
+            <AlertDescription className="mt-2 w-full text-amber-900 dark:text-amber-200">
+              <p>Revísalo antes de registrar otro contrato para evitar duplicados.</p>
+              <div className="mt-2 grid w-full gap-2">
+                {activeContracts.map((contract) => (
+                  <div
+                    key={contract.id}
+                    className="flex flex-col gap-2 rounded-md border border-amber-300/70 bg-background/80 p-3 sm:flex-row sm:items-center sm:justify-between dark:border-amber-800"
+                  >
+                    <div>
+                      <p className="font-semibold">{contract.numero}</p>
+                      <p className="text-xs">
+                        Vigente del {formatContractDate(contract.fecha_inicio)} al {formatContractDate(contract.fecha_fin)}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="gap-2"
+                      onClick={() =>
+                        openContractPdf(contract.id).catch(() =>
+                          errorToast("No se pudo abrir el PDF del contrato.")
+                        )
+                      }
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Ver PDF
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!isContractStatusPending && contractsCheckFailed && (
+          <Alert variant="destructive" className="md:col-span-2">
+            <AlertTriangle />
+            <AlertTitle>No se pudo verificar si existen contratos vigentes</AlertTitle>
+            <AlertDescription>
+              Puedes continuar, pero revisa el listado de contratos antes de guardar.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!isContractStatusPending &&
+          currentClientId &&
+          !contractsCheckFailed &&
+          activeContracts.length === 0 && (
+            <Alert className="md:col-span-2 border-emerald-300 bg-emerald-50 text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-100">
+              <CheckCircle2 />
+              <AlertTitle>Local disponible</AlertTitle>
+              <AlertDescription className="text-emerald-800 dark:text-emerald-200">
+                No se encontraron contratos vigentes para este local.
+              </AlertDescription>
+            </Alert>
+          )}
 
         <FormSelect
           control={control}
@@ -337,7 +479,7 @@ export const ContractBasicInfo = ({
           control={control}
           name="total"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="md:col-start-1">
               <FormLabel>Precio Total (S/.)</FormLabel>
               <FormControl>
                 <div className="relative">
@@ -357,6 +499,22 @@ export const ContractBasicInfo = ({
             </FormItem>
           )}
         />
+
+        <div className="flex flex-col justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2"
+            disabled={!hasInstallments}
+            onClick={onRecalculateTotal}
+          >
+            <Calculator className="h-4 w-4" />
+            Recalcular total desde cuotas
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Suma actual de cuotas: S/. {installmentsTotal.toFixed(2)}
+          </p>
+        </div>
       </div>
 
     

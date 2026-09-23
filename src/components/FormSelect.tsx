@@ -27,6 +27,7 @@ import { useState } from "react";
 interface Option {
   label: string;
   value: string | number;
+  keywords?: string[];
 }
 
 interface FormSelectProps {
@@ -93,6 +94,7 @@ export function FormSelect({
                     {options.map((option) => (
                       <CommandItem
                         key={option.value}
+                        keywords={option.keywords}
                         onSelect={() => {
                           const newValue =
                             option.value === field.value ? "" : option.value;

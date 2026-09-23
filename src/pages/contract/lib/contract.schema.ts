@@ -77,12 +77,6 @@ const validateContract = (
   data: z.infer<typeof contractBaseObject>,
   ctx: z.RefinementCtx
 ) => {
-  const months = calculateMonthsBetween(data.fecha_inicio, data.fecha_fin);
-  const billingPeriods =
-    data.periodicidad_cuota === "anual"
-      ? Math.max(1, Math.round(months / 12))
-      : Math.max(1, months);
-
   if (data.fecha_inicio && data.fecha_fin) {
     const ini = new Date(data.fecha_inicio);
     const fin = new Date(data.fecha_fin);
@@ -133,19 +127,6 @@ const validateContract = (
       message: "Para contratos SaaS debes seleccionar al menos un producto.",
       path: ["productos_modulos"],
     });
-  }
-
-  if (data.tipo_contrato === "saas") {
-    const baseSum = (data.productos_modulos ?? []).reduce((acc, x) => acc + x.precio, 0);
-    const costoInstalacion = data.periodicidad_cuota === "mensual" ? (data.costo_instalacion ?? 0) : 0;
-    const expectedTotal = baseSum * billingPeriods + costoInstalacion;
-    if (eq(data.total) !== eq(expectedTotal)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `El total (${eq(data.total)}) debe ser igual al valor del contrato segun su vigencia (${eq(expectedTotal)})`,
-        path: ["total"],
-      });
-    }
   }
 
   if (data.forma_pago === "parcial") {

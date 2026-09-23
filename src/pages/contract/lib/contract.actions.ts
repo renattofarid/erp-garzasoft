@@ -7,6 +7,7 @@ import {
   ContractMutationResponse,
   ContractResourceById,
   ContractResponse,
+  ActiveContractsResponse,
 } from "./contract.interface.ts";
 import { per_page } from "@/lib/core.function";
 
@@ -34,6 +35,23 @@ export async function getAllContracts({
     },
   };
   const { data } = await api.get<ContractResponse>(ENDPOINT, config);
+  return data;
+}
+
+export async function getActiveContractsByClient(
+  clienteId: number,
+  excludeId?: number
+): Promise<ActiveContractsResponse> {
+  const { data } = await api.get<ActiveContractsResponse>(
+    `${ENDPOINT}/vigentes`,
+    {
+      params: {
+        cliente_id: clienteId,
+        ...(excludeId ? { exclude_id: excludeId } : {}),
+      },
+    }
+  );
+
   return data;
 }
 

@@ -119,6 +119,7 @@ export default function ContractEditPage() {
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
         mode="update"
+        currentContractId={Number(id)}
         onCancel={() => router(ContractRoute)}
       />
     </div>

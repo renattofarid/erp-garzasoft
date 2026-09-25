@@ -138,13 +138,13 @@ export const ProductColumns = ({
               </TooltipContent>
             </Tooltip>
 
-            {/* 3. Editar (Azul) */}
+            {/* 3. Editar (Amarillo) */}
             <Tooltip disableHoverableContent>
               <TooltipTrigger asChild>
                 <Button
                   type="button"
                   size="icon"
-                  className="size-8 rounded-full bg-[#1E88E5] hover:bg-[#1976D2] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+                  className="size-8 rounded-full bg-[#EAB308] hover:bg-[#CA8A04] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
                   aria-label="Editar producto"
                   onMouseLeave={(e) => e.currentTarget.blur()}
                   onClick={(e) => {

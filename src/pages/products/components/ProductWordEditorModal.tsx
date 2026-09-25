@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { toJpeg } from "html-to-image";
 import {
   AlignCenter,
   AlignJustify,
@@ -261,57 +260,11 @@ export default function ProductWordEditorModal({
     try {
       const total = pages.length;
 
-      // 1. Capturar cada hoja renderizada en el DOM como imagen JPEG optimizada
-      const pageImages: string[] = [];
-      for (let idx = 0; idx < total; idx++) {
-        const sheetEl = document.getElementById(`page-sheet-${idx}`);
-        if (sheetEl) {
-          try {
-            const imgData = await toJpeg(sheetEl, {
-              quality: 0.85,
-              pixelRatio: 1.4,
-              skipFonts: true,
-              cacheBust: true,
-              filter: (node) => {
-                if (node instanceof HTMLElement) {
-                  if (
-                    node.classList.contains("group-hover:opacity-100") ||
-                    node.classList.contains("animate-in") ||
-                    node.tagName.toLowerCase() === "button" ||
-                    node.getAttribute("type") === "file"
-                  ) {
-                    return false;
-                  }
-                }
-                return true;
-              },
-            });
-            pageImages.push(imgData);
-          } catch (err) {
-            console.warn(`Failed to capture sheet ${idx} image`, err);
-            pageImages.push("");
-          }
-        } else {
-          pageImages.push("");
-        }
-      }
-
-      // 2. Construir HTML combinado con la imagen exacta de la hoja y el contenido HTML editable oculto
       const combinedHtml = pages
         .map((content, idx) => {
           const cleanContent = cleanHtmlPageContent(content);
-          const imgUrl = pageImages[idx];
           const isLast = idx === total - 1;
           const pageBreakRule = isLast ? "page-break-after: avoid;" : "page-break-after: always;";
-
-          if (imgUrl) {
-            return `
-<div class="a4-page-sheet" data-paper-size="${paperSize}" style="position: relative; width: 100%; height: ${paperSize === "a4" ? "297mm" : "279.4mm"}; max-height: ${paperSize === "a4" ? "297mm" : "279.4mm"}; ${pageBreakRule} overflow: hidden; background: #ffffff; padding: 0; margin: 0; box-sizing: border-box;">
-  <img src="${imgUrl}" style="width: 100%; height: 100%; display: block; object-fit: contain; border: none; margin: 0; padding: 0;" />
-  <div class="page-content" style="display: none;">${cleanContent}</div>
-</div>`;
-          }
-
           const isCover = idx === 0;
           const footerHtml = isCover
             ? ""
@@ -328,7 +281,7 @@ export default function ProductWordEditorModal({
           const pagePadding = isCover ? "padding: 0;" : "padding: 30px 38px 45px 38px;";
 
           return `
-<div class="a4-page-sheet" data-paper-size="${paperSize}" style="position: relative; width: 100%; height: ${paperSize === "a4" ? "297mm" : "279.4mm"}; max-height: ${paperSize === "a4" ? "297mm" : "279.4mm"}; page-break-after: always; overflow: hidden; ${pagePadding} background: #ffffff; box-sizing: border-box;">
+<div class="a4-page-sheet" data-paper-size="${paperSize}" style="position: relative; width: 100%; height: ${paperSize === "a4" ? "297mm" : "279.4mm"}; max-height: ${paperSize === "a4" ? "297mm" : "279.4mm"}; ${pageBreakRule} overflow: hidden; ${pagePadding} background: #ffffff; box-sizing: border-box;">
   <div class="page-content" style="font-size: 11.5px; line-height: 1.45; color: #111827; position: relative; z-index: 1;">
     ${cleanContent}
   </div>

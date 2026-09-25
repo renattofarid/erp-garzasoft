@@ -4,12 +4,16 @@ import {
   AlignLeft,
   AlignRight,
   ArrowDown,
-  ArrowLeftRight,
   ArrowUp,
+  BringToFront,
   Copy,
   Maximize2,
   Minimize2,
+  Move,
+  Pin,
+  PinOff,
   Plus,
+  SendToBack,
   Sun,
   SunDim,
   Trash2,
@@ -62,13 +66,15 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
     }
   }, [content]);
 
-  // Attach Drag & Drop + Click listeners to all images in this sheet
+  // Attach Mouse Dragging + Free Positioning + Click listeners to all images in this sheet
   const attachImageHandlers = () => {
     if (!contentRef.current) return;
+    const sheetEl = document.getElementById(`page-sheet-${pageIndex}`);
+    if (!sheetEl) return;
+
     const imgs = contentRef.current.querySelectorAll("img");
 
     imgs.forEach((img) => {
-      img.setAttribute("draggable", "true");
       img.style.cursor = "grab";
 
       img.onclick = (e) => {
@@ -77,54 +83,78 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
         updateToolbarPos(img);
       };
 
-      img.ondragstart = (e) => {
-        e.dataTransfer?.setData("text/plain", img.src);
-        (window as any).__draggedDocxImg = img;
-        img.style.opacity = "0.5";
-      };
+      img.onmousedown = (e) => {
+        if (e.button !== 0) return; // Only left click drag
+        e.stopPropagation();
 
-      img.ondragend = () => {
-        img.style.opacity = img.getAttribute("data-opacity") || "1";
-        (window as any).__draggedDocxImg = null;
-      };
+        setSelectedImg(img);
+        updateToolbarPos(img);
 
-      img.ondragover = (e) => {
-        e.preventDefault();
-        img.style.outline = "3px dashed #eb5454";
-        img.style.outlineOffset = "4px";
-      };
+        const sheetRect = sheetEl.getBoundingClientRect();
+        const imgRect = img.getBoundingClientRect();
 
-      img.ondragleave = () => {
-        img.style.outline = "";
-        img.style.outlineOffset = "";
-      };
-
-      img.ondrop = (e) => {
-        e.preventDefault();
-        img.style.outline = "";
-        img.style.outlineOffset = "";
-
-        const sourceImg = (window as any).__draggedDocxImg as HTMLImageElement | null;
-        if (sourceImg && sourceImg !== img) {
-          // SWAP IMAGES
-          const tempSrc = img.src;
-          const tempAlt = img.alt;
-          const tempStyle = img.getAttribute("style") || "";
-
-          img.src = sourceImg.src;
-          img.alt = sourceImg.alt;
-          if (sourceImg.getAttribute("style")) {
-            img.setAttribute("style", sourceImg.getAttribute("style") || "");
+        // Convert inline image to absolute positioning on first drag if not already absolute
+        if (img.style.position !== "absolute") {
+          const initialLeft = Math.max(0, Math.round(imgRect.left - sheetRect.left));
+          const initialTop = Math.max(0, Math.round(imgRect.top - sheetRect.top));
+          img.style.position = "absolute";
+          img.style.left = `${initialLeft}px`;
+          img.style.top = `${initialTop}px`;
+          img.style.margin = "0";
+          if (!img.style.zIndex) {
+            img.style.zIndex = "10";
           }
-
-          sourceImg.src = tempSrc;
-          sourceImg.alt = tempAlt;
-          if (tempStyle) {
-            sourceImg.setAttribute("style", tempStyle);
-          }
-
-          handleInput();
         }
+
+        const startLeft = parseFloat(img.style.left || "0");
+        const startTop = parseFloat(img.style.top || "0");
+        const startX = e.clientX;
+        const startY = e.clientY;
+
+        img.style.cursor = "grabbing";
+        img.style.outline = "2px dashed #eb5454";
+        img.style.outlineOffset = "2px";
+
+        let hasMoved = false;
+
+        const onMouseMove = (moveEvent: MouseEvent) => {
+          moveEvent.preventDefault();
+          hasMoved = true;
+
+          const deltaX = moveEvent.clientX - startX;
+          const deltaY = moveEvent.clientY - startY;
+
+          const imgW = img.clientWidth || imgRect.width;
+          const imgH = img.clientHeight || imgRect.height;
+
+          // Restrict within page boundaries with slight overflow padding
+          const minL = -10;
+          const maxL = sheetRect.width - imgW + 10;
+          const minT = -10;
+          const maxT = sheetRect.height - imgH + 10;
+
+          const newLeft = Math.max(minL, Math.min(maxL, Math.round(startLeft + deltaX)));
+          const newTop = Math.max(minT, Math.min(maxT, Math.round(startTop + deltaY)));
+
+          img.style.left = `${newLeft}px`;
+          img.style.top = `${newTop}px`;
+
+          updateToolbarPos(img);
+        };
+
+        const onMouseUp = () => {
+          window.removeEventListener("mousemove", onMouseMove);
+          window.removeEventListener("mouseup", onMouseUp);
+          img.style.cursor = "grab";
+          img.style.outline = "";
+
+          if (hasMoved) {
+            handleInput();
+          }
+        };
+
+        window.addEventListener("mousemove", onMouseMove);
+        window.addEventListener("mouseup", onMouseUp);
       };
     });
   };
@@ -136,8 +166,8 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
     const imgRect = img.getBoundingClientRect();
 
     setImgToolbarPos({
-      top: Math.max(10, imgRect.top - sheetRect.top - 46),
-      left: Math.max(10, Math.min(sheetRect.width - 320, imgRect.left - sheetRect.left + imgRect.width / 2 - 160)),
+      top: Math.max(10, imgRect.top - sheetRect.top - 48),
+      left: Math.max(10, Math.min(sheetRect.width - 450, imgRect.left - sheetRect.left + imgRect.width / 2 - 225)),
     });
   };
 
@@ -149,7 +179,45 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
     }
   };
 
-  // Image actions
+  // Image position & action handlers
+  const handleTogglePositionMode = () => {
+    if (!selectedImg) return;
+    const sheetEl = document.getElementById(`page-sheet-${pageIndex}`);
+    if (!sheetEl) return;
+
+    if (selectedImg.style.position === "absolute") {
+      selectedImg.style.position = "static";
+      selectedImg.style.left = "";
+      selectedImg.style.top = "";
+      selectedImg.style.margin = "12px auto";
+      selectedImg.style.display = "block";
+    } else {
+      const sheetRect = sheetEl.getBoundingClientRect();
+      const imgRect = selectedImg.getBoundingClientRect();
+      const initialLeft = Math.max(0, Math.round(imgRect.left - sheetRect.left));
+      const initialTop = Math.max(0, Math.round(imgRect.top - sheetRect.top));
+
+      selectedImg.style.position = "absolute";
+      selectedImg.style.left = `${initialLeft}px`;
+      selectedImg.style.top = `${initialTop}px`;
+      selectedImg.style.margin = "0";
+      if (!selectedImg.style.zIndex) {
+        selectedImg.style.zIndex = "10";
+      }
+    }
+    handleInput();
+    updateToolbarPos(selectedImg);
+  };
+
+  const handleZIndex = (delta: number) => {
+    if (!selectedImg) return;
+    const currentZ = parseInt(selectedImg.style.zIndex || "10", 10);
+    const newZ = Math.max(0, Math.min(100, currentZ + delta));
+    selectedImg.style.zIndex = `${newZ}`;
+    handleInput();
+    updateToolbarPos(selectedImg);
+  };
+
   const handleAlign = (alignment: "left" | "center" | "right") => {
     if (!selectedImg) return;
     if (alignment === "left") {
@@ -403,14 +471,68 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
       {/* Floating Image Action Toolbar */}
       {selectedImg && imgToolbarPos && (
         <div
-          className="absolute bg-zinc-900/95 backdrop-blur-md text-white rounded-lg shadow-2xl px-2 py-1 flex items-center gap-1 z-30 border border-zinc-700 animate-in fade-in zoom-in-95 select-none"
+          className="absolute bg-zinc-900/95 backdrop-blur-md text-white rounded-lg shadow-2xl px-2.5 py-1.5 flex items-center gap-1.5 z-40 border border-zinc-700 animate-in fade-in zoom-in-95 select-none"
           style={{ top: `${imgToolbarPos.top}px`, left: `${imgToolbarPos.left}px` }}
           onClick={(e) => e.stopPropagation()}
         >
           <span className="text-[10px] font-bold text-amber-400 px-1 flex items-center gap-1">
-            <ArrowLeftRight className="h-3 w-3" /> Arrastra p/ Intercambiar
+            <Move className="h-3.5 w-3.5" />
+            {selectedImg.style.position === "absolute" ? "Libre (Arrastrable)" : "En Línea"}
           </span>
-          <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
+
+          <div className="h-4 w-px bg-zinc-700 mx-0.5" />
+
+          {/* Toggle Absolute Free Position vs Inline */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleTogglePositionMode}
+            title={selectedImg.style.position === "absolute" ? "Cambiar a modo En Texto (En línea)" : "Cambiar a modo Libre (Arrastrable a cualquier posición)"}
+            className="h-6.5 px-2 text-[10.5px] font-semibold text-emerald-400 hover:text-emerald-300 hover:bg-zinc-800 gap-1"
+          >
+            {selectedImg.style.position === "absolute" ? (
+              <>
+                <PinOff className="h-3.5 w-3.5" />
+                <span>En Texto</span>
+              </>
+            ) : (
+              <>
+                <Pin className="h-3.5 w-3.5" />
+                <span>Mover Libre</span>
+              </>
+            )}
+          </Button>
+
+          <div className="h-4 w-px bg-zinc-700 mx-0.5" />
+
+          {/* Z-Index / Layer Controls */}
+          {selectedImg.style.position === "absolute" && (
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => handleZIndex(10)}
+                title="Traer capa al frente (Z-Index +10)"
+                className="h-6.5 w-6.5 text-zinc-300 hover:text-white hover:bg-zinc-800"
+              >
+                <BringToFront className="h-3.5 w-3.5 text-cyan-400" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => handleZIndex(-10)}
+                title="Enviar capa al fondo / Marca de agua (Z-Index -10)"
+                className="h-6.5 w-6.5 text-zinc-300 hover:text-white hover:bg-zinc-800"
+              >
+                <SendToBack className="h-3.5 w-3.5 text-indigo-400" />
+              </Button>
+              <div className="h-4 w-px bg-zinc-700 mx-0.5" />
+            </>
+          )}
+
           {/* Alignment */}
           <Button
             type="button"
@@ -418,7 +540,7 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
             size="icon"
             onClick={() => handleAlign("left")}
             title="Alinear a la izquierda"
-            className="h-6 w-6 text-zinc-300 hover:text-white hover:bg-zinc-800"
+            className="h-6.5 w-6.5 text-zinc-300 hover:text-white hover:bg-zinc-800"
           >
             <AlignLeft className="h-3.5 w-3.5" />
           </Button>
@@ -428,7 +550,7 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
             size="icon"
             onClick={() => handleAlign("center")}
             title="Centrar"
-            className="h-6 w-6 text-zinc-300 hover:text-white hover:bg-zinc-800"
+            className="h-6.5 w-6.5 text-zinc-300 hover:text-white hover:bg-zinc-800"
           >
             <AlignCenter className="h-3.5 w-3.5" />
           </Button>
@@ -438,19 +560,21 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
             size="icon"
             onClick={() => handleAlign("right")}
             title="Alinear a la derecha"
-            className="h-6 w-6 text-zinc-300 hover:text-white hover:bg-zinc-800"
+            className="h-6.5 w-6.5 text-zinc-300 hover:text-white hover:bg-zinc-800"
           >
             <AlignRight className="h-3.5 w-3.5" />
           </Button>
-          <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
-          {/* Move Up / Down */}
+
+          <div className="h-4 w-px bg-zinc-700 mx-0.5" />
+
+          {/* Move Up / Down in DOM */}
           <Button
             type="button"
             variant="ghost"
             size="icon"
             onClick={() => handleMoveNode("up")}
-            title="Mover arriba en el documento"
-            className="h-6 w-6 text-zinc-300 hover:text-white hover:bg-zinc-800"
+            title="Mover arriba en el código"
+            className="h-6.5 w-6.5 text-zinc-300 hover:text-white hover:bg-zinc-800"
           >
             <ArrowUp className="h-3.5 w-3.5" />
           </Button>
@@ -459,12 +583,14 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
             variant="ghost"
             size="icon"
             onClick={() => handleMoveNode("down")}
-            title="Mover abajo en el documento"
-            className="h-6 w-6 text-zinc-300 hover:text-white hover:bg-zinc-800"
+            title="Mover abajo en el código"
+            className="h-6.5 w-6.5 text-zinc-300 hover:text-white hover:bg-zinc-800"
           >
             <ArrowDown className="h-3.5 w-3.5" />
           </Button>
-          <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
+
+          <div className="h-4 w-px bg-zinc-700 mx-0.5" />
+
           {/* Symmetrical Resizing */}
           <Button
             type="button"
@@ -472,7 +598,7 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
             size="icon"
             onClick={() => handleResize(0.85)}
             title="Reducir tamaño proporcionalmente"
-            className="h-6 w-6 text-zinc-300 hover:text-white hover:bg-zinc-800"
+            className="h-6.5 w-6.5 text-zinc-300 hover:text-white hover:bg-zinc-800"
           >
             <Minimize2 className="h-3.5 w-3.5" />
           </Button>
@@ -482,19 +608,21 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
             size="icon"
             onClick={() => handleResize(1.15)}
             title="Aumentar tamaño proporcionalmente"
-            className="h-6 w-6 text-zinc-300 hover:text-white hover:bg-zinc-800"
+            className="h-6.5 w-6.5 text-zinc-300 hover:text-white hover:bg-zinc-800"
           >
             <Maximize2 className="h-3.5 w-3.5" />
           </Button>
-          <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
+
+          <div className="h-4 w-px bg-zinc-700 mx-0.5" />
+
           {/* Opacity Control */}
           <Button
             type="button"
             variant="ghost"
             size="icon"
             onClick={() => handleOpacity(-0.15)}
-            title="Bajar opacidad (más transparente)"
-            className="h-6 w-6 text-amber-300 hover:text-white hover:bg-zinc-800"
+            title="Bajar opacidad (más transparente / marca de agua)"
+            className="h-6.5 w-6.5 text-amber-300 hover:text-white hover:bg-zinc-800"
           >
             <SunDim className="h-3.5 w-3.5" />
           </Button>
@@ -504,11 +632,13 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
             size="icon"
             onClick={() => handleOpacity(0.15)}
             title="Subir opacidad (más sólido)"
-            className="h-6 w-6 text-amber-400 hover:text-white hover:bg-zinc-800"
+            className="h-6.5 w-6.5 text-amber-400 hover:text-white hover:bg-zinc-800"
           >
             <Sun className="h-3.5 w-3.5" />
           </Button>
-          <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
+
+          <div className="h-4 w-px bg-zinc-700 mx-0.5" />
+
           {/* Replace / Delete */}
           <Button
             type="button"
@@ -516,7 +646,7 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
             size="icon"
             onClick={() => imageReplaceInputRef.current?.click()}
             title="Reemplazar por otra imagen"
-            className="h-6 w-6 text-cyan-400 hover:text-cyan-300 hover:bg-zinc-800"
+            className="h-6.5 w-6.5 text-cyan-400 hover:text-cyan-300 hover:bg-zinc-800"
           >
             <Upload className="h-3.5 w-3.5" />
           </Button>
@@ -526,7 +656,7 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
             size="icon"
             onClick={handleDeleteImage}
             title="Eliminar imagen"
-            className="h-6 w-6 text-red-400 hover:text-red-300 hover:bg-zinc-800"
+            className="h-6.5 w-6.5 text-red-400 hover:text-red-300 hover:bg-zinc-800"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>

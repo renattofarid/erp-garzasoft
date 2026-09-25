@@ -5,14 +5,17 @@ import {
   AlignRight,
   ArrowDown,
   ArrowUp,
+  Braces,
   BringToFront,
   Copy,
+  Crop,
   Maximize2,
   Minimize2,
   Move,
   Pin,
   PinOff,
   Plus,
+  RefreshCw,
   SendToBack,
   Sun,
   SunDim,
@@ -20,6 +23,8 @@ import {
   Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ImageCropModal } from "./ImageCropModal";
+import { ImageVariableModal } from "./ImageVariableModal";
 
 interface PageSheetItemProps {
   pageIndex: number;
@@ -52,6 +57,9 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
 
   const [selectedImg, setSelectedImg] = useState<HTMLImageElement | null>(null);
   const [imgToolbarPos, setImgToolbarPos] = useState<{ top: number; left: number } | null>(null);
+
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [varModalOpen, setVarModalOpen] = useState(false);
 
   const [selectedCell, setSelectedCell] = useState<HTMLTableCellElement | null>(null);
   const [tableToolbarPos, setTableToolbarPos] = useState<{ top: number; left: number } | null>(null);
@@ -302,6 +310,55 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
     };
     reader.readAsDataURL(file);
     e.target.value = "";
+  };
+
+  // Crop & Image Variable handlers
+  const handleApplyCrop = (croppedDataUrl: string) => {
+    if (!selectedImg) return;
+    selectedImg.src = croppedDataUrl;
+    handleInput();
+    updateToolbarPos(selectedImg);
+  };
+
+  const handleSaveImageVariable = (
+    variableKey: string,
+    options: string[],
+    activeIndex: number
+  ) => {
+    if (!selectedImg) return;
+    selectedImg.setAttribute("data-image-variable", variableKey);
+    selectedImg.setAttribute("data-image-options", JSON.stringify(options));
+    selectedImg.setAttribute("data-image-option", `${activeIndex}`);
+    if (options[activeIndex]) {
+      selectedImg.src = options[activeIndex];
+    }
+    selectedImg.title = `Variable de Elección: {${variableKey}} (Opción ${activeIndex + 1} de ${options.length})`;
+    handleInput();
+    updateToolbarPos(selectedImg);
+  };
+
+  const handleCycleImageOption = () => {
+    if (!selectedImg) return;
+    const rawOptions = selectedImg.getAttribute("data-image-options");
+    if (!rawOptions) return;
+    try {
+      const options: string[] = JSON.parse(rawOptions);
+      if (!options || options.length <= 1) return;
+
+      const currentIdx = parseInt(selectedImg.getAttribute("data-image-option") || "0", 10);
+      const nextIdx = (currentIdx + 1) % options.length;
+
+      selectedImg.setAttribute("data-image-option", `${nextIdx}`);
+      if (options[nextIdx]) {
+        selectedImg.src = options[nextIdx];
+      }
+      const varKey = selectedImg.getAttribute("data-image-variable") || "IMAGEN";
+      selectedImg.title = `Variable de Elección: {${varKey}} (Opción ${nextIdx + 1} de ${options.length})`;
+      handleInput();
+      updateToolbarPos(selectedImg);
+    } catch {
+      // ignore
+    }
   };
 
   // Table manipulation handlers
@@ -639,6 +696,51 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
 
           <div className="h-4 w-px bg-zinc-700 mx-0.5" />
 
+          {/* Crop Tool */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setCropModalOpen(true)}
+            title="Recortar bordes, girar y ajustar proporciones de esta imagen"
+            className="h-6.5 px-2 text-[10.5px] font-semibold text-amber-400 hover:text-amber-300 hover:bg-zinc-800 gap-1"
+          >
+            <Crop className="h-3.5 w-3.5" />
+            <span>Recortar</span>
+          </Button>
+
+          <div className="h-4 w-px bg-zinc-700 mx-0.5" />
+
+          {/* Variable Choice Config */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setVarModalOpen(true)}
+            title="Vincular o definir como una variable de elección de imagen (ej: Logo A vs Logo B)"
+            className="h-6.5 px-2 text-[10.5px] font-semibold text-purple-400 hover:text-purple-300 hover:bg-zinc-800 gap-1"
+          >
+            <Braces className="h-3.5 w-3.5" />
+            <span>Variable</span>
+          </Button>
+
+          {/* If image has variable options assigned, show quick option cycler */}
+          {selectedImg.getAttribute("data-image-variable") && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleCycleImageOption}
+              title={`Variable {${selectedImg.getAttribute("data-image-variable")}}: Clic para cambiar a la siguiente opción`}
+              className="h-6.5 px-2 text-[10.5px] font-bold text-cyan-400 hover:text-cyan-300 hover:bg-zinc-800 gap-1 border border-cyan-500/30 rounded"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span>Opción {(parseInt(selectedImg.getAttribute("data-image-option") || "0", 10) + 1)}</span>
+            </Button>
+          )}
+
+          <div className="h-4 w-px bg-zinc-700 mx-0.5" />
+
           {/* Replace / Delete */}
           <Button
             type="button"
@@ -894,6 +996,35 @@ export const PageSheetItem: React.FC<PageSheetItemProps> = ({
             Página {pageIndex} de {totalPages - 1}
           </span>
         </div>
+      )}
+
+      {/* Image Crop Modal */}
+      {selectedImg && cropModalOpen && (
+        <ImageCropModal
+          open={cropModalOpen}
+          onOpenChange={setCropModalOpen}
+          imageSrc={selectedImg.src}
+          onApplyCrop={handleApplyCrop}
+        />
+      )}
+
+      {/* Image Variable Choice Modal */}
+      {selectedImg && varModalOpen && (
+        <ImageVariableModal
+          open={varModalOpen}
+          onOpenChange={setVarModalOpen}
+          currentImageSrc={selectedImg.src}
+          existingVariableKey={selectedImg.getAttribute("data-image-variable") || ""}
+          existingOptions={(() => {
+            try {
+              return JSON.parse(selectedImg.getAttribute("data-image-options") || "[]");
+            } catch {
+              return [selectedImg.src];
+            }
+          })()}
+          selectedIndex={parseInt(selectedImg.getAttribute("data-image-option") || "0", 10)}
+          onSave={handleSaveImageVariable}
+        />
       )}
     </div>
   );

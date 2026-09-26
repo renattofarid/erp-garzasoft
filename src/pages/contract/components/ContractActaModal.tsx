@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { errorToast, successToast } from "@/lib/core.function";
 import { ContractResource } from "../lib/contract.interface";
 import { getProductFormatoAlta } from "@/pages/products/lib/product.actions";
@@ -262,9 +261,9 @@ export default function ContractActaModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl w-[95vw] sm:w-full p-0 gap-0 overflow-hidden rounded-2xl border shadow-2xl bg-background text-foreground flex flex-col max-h-[90vh]">
+      <DialogContent className="w-[96vw] max-w-6xl xl:max-w-7xl h-[92vh] max-h-[92vh] p-0 gap-0 overflow-hidden rounded-2xl border shadow-2xl bg-background text-foreground flex flex-col sm:max-w-6xl xl:max-w-7xl">
         {/* Cabecera Principal */}
-        <DialogHeader className="px-6 py-4 border-b bg-card flex flex-row items-center justify-between shrink-0">
+        <DialogHeader className="px-5 sm:px-6 py-4 border-b bg-card flex flex-row items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
               <Braces className="h-5 w-5" />
@@ -292,10 +291,10 @@ export default function ContractActaModal({
             </span>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
             {/* Buscador y contador */}
-            <div className="p-4 border-b bg-muted/30 flex items-center justify-between gap-4 shrink-0">
-              <div className="relative flex-1 max-w-sm">
+            <div className="px-5 py-3 border-b bg-muted/30 flex items-center justify-between gap-4 shrink-0">
+              <div className="relative flex-1 max-w-md">
                 <Search className="h-3.5 w-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
                 <Input
                   type="text"
@@ -306,32 +305,32 @@ export default function ContractActaModal({
                 />
               </div>
 
-              <span className="text-xs font-semibold text-muted-foreground">
+              <span className="text-xs font-semibold text-muted-foreground shrink-0">
                 Variables ({filteredVariables.length} / {activeVariables.length})
               </span>
             </div>
 
-            {/* Formulario en Grid 2 columnas */}
-            <ScrollArea className="flex-1 p-6">
+            {/* Formulario con Scroll Nativo y Grid Responsive de 1, 2 y 3 Columnas */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6">
               {filteredVariables.length === 0 ? (
                 <div className="py-12 text-center text-xs text-muted-foreground">
                   No se encontraron variables con el término de búsqueda.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 pb-6">
                   {filteredVariables.map((v) => (
                     <div
                       key={v.key}
                       className="bg-card border border-border/80 rounded-xl p-3.5 shadow-2xs hover:border-purple-300 dark:hover:border-purple-800 transition-all flex flex-col gap-2 group"
                     >
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                          <span className="h-2 w-2 rounded-full bg-purple-500" />
-                          <span>{v.label}</span>
+                        <Label className="text-xs font-bold text-foreground flex items-center gap-1.5 truncate">
+                          <span className="h-2 w-2 rounded-full bg-purple-500 shrink-0" />
+                          <span className="truncate">{v.label}</span>
                         </Label>
                         <Badge
                           variant="secondary"
-                          className="font-mono text-[10px] bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200"
+                          className="font-mono text-[10px] bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 shrink-0"
                         >
                           {`{${v.key}}`}
                         </Badge>
@@ -347,24 +346,24 @@ export default function ContractActaModal({
 
                       <p className="text-[11px] text-muted-foreground leading-tight flex items-start gap-1">
                         <Info className="h-3 w-3 shrink-0 text-purple-500 mt-0.5" />
-                        <span>{v.description}</span>
+                        <span className="line-clamp-2">{v.description}</span>
                       </p>
                     </div>
                   ))}
                 </div>
               )}
-            </ScrollArea>
+            </div>
           </div>
         )}
 
         {/* Footer con Acciones */}
-        <div className="px-6 py-3.5 border-t bg-card flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-          <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5 text-purple-600" />
-            <span>Configura las variables y abre el resultado en una nueva pestaña.</span>
+        <div className="px-5 sm:px-6 py-3.5 border-t bg-card flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+          <div className="text-xs text-muted-foreground flex items-center gap-1.5 w-full sm:w-auto">
+            <Sparkles className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+            <span className="line-clamp-1">Configura las variables y abre el resultado en una nueva pestaña.</span>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap sm:flex-nowrap">
             <Button
               type="button"
               variant="outline"

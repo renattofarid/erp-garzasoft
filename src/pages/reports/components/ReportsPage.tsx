@@ -141,7 +141,11 @@ export default function ReportsPage() {
               <div className="relative"><Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" /><Input value={filters.buscar || ""} onChange={(event) => update("buscar", event.target.value)} onKeyDown={(event) => event.key === "Enter" && apply()} placeholder="Escriba para buscar..." className="pl-9" /></div>
             </Field>
             <Field label="Campo de fecha">
-              <Select value={filters.campo_fecha || "emision"} onChange={(value) => update("campo_fecha", value)} options={[{ value: "emision", label: "Fecha de emisión" }, { value: "inicio", label: "Fecha de inicio" }, { value: "vencimiento", label: "Fecha de vencimiento" }]} />
+              {type === "situacion_cuotas" ? (
+                <select disabled className="h-10 w-full rounded-md border border-input bg-muted px-3 text-sm text-muted-foreground"><option>Vencimiento de la cuota</option></select>
+              ) : (
+                <Select value={filters.campo_fecha || "emision"} onChange={(value) => update("campo_fecha", value)} options={[{ value: "emision", label: "Fecha de emisión" }, { value: "inicio", label: "Fecha de inicio" }, { value: "vencimiento", label: "Fecha de vencimiento" }]} />
+              )}
             </Field>
             <Field label="Desde"><Input type="date" value={filters.fecha_desde || ""} onChange={(event) => update("fecha_desde", event.target.value)} /></Field>
             <Field label="Hasta"><Input type="date" value={filters.fecha_hasta || ""} onChange={(event) => update("fecha_hasta", event.target.value)} /></Field>

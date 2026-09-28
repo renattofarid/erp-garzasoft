@@ -97,7 +97,8 @@ const createClientNodeSchema: z.ZodType<any> = z.lazy(() =>
       const hasPrincipalContact =
         Boolean(data.contacto?.nombre) || Boolean(data.contactos?.[0]?.nombre);
 
-      if (!hasPrincipalContact) {
+      // Skip when the entity inherits its contact from the parent (corporación→empresa→local)
+      if (!data.contacto_igual_empresa && !hasPrincipalContact) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: data.contactos?.length ? ["contactos", 0, "nombre"] : ["contacto", "nombre"],

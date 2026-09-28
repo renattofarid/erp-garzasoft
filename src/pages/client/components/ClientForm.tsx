@@ -17,6 +17,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { errorToast, successToast } from "@/lib/core.function";
 import axios from "axios";
 import { lookupClientByDni, lookupClientByRuc } from "../lib/client.actions";
+import { lookupContactByDni } from "@/pages/contacts/lib/contact.actions";
+
 import {
   ClientFormNode,
   LocalKind,
@@ -944,6 +946,21 @@ export const ClientForm = ({
 
     try {
       setLookupLoadingPath(path);
+
+      // 1. Try local DB first (fills name + phone + email)
+      const localResult = await lookupContactByDni(dni).catch(() => null);
+
+      if (localResult?.status === 200 && localResult.data?.nombre) {
+        const { nombre, celular, email } = localResult.data;
+        form.setValue(joinPath(basePath, "nombre") as Path<ClientSchema>, nombre, { shouldValidate: true });
+        if (celular) form.setValue(joinPath(basePath, "celular") as Path<ClientSchema>, celular, { shouldValidate: true });
+        if (email) form.setValue(joinPath(basePath, "email") as Path<ClientSchema>, email, { shouldValidate: true });
+        const source = localResult.source === "local" ? "base local" : "RENIEC";
+        successToast(`Contacto encontrado (${source})`, nombre);
+        return;
+      }
+
+      // 2. Fallback to external web service (fills name only)
       const response = await lookupClientByDni(dni);
       const data = response.data;
       const raw = data.raw ?? {};
@@ -957,7 +974,7 @@ export const ClientForm = ({
       form.setValue(joinPath(basePath, "nombre") as Path<ClientSchema>, nombreCompleto, {
         shouldValidate: true,
       });
-      successToast("Busqueda de DNI completada.", nombreCompleto || "Datos obtenidos correctamente.");
+      successToast("Búsqueda de DNI completada (RENIEC).", nombreCompleto || "Datos obtenidos correctamente.");
     } catch (error: unknown) {
       const message = axios.isAxiosError(error)
         ? error.response?.data?.message || "No se pudo consultar el DNI."

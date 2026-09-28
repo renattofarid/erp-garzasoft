@@ -37,6 +37,8 @@ import FacturadorPage from "./pages/facturador/components/FacturadorPage";
 import { FacturadorRoute } from "./pages/facturador/lib/facturador.interface";
 import ClientPortalPage from "./pages/client-portal/components/ClientPortalPage";
 import ReportsPage from "./pages/reports/components/ReportsPage";
+import ContactPage from "./pages/contacts/components/ContactPage";
+import { ContactRoute } from "./pages/contacts/lib/contact.interface";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { token, user } = useAuthStore();
@@ -210,6 +212,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ReportsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path={ContactRoute}
+            element={
+              <ProtectedRoute>
+                <ContactPage />
               </ProtectedRoute>
             }
           />

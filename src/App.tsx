@@ -36,6 +36,7 @@ import { LocalTypeRoute } from "./pages/local-types/lib/localType.interface";
 import FacturadorPage from "./pages/facturador/components/FacturadorPage";
 import { FacturadorRoute } from "./pages/facturador/lib/facturador.interface";
 import ClientPortalPage from "./pages/client-portal/components/ClientPortalPage";
+import ReportsPage from "./pages/reports/components/ReportsPage";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { token, user } = useAuthStore();
@@ -200,6 +201,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <FacturadorPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/reportes"
+            element={
+              <ProtectedRoute>
+                <ReportsPage />
               </ProtectedRoute>
             }
           />

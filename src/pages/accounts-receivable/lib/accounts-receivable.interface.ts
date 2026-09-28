@@ -48,6 +48,8 @@ export interface Contrato {
   tipo_contrato: string;
   total: string;
   forma_pago: string;
+  no_facturado?: boolean;
+  no_facturado_efectivo?: boolean;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

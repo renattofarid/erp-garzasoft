@@ -49,6 +49,8 @@ export interface ClientResource {
   dueno_es_representante?: boolean;
   dueno_es_responsable?: boolean;
   contacto_igual_empresa?: boolean;
+  no_facturado?: boolean;
+  no_facturado_efectivo?: boolean;
   representante_nombre: string | null;
   representante_celular: string | null;
   representante_email: string | null;
@@ -182,6 +184,7 @@ export interface ClientFormNode {
   contacto: ClientContact;
   contactos: ClientContact[];
   contacto_igual_empresa?: boolean;
+  no_facturado?: boolean;
   hijos: ClientFormNode[];
 }
 
@@ -214,6 +217,7 @@ export const createEmptyClientNode = (
     },
   ],
   contacto_igual_empresa: false,
+  no_facturado: false,
   hijos: [],
 });
 

@@ -66,6 +66,7 @@ const createClientNodeSchema: z.ZodType<any> = z.lazy(() =>
       contacto: looseContactSchema,
       contactos: z.array(contactSchema).optional().default([]),
       contacto_igual_empresa: z.boolean().optional().default(false),
+      no_facturado: z.boolean().optional().default(false),
       hijos: z.array(createClientNodeSchema).default([]),
     })
     .superRefine((data, ctx) => {

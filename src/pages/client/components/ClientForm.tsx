@@ -73,6 +73,7 @@ const cloneNode = (node: Partial<ClientFormNode>, isRoot = false): ClientFormNod
     ...node.contacto,
   },
   contacto_igual_empresa: node.contacto_igual_empresa ?? false,
+  no_facturado: node.no_facturado ?? false,
   contactos: isRoot
     ? node.contactos && node.contactos.length > 0
       ? node.contactos.map((contacto) => ({
@@ -118,6 +119,7 @@ const stripNode = (node: ClientFormNode, isRoot = false): ClientSchema => {
     contacto: contactoPrincipal,
     contactos: isRoot ? normalizedContacts : [],
     contacto_igual_empresa: node.contacto_igual_empresa ?? false,
+    no_facturado: node.no_facturado ?? false,
     hijos: (node.hijos ?? []).map((child) => stripNode(child, false)),
   };
 };
@@ -185,8 +187,12 @@ function ClientNodeSection({
   const rucPath = joinPath(basePath, "ruc");
   const dniPath = joinPath(joinPath(basePath, "contacto"), "dni");
   const allowMultipleContacts = isRoot;
-  const showSameCompanyContact = isLocal && !isRoot;
+  const showSameParentContact = !isRoot;
   const parentPath = getParentNodePath(basePath);
+  const parentType = useWatch({
+    control,
+    name: joinPath(parentPath, "tipo") as Path<any>,
+  }) as ClientTypeUi | undefined;
   const parentSingleContact = useWatch({
     control,
     name: joinPath(parentPath, "contacto") as Path<any>,
@@ -199,6 +205,17 @@ function ClientNodeSection({
     parentMainContact?.nombre || parentMainContact?.dni
       ? parentMainContact
       : parentSingleContact;
+
+  const currentContactLabel = isEmpresa
+    ? "El contacto de la empresa"
+    : isLocal
+    ? "El contacto del local"
+    : "El contacto del cliente";
+  const parentLevelLabel = parentType === "corporacion"
+    ? "la corporación"
+    : parentType === "empresa"
+    ? "la empresa"
+    : "el cliente superior";
 
   const syncCompanyContact = (checked: boolean) => {
     setValue(sameCompanyContactPath as Path<ClientSchema>, checked as any, {
@@ -226,6 +243,32 @@ function ClientNodeSection({
     });
   };
 
+  useEffect(() => {
+    if (sameCompanyContact !== true) return;
+
+    setValue(joinPath(basePath, "contacto") as Path<ClientSchema>, {
+      dni: companyContact?.dni ?? "",
+      nombre: companyContact?.nombre ?? "",
+      celular: companyContact?.celular ?? "",
+      email: companyContact?.email ?? "",
+      es_dueno: companyContact?.es_dueno ?? false,
+      es_vendedor: companyContact?.es_vendedor ?? false,
+    } as any, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }, [
+    basePath,
+    companyContact?.celular,
+    companyContact?.dni,
+    companyContact?.email,
+    companyContact?.es_dueno,
+    companyContact?.es_vendedor,
+    companyContact?.nombre,
+    sameCompanyContact,
+    setValue,
+  ]);
+
   return (
     <div className="space-y-4 rounded-xl border bg-sidebar p-5">
       <div className="flex items-start justify-between gap-3">
@@ -239,6 +282,20 @@ function ClientNodeSection({
               : "El local es el punto final de atención."}
           </p>
         </div>
+        <FormField
+          control={control}
+          name={joinPath(basePath, "no_facturado") as Path<any>}
+          render={({ field }) => (
+            <FormItem>
+              <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                <FormControl>
+                  <Checkbox checked={Boolean(field.value)} onCheckedChange={(checked) => field.onChange(checked === true)} />
+                </FormControl>
+                No facturado
+              </label>
+            </FormItem>
+          )}
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -432,7 +489,7 @@ function ClientNodeSection({
 
         {!allowMultipleContacts && (
           <>
-          {showSameCompanyContact && (
+          {showSameParentContact && (
             <div className="mt-4 rounded-lg border bg-background/40 p-3">
               <label className="flex items-start gap-3 text-sm">
                 <Checkbox
@@ -442,10 +499,10 @@ function ClientNodeSection({
                 />
                 <span className="grid gap-1">
                   <span className="font-medium">
-                    El contacto del local es el mismo de la empresa
+                    {currentContactLabel} es el mismo de {parentLevelLabel}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    Al marcarlo se copia el contacto principal de la empresa y se bloquean estos campos.
+                    Al marcarlo se mantiene sincronizado con el contacto principal de {parentLevelLabel} y se bloquean estos campos.
                   </span>
                 </span>
               </label>

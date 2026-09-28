@@ -390,6 +390,20 @@ export const ContractColumns = ({
     },
   },
   {
+    accessorKey: "no_facturado_efectivo",
+    header: "Facturación",
+    cell: ({ row }) =>
+      row.original.no_facturado_efectivo ? (
+        <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
+          No facturado
+        </Badge>
+      ) : (
+        <Badge variant="outline" className="border-emerald-400 bg-emerald-50 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200">
+          Facturable
+        </Badge>
+      ),
+  },
+  {
     accessorKey: "estado",
     header: "Estado",
     cell: ({ row }) => (

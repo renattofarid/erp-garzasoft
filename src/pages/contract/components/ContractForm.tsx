@@ -1,6 +1,7 @@
 "use client";
 
-import { Form } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Loader } from "lucide-react";
 import { useAllClients } from "@/pages/client/lib/client.hook";
@@ -85,6 +86,25 @@ export const ContractForm = ({
   return (
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 w-full">
+        <FormField
+          control={control}
+          name="no_facturado"
+          render={({ field }) => (
+            <FormItem className="rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
+              <label className="flex cursor-pointer items-start gap-3">
+                <FormControl>
+                  <Checkbox checked={Boolean(field.value)} onCheckedChange={(checked) => field.onChange(checked === true)} />
+                </FormControl>
+                <span className="grid gap-1">
+                  <span className="font-semibold text-amber-900 dark:text-amber-100">No facturado</span>
+                  <span className="text-sm text-amber-800/80 dark:text-amber-100/70">
+                    Este contrato seguirá generando cuotas, deuda y pagos, pero será excluido de toda emisión de facturas.
+                  </span>
+                </span>
+              </label>
+            </FormItem>
+          )}
+        />
         {/* Layout Grid Principal */}
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           {/* Columna Izquierda - Información del Contrato y Productos */}

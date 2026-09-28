@@ -47,6 +47,7 @@ const contractBaseObject = z.object({
   total: z.coerce.number().nonnegative({ message: "El total no puede ser negativo" }),
   forma_pago: z.enum(["unico", "parcial"]),
   periodicidad_cuota: z.enum(["mensual", "anual"]),
+  no_facturado: z.boolean().optional().default(false),
   productos_modulos: z.array(productoModuloSchema).default([]),
   cuotas: z.array(cuotaSchema).optional().default([]),
 });

@@ -82,7 +82,7 @@ export default function ClientEditPage() {
       });
     const contactoIgualEmpresa =
       Boolean(data.contacto_igual_empresa) ||
-      (data.tipo_ui === "local" && sameContact(contactoPrincipal, parentMainContact));
+      (Boolean(parentMainContact) && sameContact(contactoPrincipal, parentMainContact));
 
     return {
       id: String(data.id),
@@ -105,6 +105,7 @@ export default function ClientEditPage() {
               },
             ],
       contacto_igual_empresa: contactoIgualEmpresa,
+      no_facturado: Boolean(data.no_facturado),
       hijos: (data.hijos_clientes ?? []).map((child) =>
         mapClientToForm(child, contactoPrincipal)
       ),

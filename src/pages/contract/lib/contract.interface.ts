@@ -51,6 +51,8 @@ export interface ContractResource {
   total: string;
   forma_pago: FormaPago;
   estado: EstadoContrato;
+  no_facturado: boolean;
+  no_facturado_efectivo: boolean;
   periodicidad_cuota?: PeriodicidadCuota | null;
   motivo_anulacion?: string | null;
   fecha_anulacion?: string | null;

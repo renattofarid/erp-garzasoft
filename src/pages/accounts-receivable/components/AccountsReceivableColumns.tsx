@@ -207,7 +207,18 @@ export const CuentasPorCobrarColumns = ({
             )}
 
             {/* 2. Facturación: Generar o Revisar / Reenviar / ZIP */}
-            {!comprobante ? (
+            {!comprobante && cuota.contrato?.no_facturado_efectivo ? (
+              <Tooltip disableHoverableContent>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
+                    No facturado
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={6} className="max-w-64 font-medium shadow-md pointer-events-none">
+                  Esta deuda se cobra normalmente, pero el cliente o contrato está excluido de facturación.
+                </TooltipContent>
+              </Tooltip>
+            ) : !comprobante ? (
               <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
                   <Button

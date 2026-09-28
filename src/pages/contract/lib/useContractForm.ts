@@ -58,6 +58,7 @@ export const useContractForm = ({
       total: 0,
       forma_pago: "parcial",
       periodicidad_cuota: "mensual",
+      no_facturado: false,
       productos_modulos: [],
       cuotas: [],
       ...defaultValues,

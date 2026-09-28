@@ -49,6 +49,7 @@ import {
   FacturadorRoute,
   FacturadorTitle,
 } from "@/pages/facturador/lib/facturador.interface";
+import { ContactRoute } from "@/pages/contacts/lib/contact.interface";
 
 const data = {
   navMain: [
@@ -93,6 +94,11 @@ const data = {
           title: LocalTypeTitle,
           url: LocalTypeRoute,
           icon: Store,
+        },
+        {
+          title: "Contactos",
+          url: ContactRoute,
+          icon: Users,
         },
         {
           title: "Mensajes",

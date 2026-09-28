@@ -114,12 +114,16 @@ export default function InvoicingPage() {
   );
 
   const clientesVisibles = useMemo(() => {
-    if (form.tipo_documento !== "F") {
-      return clientes;
-    }
-
-    return clientes.filter((cliente) => /^\d{11}$/.test(cliente.ruc || ""));
+    return clientes.filter((cliente) => {
+      if (cliente.no_facturado_efectivo) return false;
+      return form.tipo_documento !== "F" || /^\d{11}$/.test(cliente.ruc || "");
+    });
   }, [clientes, form.tipo_documento]);
+
+  const clientesNoFacturados = useMemo(
+    () => clientes.filter((cliente) => cliente.no_facturado_efectivo).length,
+    [clientes]
+  );
 
   const loadComprobantes = async () => {
     setLoading(true);
@@ -145,16 +149,14 @@ export default function InvoicingPage() {
   }, []);
 
   useEffect(() => {
-    if (form.tipo_documento !== "F") {
-      return;
-    }
-
     setForm((current) => ({
       ...current,
       cliente_ids: current.cliente_ids.filter((clienteId) =>
         clientes.some(
           (cliente) =>
-            cliente.id === clienteId && /^\d{11}$/.test(cliente.ruc || "")
+            cliente.id === clienteId &&
+            !cliente.no_facturado_efectivo &&
+            (form.tipo_documento !== "F" || /^\d{11}$/.test(cliente.ruc || ""))
         )
       ),
     }));
@@ -679,6 +681,7 @@ export default function InvoicingPage() {
                   <h3 className="text-base font-semibold">Clientes</h3>
                   <p className="text-sm text-muted-foreground">
                     Para facturas solo se habilitan clientes con RUC valido.
+                    {clientesNoFacturados > 0 && ` ${clientesNoFacturados} cliente(s) con “No facturado” fueron excluidos.`}
                   </p>
                 </div>
                 <Badge variant="outline">

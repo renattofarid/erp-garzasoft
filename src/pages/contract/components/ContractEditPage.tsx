@@ -75,6 +75,7 @@ export default function ContractEditPage() {
     total: Number(data.total),
     forma_pago: data.forma_pago,
     periodicidad_cuota: data.periodicidad_cuota ?? "mensual",
+    no_facturado: Boolean(data.no_facturado),
     productos_modulos: (
       data.contrato_producto_modulos ||
       (data as any).contratoProductoModulos ||

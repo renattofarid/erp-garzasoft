@@ -163,44 +163,61 @@ export default function ReportsPage() {
         </CardContent>
       </Card>
 
-      {loading ? (
-        <div className="flex min-h-64 items-center justify-center rounded-xl border border-dashed"><Loader2 className="mr-3 size-5 animate-spin text-primary" /> Generando reporte...</div>
+      {/* Report content — kept mounted while loading to avoid flicker */}
+      {!report && loading ? (
+        // Only show full-page spinner on the very first load (no data yet)
+        <div className="flex min-h-64 items-center justify-center rounded-xl border border-dashed">
+          <Loader2 className="mr-3 size-5 animate-spin text-primary" /> Generando reporte...
+        </div>
       ) : report && (
-        <>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {Object.entries(report.summary).map(([key, value]) => <SummaryCard key={key} label={label(key)} value={formatSummary(key, value)} />)}
+        <div className="relative">
+          {/* Subtle overlay while refreshing — keeps old data readable */}
+          {loading && (
+            <div className="absolute inset-0 z-10 flex items-start justify-center rounded-xl bg-background/60 backdrop-blur-[1px] pt-16 pointer-events-none">
+              <div className="flex items-center gap-2 rounded-full border bg-card px-4 py-2 shadow-md text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin text-primary" />
+                Actualizando...
+              </div>
+            </div>
+          )}
+
+          <div className={`space-y-4 transition-opacity duration-150 ${loading ? "opacity-60" : "opacity-100"}`}>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {Object.entries(report.summary).map(([key, value]) => <SummaryCard key={key} label={label(key)} value={formatSummary(key, value)} />)}
+            </div>
+            <Card className="min-w-0 overflow-hidden border-border/80 shadow-sm">
+              <CardHeader className="border-b bg-muted/20 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div><CardTitle className="text-lg">{report.title}</CardTitle><p className="mt-1 text-sm text-muted-foreground">{report.description}</p></div>
+                  <Badge variant="outline">{number.format(report.rows.length)} registro(s)</Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[900px] text-sm">
+                    <thead><tr className="border-b bg-primary/[0.06]">{report.columns.map((column) => <th key={column} className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-primary">{column}</th>)}</tr></thead>
+                    <tbody>
+                      {visibleRows.length ? visibleRows.map((row, rowIndex) => (
+                        <tr key={`${page}-${rowIndex}`} className="border-b transition-colors hover:bg-muted/35">
+                          {row.map((cell, index) => <td key={index} className={`max-w-[320px] px-4 py-3 align-top ${report.currencyColumns.includes(index) ? "whitespace-nowrap text-right font-medium tabular-nums" : "break-words"}`}>{report.currencyColumns.includes(index) ? money.format(Number(cell || 0)) : cell || "—"}</td>)}
+                        </tr>
+                      )) : <tr><td colSpan={report.columns.length} className="p-12 text-center text-muted-foreground">No hay registros para los filtros seleccionados.</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+                  <span>Página {page} de {pageCount} · Mostrando {visibleRows.length} de {report.rows.length}</span>
+                  <div className="flex gap-2"><Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage((value) => value - 1)}><ChevronLeft className="size-4" /></Button><Button size="sm" variant="outline" disabled={page === pageCount} onClick={() => setPage((value) => value + 1)}><ChevronRight className="size-4" /></Button></div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-          <Card className="min-w-0 overflow-hidden border-border/80 shadow-sm">
-            <CardHeader className="border-b bg-muted/20 py-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div><CardTitle className="text-lg">{report.title}</CardTitle><p className="mt-1 text-sm text-muted-foreground">{report.description}</p></div>
-                <Badge variant="outline">{number.format(report.rows.length)} registro(s)</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[900px] text-sm">
-                  <thead><tr className="border-b bg-primary/[0.06]">{report.columns.map((column) => <th key={column} className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-primary">{column}</th>)}</tr></thead>
-                  <tbody>
-                    {visibleRows.length ? visibleRows.map((row, rowIndex) => (
-                      <tr key={`${page}-${rowIndex}`} className="border-b transition-colors hover:bg-muted/35">
-                        {row.map((cell, index) => <td key={index} className={`max-w-[320px] px-4 py-3 align-top ${report.currencyColumns.includes(index) ? "whitespace-nowrap text-right font-medium tabular-nums" : "break-words"}`}>{report.currencyColumns.includes(index) ? money.format(Number(cell || 0)) : cell || "—"}</td>)}
-                      </tr>
-                    )) : <tr><td colSpan={report.columns.length} className="p-12 text-center text-muted-foreground">No hay registros para los filtros seleccionados.</td></tr>}
-                  </tbody>
-                </table>
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-                <span>Página {page} de {pageCount} · Mostrando {visibleRows.length} de {report.rows.length}</span>
-                <div className="flex gap-2"><Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage((value) => value - 1)}><ChevronLeft className="size-4" /></Button><Button size="sm" variant="outline" disabled={page === pageCount} onClick={() => setPage((value) => value + 1)}><ChevronRight className="size-4" /></Button></div>
-              </div>
-            </CardContent>
-          </Card>
-        </>
+        </div>
       )}
     </div>
   );
 }
+
 
 function Field({ label: fieldLabel, children }: { label: string; children: React.ReactNode }) {
   return <label className="space-y-1.5"><span className="text-xs font-medium text-muted-foreground">{fieldLabel}</span>{children}</label>;

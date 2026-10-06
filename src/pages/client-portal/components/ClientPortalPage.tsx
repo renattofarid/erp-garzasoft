@@ -1238,11 +1238,12 @@ export default function ClientPortalPage() {
       />
 
       {/* MODAL DE PAGO DE CUOTA */}
-      <ClientPaymentModal
-        open={isPaymentModalOpen}
-        onOpenChange={setIsPaymentModalOpen}
-        cuota={selectedPayCuota}
-      />
+        <ClientPaymentModal
+          open={isPaymentModalOpen}
+          onOpenChange={setIsPaymentModalOpen}
+          cuota={selectedPayCuota}
+          onPaymentFinished={() => setTimeout(fetchPortalData, 1500)}
+        />
     </div>
   );
 }

@@ -30,12 +30,14 @@ export default function PendingPaymentsPage() {
     setProcessing(payment.id);
     try {
       if (action === "approve") {
-        await approvePago(payment.id);
+        const comment = window.prompt("Comentario para el cliente (opcional):", "");
+        if (comment === null) return;
+        await approvePago(payment.id, comment.trim() || undefined);
         successToast("Comprobante aprobado y cuota actualizada.");
       } else {
-        const reason = window.prompt("Indica el motivo del rechazo:", "El comprobante no permite validar el pago.");
-        if (!reason?.trim()) return;
-        await rejectPago(payment.id, reason.trim());
+        const reason = window.prompt("Comentario para el cliente (opcional):", "");
+        if (reason === null) return;
+        await rejectPago(payment.id, reason.trim() || undefined);
         successToast("Comprobante rechazado.");
       }
       await load();

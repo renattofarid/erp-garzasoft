@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { login } from "../lib/auth.actions";
 import { errorToast, successToast } from "@/lib/core.function";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const formSchema = z.object({
   username: z
@@ -33,6 +33,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -51,7 +52,7 @@ export default function LoginPage() {
 
       console.log("Inicio de sesión exitoso:", response);
       successToast("Inicio de sesión exitoso");
-      navigate("/inicio");
+      navigate((location.state as { from?: string } | null)?.from || "/inicio", { replace: true });
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message || "Error al iniciar sesión.";

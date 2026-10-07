@@ -16,6 +16,7 @@ import {
   Store,
   Users,
   FileCheck2,
+  Settings2,
 } from "lucide-react";
 
 import {
@@ -152,6 +153,11 @@ const data = {
         { title: "Listado de clientes", url: "/reportes?tipo=listado_clientes", icon: Users },
         { title: "Fechas de contratos", url: "/reportes?tipo=fechas_contrato", icon: BookOpen },
       ],
+    },
+    {
+      title: "Configuración",
+      url: "/configuracion",
+      icon: Settings2,
     },
   ],
 };

@@ -108,7 +108,7 @@ export function ClientPaymentModal({ open, onOpenChange, cuota, onPaymentFinishe
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && close()}>
       <DialogContent
         showCloseButton={false}
-        className="max-w-6xl w-[calc(100%-2rem)] max-h-[94vh] overflow-hidden gap-0 rounded-2xl border border-slate-200 bg-[#fbfbfa] p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950"
+        className="w-[calc(100%-1rem)] max-w-6xl sm:w-[calc(100%-2rem)] sm:max-w-6xl max-h-[94vh] overflow-hidden gap-0 rounded-2xl border border-slate-200 bg-[#fbfbfa] p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950"
       >
         <div className="flex max-h-[94vh] flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
           <aside className="bg-[#f1f3f1] px-7 py-7 text-slate-900 dark:bg-slate-900 dark:text-white lg:w-[31%] lg:border-r lg:border-slate-200 lg:px-10 lg:py-10 dark:lg:border-slate-800">
@@ -134,7 +134,7 @@ export function ClientPaymentModal({ open, onOpenChange, cuota, onPaymentFinishe
             </div>
           </aside>
 
-          <section className="min-w-0 flex-1 bg-white dark:bg-slate-950">
+          <section className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-white dark:bg-slate-950">
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5 dark:border-slate-800 sm:px-10">
               <div>
                 <DialogTitle className="text-lg font-semibold tracking-tight text-slate-950 dark:text-white">Completa tu pago</DialogTitle>

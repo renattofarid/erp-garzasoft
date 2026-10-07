@@ -463,13 +463,13 @@ export default function ClientPortalPage() {
 
         {/* PESTAÑA 1: CRONOGRAMA DE PAGOS Y DEUDA CON PAGINACIÓN Y FACTURA ASOCIADA */}
         <TabsContent value="installments" className="space-y-4 outline-none">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-card dark:bg-zinc-900/90 p-4 rounded-2xl border border-border/80 shadow-xs">
+          <div className="space-y-5 rounded-2xl border border-border/80 bg-card p-5 shadow-xs dark:bg-zinc-900/90 sm:p-6">
             <div>
-              <h3 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
+              <h3 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
                 <CalendarClock className="h-5 w-5 text-primary" />
                 Cronograma de Pagos, Facturas y Deuda
               </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground">
                 Revisa tus cuotas, la factura emitida asociada a cada una y su estado de vencimiento.
               </p>
             </div>
@@ -759,33 +759,35 @@ export default function ClientPortalPage() {
         </TabsContent>
 
         {/* PESTAÑA 2: CONTRATOS DEL CLIENTE CON NOMBRE DE PRODUCTO DESTACADO */}
-        <TabsContent value="contracts" className="space-y-4 outline-none">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-card dark:bg-zinc-900/90 p-4 rounded-2xl border border-border/80 shadow-xs">
+        <TabsContent value="contracts" className="space-y-5 outline-none">
+          <div className="space-y-5 rounded-2xl border border-border/80 bg-card p-5 shadow-xs dark:bg-zinc-900/90 sm:p-6">
             <div>
-              <h3 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-lg font-bold tracking-tight text-foreground">
                 <FileText className="h-5 w-5 text-primary" />
                 Mis Contratos y Servicios
               </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground">
                 Identifica el servicio contratado (Gesrest, HotelHUB, 360sys, etc.), descarga el contrato y gestiona tu firma.
               </p>
             </div>
 
             {/* Filtros de Contratos */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              <div className="relative w-full sm:w-44">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <div className="grid w-full grid-cols-1 gap-3 border-t border-border/70 pt-5 sm:grid-cols-2 lg:grid-cols-[minmax(180px,1fr)_minmax(180px,1fr)_minmax(250px,auto)_auto] lg:items-end">
+              <div className="relative w-full">
+                <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Contrato</label>
+                <Search className="absolute left-2.5 top-[2.05rem] h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="N° contrato..."
                   value={contractNumberFilter}
                   onChange={(e) => setContractNumberFilter(e.target.value)}
-                  className="pl-8 h-9 text-xs bg-background dark:bg-zinc-800 border-border"
+                  className="h-10 border-border bg-background pl-8 text-sm dark:bg-zinc-800"
                 />
               </div>
 
-              <div className="w-full sm:w-44">
+              <div className="w-full">
+                <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Producto o servicio</label>
                 <Select value={contractProductFilter} onValueChange={setContractProductFilter}>
-                  <SelectTrigger className="h-9 text-xs bg-background dark:bg-zinc-800 border-border">
+                    <SelectTrigger className="h-10 border-border bg-background text-sm dark:bg-zinc-800">
                     <SelectValue placeholder="Todos los productos" />
                   </SelectTrigger>
                   <SelectContent>
@@ -799,22 +801,27 @@ export default function ClientPortalPage() {
                 </Select>
               </div>
 
-              <div className="flex items-center gap-1.5 w-full sm:w-auto">
+              <div className="grid w-full grid-cols-2 gap-2 sm:col-span-2 lg:col-span-1">
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Desde</label>
                 <Input
                   type="date"
                   value={contractDateFrom}
                   onChange={(e) => setContractDateFrom(e.target.value)}
-                  className="h-9 text-xs bg-background dark:bg-zinc-800 border-border w-32"
+                  className="h-10 w-full min-w-0 border-border bg-background text-sm dark:bg-zinc-800"
                   title="Fecha inicio desde"
                 />
-                <span className="text-xs text-muted-foreground">-</span>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Hasta</label>
                 <Input
                   type="date"
                   value={contractDateTo}
                   onChange={(e) => setContractDateTo(e.target.value)}
-                  className="h-9 text-xs bg-background dark:bg-zinc-800 border-border w-32"
+                  className="h-10 w-full min-w-0 border-border bg-background text-sm dark:bg-zinc-800"
                   title="Fecha inicio hasta"
                 />
+                </div>
               </div>
 
               {(contractNumberFilter || contractProductFilter !== "todos" || contractDateFrom || contractDateTo) && (
@@ -827,7 +834,7 @@ export default function ClientPortalPage() {
                     setContractDateFrom("");
                     setContractDateTo("");
                   }}
-                  className="h-9 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  className="h-10 justify-self-start px-3 text-xs text-muted-foreground hover:text-foreground sm:justify-self-end"
                 >
                   Limpiar
                 </Button>

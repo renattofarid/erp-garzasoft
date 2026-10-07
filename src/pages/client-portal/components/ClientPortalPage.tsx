@@ -851,6 +851,9 @@ export default function ClientPortalPage() {
 
                 const tieneFirmaArrendador = !!contract.firma_arrendador;
                 const tieneFirmaCliente = !!contract.firma_cliente;
+                const contractInstallments = contract.cuotas || [];
+                const pendingInstallments = contractInstallments.filter((quota) => quota.situacion !== "pagado").length;
+                const subscriptionAmount = Number(contract.kuti_subscription_amount || contractInstallments.find((quota) => quota.situacion !== "pagado")?.monto || 0);
 
                 return (
                   <Card key={contract.id} className="relative overflow-hidden border border-border/80 bg-card dark:bg-zinc-900/90 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
@@ -1027,11 +1030,16 @@ export default function ClientPortalPage() {
                           </span>
                         </div>
                       </div>
-                      <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/50">
-                        <div>
-                          <p className="text-xs font-semibold text-foreground">¿Quieres pagar automáticamente?</p>
-                          <p className="mt-0.5 text-[11px] text-muted-foreground">Afirma tu Yape en Kuti y cobra cada periodo.</p>
-                        </div>
+                        <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                          <div>
+                            <p className="text-xs font-semibold text-foreground">¿Quieres pagar automáticamente?</p>
+                            <p className="mt-0.5 text-[11px] text-muted-foreground">
+                              {subscriptionAmount > 0 ? `${currency.format(subscriptionAmount)} cada ${contract.periodicidad_cuota === "anual" ? "año" : "mes"}` : "Afirma tu Yape en Kuti y cobra cada periodo."}
+                            </p>
+                            {pendingInstallments > 0 && contract.fecha_fin && (
+                              <p className="mt-1 text-[10px] text-muted-foreground">{pendingInstallments} cuota{pendingInstallments === 1 ? "" : "s"} hasta {formatDisplayDate(contract.fecha_fin)}</p>
+                            )}
+                          </div>
                         {contract.kuti_subscription_status === "ACTIVE" ? (
                           <div className="text-right">
                             <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Activa</Badge>

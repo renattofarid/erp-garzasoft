@@ -15,6 +15,7 @@ import {
   Signature,
   Store,
   Users,
+  FileCheck2,
 } from "lucide-react";
 
 import {
@@ -121,6 +122,11 @@ const data = {
           title: "Cuentas por cobrar",
           url: CuentasPorCobrarRoute,
           icon: Box,
+        },
+        {
+          title: "Pagos por aprobar",
+          url: "/pagos-por-aprobar",
+          icon: FileCheck2,
         },
         {
           title: "Facturacion electronica",

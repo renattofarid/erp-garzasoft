@@ -58,7 +58,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { errorToast } from "@/lib/core.function";
+import { errorToast, successToast } from "@/lib/core.function";
 import { openPdfFromFetcher } from "@/lib/pdf";
 import { useAuthStore } from "@/pages/auth/lib/auth.store";
 import { getContract, openContractPdf } from "@/pages/contract/lib/contract.actions";
@@ -80,6 +80,7 @@ import { ClientContractSignatureModal } from "./ClientContractSignatureModal";
 import { ClientPaymentModal } from "./ClientPaymentModal";
 import { format, parseISO } from "date-fns";
 import { api } from "@/lib/config";
+import { createKutiSubscription } from "@/pages/accounts-receivable/lib/kuti.actions";
 
 const currency = new Intl.NumberFormat("es-PE", {
   style: "currency",
@@ -175,6 +176,7 @@ export default function ClientPortalPage() {
 
   const [selectedPayCuota, setSelectedPayCuota] = useState<CuentasPorCobrarResource | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [subscriptionLoading, setSubscriptionLoading] = useState<number | null>(null);
 
   const fetchPortalData = () => {
     setLoading(true);
@@ -325,6 +327,22 @@ export default function ClientPortalPage() {
     }
   };
 
+  const activateSubscription = async (contract: ContractResource) => {
+    setSubscriptionLoading(contract.id);
+    try {
+      const result = await createKutiSubscription(contract.id);
+      if (result.checkout_url) {
+        window.open(result.checkout_url, "_blank", "noopener,noreferrer");
+      }
+      successToast(result.message || "Sigue los pasos de Kuti para activar los cobros automáticos.");
+      fetchPortalData();
+    } catch (error: any) {
+      errorToast(error?.response?.data?.message || "No se pudo preparar la suscripción.");
+    } finally {
+      setSubscriptionLoading(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-muted-foreground">
@@ -445,13 +463,13 @@ export default function ClientPortalPage() {
 
         {/* PESTAÑA 1: CRONOGRAMA DE PAGOS Y DEUDA CON PAGINACIÓN Y FACTURA ASOCIADA */}
         <TabsContent value="installments" className="space-y-4 outline-none">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-card dark:bg-zinc-900/90 p-4 rounded-2xl border border-border/80 shadow-xs">
+          <div className="space-y-5 rounded-2xl border border-border/80 bg-card p-5 shadow-xs dark:bg-zinc-900/90 sm:p-6">
             <div>
-              <h3 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
+              <h3 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
                 <CalendarClock className="h-5 w-5 text-primary" />
                 Cronograma de Pagos, Facturas y Deuda
               </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground">
                 Revisa tus cuotas, la factura emitida asociada a cada una y su estado de vencimiento.
               </p>
             </div>
@@ -741,33 +759,35 @@ export default function ClientPortalPage() {
         </TabsContent>
 
         {/* PESTAÑA 2: CONTRATOS DEL CLIENTE CON NOMBRE DE PRODUCTO DESTACADO */}
-        <TabsContent value="contracts" className="space-y-4 outline-none">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-card dark:bg-zinc-900/90 p-4 rounded-2xl border border-border/80 shadow-xs">
+        <TabsContent value="contracts" className="space-y-5 outline-none">
+          <div className="space-y-5 rounded-2xl border border-border/80 bg-card p-5 shadow-xs dark:bg-zinc-900/90 sm:p-6">
             <div>
-              <h3 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-lg font-bold tracking-tight text-foreground">
                 <FileText className="h-5 w-5 text-primary" />
                 Mis Contratos y Servicios
               </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground">
                 Identifica el servicio contratado (Gesrest, HotelHUB, 360sys, etc.), descarga el contrato y gestiona tu firma.
               </p>
             </div>
 
             {/* Filtros de Contratos */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              <div className="relative w-full sm:w-44">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <div className="grid w-full grid-cols-1 gap-3 border-t border-border/70 pt-5 sm:grid-cols-2 lg:grid-cols-[minmax(180px,1fr)_minmax(180px,1fr)_minmax(250px,auto)_auto] lg:items-end">
+              <div className="relative w-full">
+                <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Contrato</label>
+                <Search className="absolute left-2.5 top-[2.05rem] h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="N° contrato..."
                   value={contractNumberFilter}
                   onChange={(e) => setContractNumberFilter(e.target.value)}
-                  className="pl-8 h-9 text-xs bg-background dark:bg-zinc-800 border-border"
+                  className="h-10 border-border bg-background pl-8 text-sm dark:bg-zinc-800"
                 />
               </div>
 
-              <div className="w-full sm:w-44">
+              <div className="w-full">
+                <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Producto o servicio</label>
                 <Select value={contractProductFilter} onValueChange={setContractProductFilter}>
-                  <SelectTrigger className="h-9 text-xs bg-background dark:bg-zinc-800 border-border">
+                    <SelectTrigger className="h-10 border-border bg-background text-sm dark:bg-zinc-800">
                     <SelectValue placeholder="Todos los productos" />
                   </SelectTrigger>
                   <SelectContent>
@@ -781,22 +801,27 @@ export default function ClientPortalPage() {
                 </Select>
               </div>
 
-              <div className="flex items-center gap-1.5 w-full sm:w-auto">
+              <div className="grid w-full grid-cols-2 gap-2 sm:col-span-2 lg:col-span-1">
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Desde</label>
                 <Input
                   type="date"
                   value={contractDateFrom}
                   onChange={(e) => setContractDateFrom(e.target.value)}
-                  className="h-9 text-xs bg-background dark:bg-zinc-800 border-border w-32"
+                  className="h-10 w-full min-w-0 border-border bg-background text-sm dark:bg-zinc-800"
                   title="Fecha inicio desde"
                 />
-                <span className="text-xs text-muted-foreground">-</span>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Hasta</label>
                 <Input
                   type="date"
                   value={contractDateTo}
                   onChange={(e) => setContractDateTo(e.target.value)}
-                  className="h-9 text-xs bg-background dark:bg-zinc-800 border-border w-32"
+                  className="h-10 w-full min-w-0 border-border bg-background text-sm dark:bg-zinc-800"
                   title="Fecha inicio hasta"
                 />
+                </div>
               </div>
 
               {(contractNumberFilter || contractProductFilter !== "todos" || contractDateFrom || contractDateTo) && (
@@ -809,7 +834,7 @@ export default function ClientPortalPage() {
                     setContractDateFrom("");
                     setContractDateTo("");
                   }}
-                  className="h-9 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  className="h-10 justify-self-start px-3 text-xs text-muted-foreground hover:text-foreground sm:justify-self-end"
                 >
                   Limpiar
                 </Button>
@@ -833,6 +858,9 @@ export default function ClientPortalPage() {
 
                 const tieneFirmaArrendador = !!contract.firma_arrendador;
                 const tieneFirmaCliente = !!contract.firma_cliente;
+                const contractInstallments = contract.cuotas || [];
+                const pendingInstallments = contractInstallments.filter((quota) => quota.situacion !== "pagado").length;
+                const subscriptionAmount = Number(contract.kuti_subscription_amount || contractInstallments.find((quota) => quota.situacion !== "pagado")?.monto || 0);
 
                 return (
                   <Card key={contract.id} className="relative overflow-hidden border border-border/80 bg-card dark:bg-zinc-900/90 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
@@ -1008,6 +1036,35 @@ export default function ClientPortalPage() {
                             {currency.format(Number(contract.total || 0))}
                           </span>
                         </div>
+                      </div>
+                        <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                          <div>
+                            <p className="text-xs font-semibold text-foreground">¿Quieres pagar automáticamente?</p>
+                            <p className="mt-0.5 text-[11px] text-muted-foreground">
+                              {subscriptionAmount > 0 ? `${currency.format(subscriptionAmount)} cada ${contract.periodicidad_cuota === "anual" ? "año" : "mes"}` : "Afirma tu Yape en Kuti y cobra cada periodo."}
+                            </p>
+                            {pendingInstallments > 0 && contract.fecha_fin && (
+                              <p className="mt-1 text-[10px] text-muted-foreground">{pendingInstallments} cuota{pendingInstallments === 1 ? "" : "s"} hasta {formatDisplayDate(contract.fecha_fin)}</p>
+                            )}
+                          </div>
+                        {contract.kuti_subscription_status === "ACTIVE" ? (
+                          <div className="text-right">
+                            <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Activa</Badge>
+                            <p className="mt-1 text-[10px] text-muted-foreground">
+                              Próximo cobro: {contract.kuti_subscription_next_charge_at ? formatDisplayDate(contract.kuti_subscription_next_charge_at) : "programado"}
+                            </p>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={subscriptionLoading === contract.id}
+                            onClick={() => activateSubscription(contract)}
+                            className="h-8 shrink-0 text-[11px] font-semibold"
+                          >
+                            {subscriptionLoading === contract.id ? "Preparando..." : "Activar cobro automático"}
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>

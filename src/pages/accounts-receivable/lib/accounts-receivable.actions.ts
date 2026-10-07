@@ -139,3 +139,13 @@ export async function deletePago(id: number): Promise<any> {
   const { data } = await api.delete<any>(`${ENDPOINT_PAGOS}/${id}`);
   return data;
 }
+
+export async function approvePago(id: number): Promise<any> {
+  const { data } = await api.post<any>(`${ENDPOINT_PAGOS}/${id}/aprobar`);
+  return data;
+}
+
+export async function rejectPago(id: number, motivo_rechazo: string): Promise<any> {
+  const { data } = await api.post<any>(`${ENDPOINT_PAGOS}/${id}/rechazar`, { motivo_rechazo });
+  return data;
+}

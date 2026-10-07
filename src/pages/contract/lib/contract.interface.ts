@@ -54,6 +54,9 @@ export interface ContractResource {
   no_facturado: boolean;
   no_facturado_efectivo: boolean;
   periodicidad_cuota?: PeriodicidadCuota | null;
+  kuti_subscription_id?: string | null;
+  kuti_subscription_status?: string | null;
+  kuti_subscription_checkout_url?: string | null;
   motivo_anulacion?: string | null;
   fecha_anulacion?: string | null;
   firma_arrendador?: string | null;

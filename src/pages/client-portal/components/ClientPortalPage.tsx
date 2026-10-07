@@ -58,7 +58,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { errorToast } from "@/lib/core.function";
+import { errorToast, successToast } from "@/lib/core.function";
 import { openPdfFromFetcher } from "@/lib/pdf";
 import { useAuthStore } from "@/pages/auth/lib/auth.store";
 import { getContract, openContractPdf } from "@/pages/contract/lib/contract.actions";
@@ -80,6 +80,7 @@ import { ClientContractSignatureModal } from "./ClientContractSignatureModal";
 import { ClientPaymentModal } from "./ClientPaymentModal";
 import { format, parseISO } from "date-fns";
 import { api } from "@/lib/config";
+import { createKutiSubscription } from "@/pages/accounts-receivable/lib/kuti.actions";
 
 const currency = new Intl.NumberFormat("es-PE", {
   style: "currency",
@@ -175,6 +176,7 @@ export default function ClientPortalPage() {
 
   const [selectedPayCuota, setSelectedPayCuota] = useState<CuentasPorCobrarResource | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [subscriptionLoading, setSubscriptionLoading] = useState<number | null>(null);
 
   const fetchPortalData = () => {
     setLoading(true);
@@ -322,6 +324,22 @@ export default function ClientPortalPage() {
       );
     } catch {
       errorToast("No se pudo obtener el Formato de Alta.");
+    }
+  };
+
+  const activateSubscription = async (contract: ContractResource) => {
+    setSubscriptionLoading(contract.id);
+    try {
+      const result = await createKutiSubscription(contract.id);
+      if (result.checkout_url) {
+        window.open(result.checkout_url, "_blank", "noopener,noreferrer");
+      }
+      successToast(result.message || "Sigue los pasos de Kuti para activar los cobros automáticos.");
+      fetchPortalData();
+    } catch (error: any) {
+      errorToast(error?.response?.data?.message || "No se pudo preparar la suscripción.");
+    } finally {
+      setSubscriptionLoading(null);
     }
   };
 
@@ -1008,6 +1026,25 @@ export default function ClientPortalPage() {
                             {currency.format(Number(contract.total || 0))}
                           </span>
                         </div>
+                      </div>
+                      <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                        <div>
+                          <p className="text-xs font-semibold text-foreground">¿Quieres pagar automáticamente?</p>
+                          <p className="mt-0.5 text-[11px] text-muted-foreground">Afirma tu Yape en Kuti y cobra cada periodo.</p>
+                        </div>
+                        {contract.kuti_subscription_status === "ACTIVE" ? (
+                          <Badge variant="outline" className="shrink-0 border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Activa</Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={subscriptionLoading === contract.id}
+                            onClick={() => activateSubscription(contract)}
+                            className="h-8 shrink-0 text-[11px] font-semibold"
+                          >
+                            {subscriptionLoading === contract.id ? "Preparando..." : "Activar cobro automático"}
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>

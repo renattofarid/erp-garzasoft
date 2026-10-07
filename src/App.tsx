@@ -38,6 +38,7 @@ import { FacturadorRoute } from "./pages/facturador/lib/facturador.interface";
 import ClientPortalPage from "./pages/client-portal/components/ClientPortalPage";
 import ReportsPage from "./pages/reports/components/ReportsPage";
 import ContactPage from "./pages/contacts/components/ContactPage";
+import PendingPaymentsPage from "./pages/accounts-receivable/components/PendingPaymentsPage";
 import { ContactRoute } from "./pages/contacts/lib/contact.interface";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
@@ -205,6 +206,11 @@ export default function App() {
                 <FacturadorPage />
               </ProtectedRoute>
             }
+          />
+
+          <Route
+            path="/pagos-por-aprobar"
+            element={<ProtectedRoute><PendingPaymentsPage /></ProtectedRoute>}
           />
 
           <Route

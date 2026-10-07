@@ -120,4 +120,9 @@ export interface PagoResource {
   comprobante: string;
   created_at: string;
   updated_at: string;
+  metodo_pago?: "manual" | "online";
+  estado_revision?: "pendiente" | "aprobado" | "rechazado";
+  motivo_rechazo?: string | null;
+  revisado_at?: string | null;
+  cuota?: CuentasPorCobrarResource;
 }

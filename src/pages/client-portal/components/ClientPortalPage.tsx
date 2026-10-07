@@ -1033,7 +1033,12 @@ export default function ClientPortalPage() {
                           <p className="mt-0.5 text-[11px] text-muted-foreground">Afirma tu Yape en Kuti y cobra cada periodo.</p>
                         </div>
                         {contract.kuti_subscription_status === "ACTIVE" ? (
-                          <Badge variant="outline" className="shrink-0 border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Activa</Badge>
+                          <div className="text-right">
+                            <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Activa</Badge>
+                            <p className="mt-1 text-[10px] text-muted-foreground">
+                              Próximo cobro: {contract.kuti_subscription_next_charge_at ? formatDisplayDate(contract.kuti_subscription_next_charge_at) : "programado"}
+                            </p>
+                          </div>
                         ) : (
                           <Button
                             size="sm"

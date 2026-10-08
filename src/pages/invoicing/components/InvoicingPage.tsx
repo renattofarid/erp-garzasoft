@@ -69,6 +69,7 @@ const estadoColor: Record<string, string> = {
 export default function InvoicingPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [bulkWhatsAppLoading, setBulkWhatsAppLoading] = useState(false);
@@ -83,6 +84,7 @@ export default function InvoicingPage() {
   const [comprobantes, setComprobantes] = useState<ComprobanteResource[]>([]);
   const [clientes, setClientes] = useState<ClientResource[]>([]);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   const pendingWhatsAppCount = useMemo(() => {
     return comprobantes.filter(
@@ -128,9 +130,10 @@ export default function InvoicingPage() {
   const loadComprobantes = async () => {
     setLoading(true);
     try {
-      const response = await getComprobantes({ page, search });
+      const response = await getComprobantes({ page, search, perPage: pageSize });
       setComprobantes(response.data || []);
       setTotalPages(response.meta?.last_page || 1);
+      setTotalItems(response.meta?.total || 0);
     } catch {
       errorToast("No se pudieron cargar los comprobantes.");
     } finally {
@@ -140,7 +143,7 @@ export default function InvoicingPage() {
 
   useEffect(() => {
     loadComprobantes();
-  }, [page, search]);
+  }, [page, pageSize, search]);
 
   useEffect(() => {
     getAllClients()
@@ -499,6 +502,9 @@ export default function InvoicingPage() {
         page={page}
         totalPages={totalPages}
         onPageChange={setPage}
+        pageSize={pageSize}
+        totalItems={totalItems}
+        onPageSizeChange={setPageSize}
       />
 
       <WhatsAppComprobanteModal

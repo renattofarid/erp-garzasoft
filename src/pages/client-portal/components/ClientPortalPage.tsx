@@ -164,7 +164,7 @@ export default function ClientPortalPage() {
 
   // Paginación Cronograma (20 en 20)
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const pageSize = 20;
+  const [pageSize, setPageSize] = useState(10);
 
   // Filtros Pestaña Contratos
   const [contractNumberFilter, setContractNumberFilter] = useState<string>("");
@@ -755,12 +755,20 @@ export default function ClientPortalPage() {
               </div>
 
               {/* PAGINACIÓN DE 20 EN 20 */}
-              {totalPages > 1 && (
+              {filteredInstallments.length > 0 && (
                 <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted/30">
-                  <div className="text-xs text-muted-foreground">
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <label className="flex items-center gap-2 whitespace-nowrap">Registros por página
+                      <Select value={String(pageSize)} onValueChange={(value) => { setPageSize(Number(value)); setCurrentPage(1); }}>
+                        <SelectTrigger className="h-8 w-[68px] bg-background text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>{[10, 20, 50].map((size) => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </label>
+                    <span className="hidden sm:inline">
                     Mostrando <strong>{(currentPage - 1) * pageSize + 1}</strong> a{" "}
                     <strong>{Math.min(currentPage * pageSize, filteredInstallments.length)}</strong> de{" "}
                     <strong>{filteredInstallments.length}</strong> cuotas
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-1.5">

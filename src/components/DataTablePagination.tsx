@@ -8,12 +8,16 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Props {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
   maxButtons?: number; // Por defecto 5
+  pageSize?: number;
+  totalItems?: number;
+  onPageSizeChange?: (pageSize: number) => void;
 }
 
 export default function DataTablePagination({
@@ -21,6 +25,9 @@ export default function DataTablePagination({
   totalPages,
   onPageChange,
   maxButtons = 5,
+  pageSize = 10,
+  totalItems,
+  onPageSizeChange,
 }: Props) {
   const [buttons, setButtons] = useState(maxButtons);
 
@@ -49,12 +56,36 @@ export default function DataTablePagination({
     pages.push(i);
   }
 
+  useEffect(() => {
+    if (totalPages > 0 && page > totalPages) onPageChange(totalPages);
+  }, [page, totalPages, onPageChange]);
+
+  const firstItem = totalItems && totalItems > 0 ? (page - 1) * pageSize + 1 : 0;
+  const lastItem = totalItems ? Math.min(page * pageSize, totalItems) : 0;
+
   return (
-    <Pagination>
-      <PaginationContent className="mt-[">
+    <div className="flex flex-col gap-3 rounded-xl border border-border/70 bg-card/60 px-4 py-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-3">
+        {onPageSizeChange && (
+          <div className="flex items-center gap-2 whitespace-nowrap">
+            <span>Registros por página</span>
+            <Select value={String(pageSize)} onValueChange={(value) => { onPageSizeChange(Number(value)); onPageChange(1); }}>
+              <SelectTrigger className="h-8 w-[72px] bg-background text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {[10, 20, 50, 100].map((size) => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {totalItems !== undefined && <span className="hidden sm:inline">Mostrando {firstItem}-{lastItem} de {totalItems}</span>}
+      </div>
+      <Pagination>
+      <PaginationContent>
         <PaginationItem>
           <PaginationPrevious
             href="#"
+            aria-disabled={page <= 1}
+            className={page <= 1 ? "pointer-events-none opacity-40" : ""}
             onClick={(e) => {
               e.preventDefault();
               if (page > 1) onPageChange(page - 1);
@@ -120,8 +151,10 @@ export default function DataTablePagination({
         )}
 
         <PaginationItem>
-          <PaginationNext
-            href="#"
+            <PaginationNext
+              href="#"
+              aria-disabled={page >= totalPages}
+              className={page >= totalPages ? "pointer-events-none opacity-40" : ""}
             onClick={(e) => {
               e.preventDefault();
               if (page < totalPages) onPageChange(page + 1);
@@ -129,6 +162,7 @@ export default function DataTablePagination({
           />
         </PaginationItem>
       </PaginationContent>
-    </Pagination>
+      </Pagination>
+    </div>
   );
 }

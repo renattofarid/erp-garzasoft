@@ -34,6 +34,7 @@ const initialFilters: ContractFiltersState = {
 
 export default function ContractPage() {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [filters, setFilters] = useState<ContractFiltersState>(initialFilters);
   const [cancelContract, setCancelContract] = useState<ContractResource | null>(null);
   const [deleteContractItem, setDeleteContractItem] = useState<ContractResource | null>(null);
@@ -50,6 +51,7 @@ export default function ContractPage() {
   useEffect(() => {
     refetch({
       page,
+      per_page: pageSize,
       search: filters.search || undefined,
       numero: filters.numero || undefined,
       cliente_id:
@@ -67,6 +69,7 @@ export default function ContractPage() {
     });
   }, [
     page,
+    pageSize,
     filters.search,
     filters.numero,
     filters.clienteId,
@@ -177,6 +180,9 @@ export default function ContractPage() {
         page={page}
         totalPages={meta?.last_page || 1}
         onPageChange={setPage}
+        pageSize={pageSize}
+        totalItems={meta?.total}
+        onPageSizeChange={setPageSize}
       />
       {/* Notificaciones */}
       {notificationId !== null && (

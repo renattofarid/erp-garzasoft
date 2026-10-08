@@ -18,8 +18,8 @@ export async function getProduct({
 }: getProductProps): Promise<ProductCollectionResponse> {
   const config: AxiosRequestConfig = {
     params: {
+      per_page: params?.per_page ?? per_page,
       ...params,
-      per_page,
     },
   };
   const { data } = await api.get<ProductCollectionResponse>(ENDPOINT, config);

@@ -18,7 +18,7 @@ export async function getContract({
 }: getContractProps): Promise<ContractResponse> {
   const config: AxiosRequestConfig = {
     params: {
-      per_page,
+      per_page: params?.per_page ?? per_page,
       ...params,
     },
   };

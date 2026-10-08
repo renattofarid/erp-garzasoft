@@ -149,18 +149,34 @@ export function replaceVariablesInHtml(
 
   let result = html;
 
-  // Reemplazar chips <span class="doc-variable-chip" data-variable-key="KEY"...>...</span>
-  const chipRegex = /<span[^>]*class=["'][^"']*doc-variable-chip[^"']*["'][^>]*data-variable-key=["']([^"']+)["'][^>]*>[\s\S]*?<\/span>/gi;
+  // Reemplazar chips completos usando el DOM. Las fichas contienen spans
+  // internos y una expresión regular podía cerrarlas prematuramente, dejando
+  // visible la clave (por ejemplo, SERIE_FAC) en el documento final.
+  if (typeof DOMParser !== "undefined") {
+    const parsed = new DOMParser().parseFromString(`<div>${result}</div>`, "text/html");
+    const root = parsed.body.firstElementChild;
 
-  result = result.replace(chipRegex, (_fullMatch, rawKey) => {
-    const cleanKey = normalizeVariableKey(rawKey);
-    const val = values[cleanKey] ?? values[rawKey] ?? `{${cleanKey}}`;
-
-    if (highlightReplaced && values[cleanKey] !== undefined) {
-      return `<strong class="replaced-variable-val" style="color: #0284c7; background-color: #e0f2fe; padding: 1px 5px; border-radius: 4px; font-weight: 700;">${val}</strong>`;
+    if (root) {
+      root.querySelectorAll(".doc-variable-chip[data-variable-key]").forEach((chip) => {
+        const rawKey = chip.getAttribute("data-variable-key") || "";
+        const cleanKey = normalizeVariableKey(rawKey);
+        const hasValue = values[cleanKey] !== undefined || values[rawKey] !== undefined;
+        const val = values[cleanKey] ?? values[rawKey] ?? `{${cleanKey}}`;
+        const replacement = parsed.createTextNode(
+          highlightReplaced && hasValue ? String(val) : String(val)
+        );
+        chip.replaceWith(replacement);
+      });
+      result = root.innerHTML;
     }
-    return val;
-  });
+  } else {
+    // Fallback para entornos sin DOMParser.
+    const chipRegex = /<span[^>]*class=["'][^"']*doc-variable-chip[^"']*["'][^>]*data-variable-key=["']([^"']+)["'][^>]*>[\s\S]*?<\/span>\s*<\/span>/gi;
+    result = result.replace(chipRegex, (_fullMatch, rawKey) => {
+      const cleanKey = normalizeVariableKey(rawKey);
+      return String(values[cleanKey] ?? values[rawKey] ?? `{${cleanKey}}`);
+    });
+  }
 
   // Reemplazar sintaxis libre {KEY} o {{KEY}}
   Object.keys(values).forEach((key) => {

@@ -21,6 +21,7 @@ export async function getClient({
 }: getClientProps): Promise<ClientResponse> {
   const config: AxiosRequestConfig = {
     params: {
+      per_page: params?.per_page ?? 10,
       ...params,
     },
   };

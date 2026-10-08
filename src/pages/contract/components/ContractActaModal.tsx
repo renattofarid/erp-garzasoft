@@ -17,8 +17,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { errorToast, successToast } from "@/lib/core.function";
+import { openPdfFromFetcher } from "@/lib/pdf";
 import { ContractResource } from "../lib/contract.interface";
-import { getProductFormatoAlta } from "@/pages/products/lib/product.actions";
+import {
+  getActaFormatoAltaPdfBlob,
+  getProductFormatoAlta,
+} from "@/pages/products/lib/product.actions";
 import {
   SYSTEM_VARIABLES,
   extractVariablesFromHtml,
@@ -26,6 +30,7 @@ import {
   replaceVariablesInHtml,
 } from "@/pages/products/lib/docVariables";
 import { getClientDisplayName } from "@/pages/client/lib/client.interface";
+import { saveContractActaVariables } from "../lib/contract.actions";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -117,7 +122,19 @@ export default function ContractActaModal({
             });
           }
 
-          setVariableValues(initialValues);
+           let savedValues: Record<string, string> = {};
+           try {
+             const localValues = window.localStorage.getItem(`acta-variables-${contract.id}`);
+             savedValues = localValues ? JSON.parse(localValues) : {};
+           } catch {
+             savedValues = {};
+           }
+
+           setVariableValues({
+             ...initialValues,
+             ...(contract.acta_variables || {}),
+             ...savedValues,
+           });
         })
         .catch(() => {
           errorToast("Error al cargar la plantilla del Formato de Alta / Acta.");
@@ -165,19 +182,37 @@ export default function ContractActaModal({
   };
 
   // Guardar configuración de variables
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!contract) return;
     setSaving(true);
-    setTimeout(() => {
+    try {
+      window.localStorage.setItem(
+        `acta-variables-${contract.id}`,
+        JSON.stringify(variableValues)
+      );
+      await saveContractActaVariables(contract.id, variableValues);
       setSaving(false);
       successToast("Variables del Acta de Alta guardadas correctamente.");
-    }, 250);
+    } catch (error: any) {
+      setSaving(false);
+      errorToast(error?.message || "No se pudieron guardar las variables del Acta de Alta.");
+    }
   };
 
   // Abrir la vista completa del PDF / Acta en una nueva pestaña con las variables reemplazadas
-  const handleOpenPdfNewTab = () => {
+  const handleOpenPdfNewTab = async () => {
     if (!contract) return;
+    setGeneratingPdf(true);
     try {
       const finalHtml = replaceVariablesInHtml(rawHtmlTemplate, variableValues, false);
+      const productId =
+        (contract as any).producto_id ||
+        ((contract as any).productos && (contract as any).productos[0]?.id) ||
+        (contract.contrato_producto_modulos && contract.contrato_producto_modulos[0]?.producto_id);
+
+      if (!productId) {
+        throw new Error("Este contrato no tiene un producto asignado para generar el PDF.");
+      }
 
       const pageStyle = paperSize === "a4" ? "A4 portrait" : "letter portrait";
       const fullDocumentHtml = `
@@ -203,16 +238,17 @@ export default function ContractActaModal({
         </html>
       `;
 
-      const blob = new Blob([fullDocumentHtml], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-      const newWin = window.open(url, "_blank");
-      if (!newWin) {
-        errorToast("El navegador bloqueó la ventana emergente. Por favor habilita ventanas emergentes.");
-      } else {
-        successToast("Acta cargada en una nueva pestaña.");
-      }
-    } catch {
-      errorToast("No se pudo visualizar el PDF del Acta.");
+      // Usa el mismo flujo del Formato de Alta: abre una pestaña inmediatamente,
+      // muestra el estado de preparación y luego carga el documento completo.
+      await openPdfFromFetcher(
+        () => getActaFormatoAltaPdfBlob(productId, fullDocumentHtml, paperSize),
+        `Generando Formato de Alta de ${contract.numero}...`
+      );
+      successToast("Formato de Alta cargado en una nueva pestaña.");
+    } catch (error: any) {
+      errorToast(error?.message || "No se pudo visualizar el PDF del Acta.");
+    } finally {
+      setGeneratingPdf(false);
     }
   };
 
@@ -379,7 +415,7 @@ export default function ContractActaModal({
               variant="outline"
               size="sm"
               onClick={handleOpenPdfNewTab}
-              disabled={loading}
+              disabled={generatingPdf || loading}
               className="text-xs h-9 gap-1.5 border-purple-300 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950 font-semibold"
             >
               <ExternalLink className="h-3.5 w-3.5" />

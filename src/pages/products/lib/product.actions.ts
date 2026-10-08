@@ -18,8 +18,8 @@ export async function getProduct({
 }: getProductProps): Promise<ProductCollectionResponse> {
   const config: AxiosRequestConfig = {
     params: {
+      per_page: params?.per_page ?? per_page,
       ...params,
-      per_page,
     },
   };
   const { data } = await api.get<ProductCollectionResponse>(ENDPOINT, config);
@@ -84,5 +84,18 @@ export async function getFormatoAltaPdfBlob(
     params,
     responseType: "blob",
   });
+  return response.data;
+}
+
+export async function getActaFormatoAltaPdfBlob(
+  id: number,
+  html: string,
+  paperSize: "a4" | "letter"
+): Promise<Blob> {
+  const response = await api.post(
+    `${ENDPOINT}/${id}/formato-alta/acta-pdf`,
+    { html, paper_size: paperSize },
+    { responseType: "blob" }
+  );
   return response.data;
 }

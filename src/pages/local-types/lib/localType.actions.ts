@@ -15,8 +15,8 @@ export async function getLocalType({
 }: GetLocalTypeProps): Promise<LocalTypeResponse> {
   const config: AxiosRequestConfig = {
     params: {
+      per_page: params?.per_page ?? per_page,
       ...params,
-      per_page,
     },
   };
   const { data } = await api.get<LocalTypeResponse>(ENDPOINT, config);

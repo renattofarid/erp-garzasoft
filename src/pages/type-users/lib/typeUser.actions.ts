@@ -15,8 +15,8 @@ export async function getTypeUser({
 }: getTypeUserProps): Promise<TypeUserResponse> {
   const config: AxiosRequestConfig = {
     params: {
+      per_page: params?.per_page ?? per_page,
       ...params,
-      per_page,
     },
   };
   const { data } = await api.get<TypeUserResponse>(ENDPOINT, config);

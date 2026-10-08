@@ -24,6 +24,7 @@ import DataTablePagination from "@/components/DataTablePagination";
 
 export default function UserPage() {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
   const [editId, setEditId] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -31,8 +32,8 @@ export default function UserPage() {
   const { data, meta, isLoading, refetch } = useUsers();
 
   useEffect(() => {
-    refetch({ page, search });
-  }, [page, search]);
+    refetch({ page, search, per_page: pageSize });
+  }, [page, pageSize, search]);
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -76,6 +77,9 @@ export default function UserPage() {
         page={page}
         totalPages={meta?.last_page || 1}
         onPageChange={setPage}
+        pageSize={pageSize}
+        totalItems={meta?.total}
+        onPageSizeChange={setPageSize}
       />
 
       {/* Formularios */}

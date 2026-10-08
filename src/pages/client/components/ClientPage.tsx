@@ -18,6 +18,7 @@ import ClientCredentialsDialog from "./ClientCredentialsDialog.tsx";
 
 export default function ClientPage() {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [credentialsId, setCredentialsId] = useState<number | null>(null);
@@ -28,8 +29,8 @@ export default function ClientPage() {
   );
 
   useEffect(() => {
-    refetch({ page, search });
-  }, [page, search]);
+    refetch({ page, search, per_page: pageSize });
+  }, [page, pageSize, search]);
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -71,6 +72,9 @@ export default function ClientPage() {
         
         totalPages={meta?.last_page || 1}
         onPageChange={setPage}
+        pageSize={pageSize}
+        totalItems={meta?.total}
+        onPageSizeChange={setPageSize}
       />
 
       {deleteId !== null && (

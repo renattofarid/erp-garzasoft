@@ -29,6 +29,7 @@ import type { ComprobanteResource } from "@/pages/invoicing/lib/invoicing.interf
 
 export default function CuentasPorCobrarPage() {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
   const [situacionFilter, setSituacionFilter] = useState<string>("");
   const [clienteIdFilter, setClienteIdFilter] = useState<string>("");
@@ -46,7 +47,7 @@ export default function CuentasPorCobrarPage() {
   const { data, meta, isLoading, refetch } = useCuentasPorCobrar();
 
   useEffect(() => {
-    const params: Record<string, any> = { page, search };
+    const params: Record<string, any> = { page, search, per_page: pageSize };
     if (situacionFilter) params.situacion = situacionFilter;
     if (clienteIdFilter) params.cliente_id = clienteIdFilter;
     if (contratoIdFilter) params.contrato_id = contratoIdFilter;
@@ -54,7 +55,7 @@ export default function CuentasPorCobrarPage() {
     if (fechaHastaFilter) params.fecha_vencimiento_hasta = fechaHastaFilter;
 
     refetch(params);
-  }, [page, search, situacionFilter, clienteIdFilter, contratoIdFilter, fechaDesdeFilter, fechaHastaFilter]);
+  }, [page, pageSize, search, situacionFilter, clienteIdFilter, contratoIdFilter, fechaDesdeFilter, fechaHastaFilter]);
 
   const handleClearFilters = () => {
     setSearch("");
@@ -278,6 +279,9 @@ export default function CuentasPorCobrarPage() {
         page={page}
         totalPages={meta?.last_page || 1}
         onPageChange={setPage}
+        pageSize={pageSize}
+        totalItems={meta?.total}
+        onPageSizeChange={setPageSize}
       />
 
       {/* Modales */}

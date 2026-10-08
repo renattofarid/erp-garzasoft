@@ -18,7 +18,7 @@ export async function getContract({
 }: getContractProps): Promise<ContractResponse> {
   const config: AxiosRequestConfig = {
     params: {
-      per_page,
+      per_page: params?.per_page ?? per_page,
       ...params,
     },
   };
@@ -72,6 +72,17 @@ export async function updateContract(
   data: any
 ): Promise<ContractMutationResponse> {
   const response = await api.put<ContractMutationResponse>(`${ENDPOINT}/${id}`, data);
+  return response.data;
+}
+
+export async function saveContractActaVariables(
+  id: number,
+  actaVariables: Record<string, string>
+): Promise<ContractMutationResponse> {
+  const response = await api.put<ContractMutationResponse>(
+    `${ENDPOINT}/${id}/acta-variables`,
+    { acta_variables: actaVariables }
+  );
   return response.data;
 }
 

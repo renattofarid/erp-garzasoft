@@ -37,6 +37,11 @@ export interface CuentasPorCobrarResource {
   contrato: Contrato;
   pagos_cuota?: PagoResource[]; // Para los pagos asociados
   comprobante?: ComprobanteResource | null;
+  pago_manual?: {
+    estado: "pendiente" | "rechazado" | null;
+    pago_id?: number | null;
+    comentario?: string | null;
+  };
 }
 
 export interface Contrato {

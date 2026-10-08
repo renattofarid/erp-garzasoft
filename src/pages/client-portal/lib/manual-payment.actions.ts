@@ -10,3 +10,8 @@ export async function submitManualPayment(cuotaId: number, data: { fecha_pago: s
   });
   return response;
 }
+
+export async function resendManualPaymentNotification(cuotaId: number) {
+  const { data } = await api.post(`cuotas/${cuotaId}/pago-manual/reenviar-aviso`);
+  return data;
+}

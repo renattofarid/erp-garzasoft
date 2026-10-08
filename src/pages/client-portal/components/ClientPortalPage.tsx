@@ -29,6 +29,7 @@ import {
   ChevronRight,
   Download,
   Layers,
+  RefreshCw,
 } from "lucide-react";
 import TitleComponent from "@/components/TitleComponent";
 import { Badge } from "@/components/ui/badge";
@@ -81,6 +82,7 @@ import { ClientPaymentModal } from "./ClientPaymentModal";
 import { format, parseISO } from "date-fns";
 import { api } from "@/lib/config";
 import { createKutiSubscription } from "@/pages/accounts-receivable/lib/kuti.actions";
+import { resendManualPaymentNotification } from "../lib/manual-payment.actions";
 
 const currency = new Intl.NumberFormat("es-PE", {
   style: "currency",
@@ -177,6 +179,7 @@ export default function ClientPortalPage() {
   const [selectedPayCuota, setSelectedPayCuota] = useState<CuentasPorCobrarResource | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [subscriptionLoading, setSubscriptionLoading] = useState<number | null>(null);
+  const [resendingPaymentId, setResendingPaymentId] = useState<number | null>(null);
 
   const fetchPortalData = () => {
     setLoading(true);
@@ -197,6 +200,18 @@ export default function ClientPortalPage() {
   useEffect(() => {
     fetchPortalData();
   }, []);
+
+  const resendPaymentNotice = async (cuotaId: number) => {
+    setResendingPaymentId(cuotaId);
+    try {
+      const response = await resendManualPaymentNotification(cuotaId);
+      successToast(response?.message || "Aviso reenviado correctamente.");
+    } catch (error: any) {
+      errorToast(error?.response?.data?.message || "No se pudo reenviar el aviso.");
+    } finally {
+      setResendingPaymentId(null);
+    }
+  };
 
   const totals = useMemo(() => {
     return installments.reduce(
@@ -611,6 +626,9 @@ export default function ClientPortalPage() {
                         };
 
                         const factura = item.comprobante;
+                        const manualReviewPending = item.pago_manual?.estado === "pendiente";
+                        const manualReviewRejected = item.pago_manual?.estado === "rechazado";
+                        const manualReviewComment = item.pago_manual?.comentario;
 
                         return (
                           <TableRow key={item.id} className="hover:bg-muted/30 dark:hover:bg-zinc-800/30">
@@ -661,17 +679,26 @@ export default function ClientPortalPage() {
 
                             {/* Estado Cuota */}
                             <TableCell className="text-center">
-                              <Badge
-                                variant="outline"
-                                className={`text-[11px] capitalize font-semibold px-2.5 py-0.5 ${variant.bg} ${variant.text} ${variant.border}`}
-                              >
-                                {item.situacion}
-                              </Badge>
+                              <div className="flex flex-col items-center gap-1.5">
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[11px] capitalize font-semibold px-2.5 py-0.5 ${manualReviewPending ? "bg-sky-500/15 text-sky-700 border-sky-500/40 dark:text-sky-300" : `${variant.bg} ${variant.text} ${variant.border}`}`}
+                                >
+                                  {manualReviewPending ? "Pendiente de revisión" : item.situacion}
+                                </Badge>
+                                {manualReviewRejected && <span className="text-[10px] font-medium text-rose-600 dark:text-rose-400">Comprobante rechazado</span>}
+                                
+                              </div>
                             </TableCell>
 
                             {/* ACCIONES POR CUOTA: VER FACTURA Y PAGAR */}
                             <TableCell className="text-right pr-6">
                               <div className="flex items-center justify-end gap-2">
+                                {manualReviewComment && (
+                                  <span className="hidden max-w-[220px] truncate text-left text-[11px] text-muted-foreground xl:inline" title={manualReviewComment}>
+                                    {manualReviewComment}
+                                  </span>
+                                )}
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -687,23 +714,36 @@ export default function ClientPortalPage() {
                                   <span>{factura ? `VER FACTURA` : `VER FACTURA`}</span>
                                 </Button>
 
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedPayCuota(item);
-                                    setIsPaymentModalOpen(true);
-                                  }}
-                                  disabled={item.situacion === "pagado"}
-                                  className={
-                                    item.situacion === "pagado"
-                                      ? "h-7 px-2.5 text-xs font-semibold gap-1 opacity-50 cursor-not-allowed"
-                                      : "h-7 px-2.5 text-xs font-bold gap-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-                                  }
-                                >
-                                  <CreditCard className="h-3.5 w-3.5" />
-                                  <span>{item.situacion === "pagado" ? "PAGADO" : "PAGAR"}</span>
-                                </Button>
+                                {manualReviewPending ? (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => resendPaymentNotice(item.id)}
+                                    disabled={resendingPaymentId === item.id}
+                                    className="h-7 gap-1 border-sky-500/40 px-2.5 text-xs font-semibold text-sky-700 hover:bg-sky-500/10 dark:text-sky-300"
+                                  >
+                                    <RefreshCw className={`h-3.5 w-3.5 ${resendingPaymentId === item.id ? "animate-spin" : ""}`} />
+                                    <span>{resendingPaymentId === item.id ? "REENVIANDO" : "REENVIAR AVISO"}</span>
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedPayCuota(item);
+                                      setIsPaymentModalOpen(true);
+                                    }}
+                                    disabled={item.situacion === "pagado"}
+                                    className={
+                                      item.situacion === "pagado"
+                                        ? "h-7 px-2.5 text-xs font-semibold gap-1 opacity-50 cursor-not-allowed"
+                                        : "h-7 px-2.5 text-xs font-bold gap-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                                    }
+                                  >
+                                    <CreditCard className="h-3.5 w-3.5" />
+                                    <span>{item.situacion === "pagado" ? "PAGADO" : "PAGAR"}</span>
+                                  </Button>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>

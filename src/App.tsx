@@ -39,13 +39,14 @@ import ClientPortalPage from "./pages/client-portal/components/ClientPortalPage"
 import ReportsPage from "./pages/reports/components/ReportsPage";
 import ContactPage from "./pages/contacts/components/ContactPage";
 import PendingPaymentsPage from "./pages/accounts-receivable/components/PendingPaymentsPage";
+import PaymentNotificationSettingsPage from "./pages/accounts-receivable/components/PaymentNotificationSettingsPage";
 import { ContactRoute } from "./pages/contacts/lib/contact.interface";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   const { token, user } = useAuthStore();
   const location = useLocation();
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: `${location.pathname}${location.search}` }} replace />;
   }
 
   if (user?.cliente_id && location.pathname !== "/" && location.pathname !== "/inicio") {
@@ -212,6 +213,7 @@ export default function App() {
             path="/pagos-por-aprobar"
             element={<ProtectedRoute><PendingPaymentsPage /></ProtectedRoute>}
           />
+          <Route path="/configuracion" element={<ProtectedRoute><PaymentNotificationSettingsPage /></ProtectedRoute>} />
 
           <Route
             path="/reportes"

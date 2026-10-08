@@ -140,12 +140,12 @@ export async function deletePago(id: number): Promise<any> {
   return data;
 }
 
-export async function approvePago(id: number): Promise<any> {
-  const { data } = await api.post<any>(`${ENDPOINT_PAGOS}/${id}/aprobar`);
+export async function approvePago(id: number, observacion_revision?: string): Promise<any> {
+  const { data } = await api.post<any>(`${ENDPOINT_PAGOS}/${id}/aprobar`, { observacion_revision });
   return data;
 }
 
-export async function rejectPago(id: number, motivo_rechazo: string): Promise<any> {
-  const { data } = await api.post<any>(`${ENDPOINT_PAGOS}/${id}/rechazar`, { motivo_rechazo });
+export async function rejectPago(id: number, observacion_revision?: string): Promise<any> {
+  const { data } = await api.post<any>(`${ENDPOINT_PAGOS}/${id}/rechazar`, { observacion_revision });
   return data;
 }

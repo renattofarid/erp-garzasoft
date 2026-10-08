@@ -75,6 +75,17 @@ export async function updateContract(
   return response.data;
 }
 
+export async function saveContractActaVariables(
+  id: number,
+  actaVariables: Record<string, string>
+): Promise<ContractMutationResponse> {
+  const response = await api.put<ContractMutationResponse>(
+    `${ENDPOINT}/${id}/acta-variables`,
+    { acta_variables: actaVariables }
+  );
+  return response.data;
+}
+
 export async function deleteContract(
   id: number,
   payload?: { motivo_anulacion?: string; fecha_anulacion: string }

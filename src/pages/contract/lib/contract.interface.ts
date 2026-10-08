@@ -65,6 +65,7 @@ export interface ContractResource {
   fecha_anulacion?: string | null;
   firma_arrendador?: string | null;
   firma_cliente?: string | null;
+  acta_variables?: Record<string, string> | null;
   created_at?: string;
   updated_at?: string;
   cliente: Cliente;

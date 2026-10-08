@@ -30,6 +30,7 @@ import {
   replaceVariablesInHtml,
 } from "@/pages/products/lib/docVariables";
 import { getClientDisplayName } from "@/pages/client/lib/client.interface";
+import { saveContractActaVariables } from "../lib/contract.actions";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -121,7 +122,19 @@ export default function ContractActaModal({
             });
           }
 
-          setVariableValues(initialValues);
+           let savedValues: Record<string, string> = {};
+           try {
+             const localValues = window.localStorage.getItem(`acta-variables-${contract.id}`);
+             savedValues = localValues ? JSON.parse(localValues) : {};
+           } catch {
+             savedValues = {};
+           }
+
+           setVariableValues({
+             ...initialValues,
+             ...(contract.acta_variables || {}),
+             ...savedValues,
+           });
         })
         .catch(() => {
           errorToast("Error al cargar la plantilla del Formato de Alta / Acta.");
@@ -169,12 +182,21 @@ export default function ContractActaModal({
   };
 
   // Guardar configuración de variables
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!contract) return;
     setSaving(true);
-    setTimeout(() => {
+    try {
+      window.localStorage.setItem(
+        `acta-variables-${contract.id}`,
+        JSON.stringify(variableValues)
+      );
+      await saveContractActaVariables(contract.id, variableValues);
       setSaving(false);
       successToast("Variables del Acta de Alta guardadas correctamente.");
-    }, 250);
+    } catch (error: any) {
+      setSaving(false);
+      errorToast(error?.message || "No se pudieron guardar las variables del Acta de Alta.");
+    }
   };
 
   // Abrir la vista completa del PDF / Acta en una nueva pestaña con las variables reemplazadas

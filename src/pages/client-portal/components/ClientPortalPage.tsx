@@ -687,7 +687,7 @@ export default function ClientPortalPage() {
                                   {manualReviewPending ? "Pendiente de revisión" : item.situacion}
                                 </Badge>
                                 {manualReviewRejected && <span className="text-[10px] font-medium text-rose-600 dark:text-rose-400">Comprobante rechazado</span>}
-                                {manualReviewComment && <span className="max-w-[180px] truncate text-[10px] text-muted-foreground" title={manualReviewComment}>Ver comentario</span>}
+                                
                               </div>
                             </TableCell>
 

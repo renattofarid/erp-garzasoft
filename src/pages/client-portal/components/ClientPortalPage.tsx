@@ -628,6 +628,7 @@ export default function ClientPortalPage() {
                         const factura = item.comprobante;
                         const manualReviewPending = item.pago_manual?.estado === "pendiente";
                         const manualReviewRejected = item.pago_manual?.estado === "rechazado";
+                        const manualReviewComment = item.pago_manual?.comentario;
 
                         return (
                           <TableRow key={item.id} className="hover:bg-muted/30 dark:hover:bg-zinc-800/30">
@@ -686,12 +687,18 @@ export default function ClientPortalPage() {
                                   {manualReviewPending ? "Pendiente de revisión" : item.situacion}
                                 </Badge>
                                 {manualReviewRejected && <span className="text-[10px] font-medium text-rose-600 dark:text-rose-400">Comprobante rechazado</span>}
+                                {manualReviewComment && <span className="max-w-[180px] truncate text-[10px] text-muted-foreground" title={manualReviewComment}>Ver comentario</span>}
                               </div>
                             </TableCell>
 
                             {/* ACCIONES POR CUOTA: VER FACTURA Y PAGAR */}
                             <TableCell className="text-right pr-6">
                               <div className="flex items-center justify-end gap-2">
+                                {manualReviewComment && (
+                                  <span className="hidden max-w-[220px] truncate text-left text-[11px] text-muted-foreground xl:inline" title={manualReviewComment}>
+                                    {manualReviewComment}
+                                  </span>
+                                )}
                                 <Button
                                   variant="outline"
                                   size="sm"

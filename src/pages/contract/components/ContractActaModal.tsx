@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { errorToast, successToast } from "@/lib/core.function";
+import { openPdfFromFetcher } from "@/lib/pdf";
 import { ContractResource } from "../lib/contract.interface";
 import { getProductFormatoAlta } from "@/pages/products/lib/product.actions";
 import {
@@ -174,8 +175,9 @@ export default function ContractActaModal({
   };
 
   // Abrir la vista completa del PDF / Acta en una nueva pestaña con las variables reemplazadas
-  const handleOpenPdfNewTab = () => {
+  const handleOpenPdfNewTab = async () => {
     if (!contract) return;
+    setGeneratingPdf(true);
     try {
       const finalHtml = replaceVariablesInHtml(rawHtmlTemplate, variableValues, false);
 
@@ -203,16 +205,17 @@ export default function ContractActaModal({
         </html>
       `;
 
-      const blob = new Blob([fullDocumentHtml], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-      const newWin = window.open(url, "_blank");
-      if (!newWin) {
-        errorToast("El navegador bloqueó la ventana emergente. Por favor habilita ventanas emergentes.");
-      } else {
-        successToast("Acta cargada en una nueva pestaña.");
-      }
-    } catch {
-      errorToast("No se pudo visualizar el PDF del Acta.");
+      // Usa el mismo flujo del Formato de Alta: abre una pestaña inmediatamente,
+      // muestra el estado de preparación y luego carga el documento completo.
+      await openPdfFromFetcher(
+        async () => new Blob([fullDocumentHtml], { type: "text/html" }),
+        `Generando Formato de Alta de ${contract.numero}...`
+      );
+      successToast("Formato de Alta cargado en una nueva pestaña.");
+    } catch (error: any) {
+      errorToast(error?.message || "No se pudo visualizar el PDF del Acta.");
+    } finally {
+      setGeneratingPdf(false);
     }
   };
 
@@ -379,7 +382,7 @@ export default function ContractActaModal({
               variant="outline"
               size="sm"
               onClick={handleOpenPdfNewTab}
-              disabled={loading}
+              disabled={generatingPdf || loading}
               className="text-xs h-9 gap-1.5 border-purple-300 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950 font-semibold"
             >
               <ExternalLink className="h-3.5 w-3.5" />

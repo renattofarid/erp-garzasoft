@@ -86,3 +86,16 @@ export async function getFormatoAltaPdfBlob(
   });
   return response.data;
 }
+
+export async function getActaFormatoAltaPdfBlob(
+  id: number,
+  html: string,
+  paperSize: "a4" | "letter"
+): Promise<Blob> {
+  const response = await api.post(
+    `${ENDPOINT}/${id}/formato-alta/acta-pdf`,
+    { html, paper_size: paperSize },
+    { responseType: "blob" }
+  );
+  return response.data;
+}

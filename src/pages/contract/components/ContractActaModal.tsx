@@ -19,7 +19,10 @@ import { Badge } from "@/components/ui/badge";
 import { errorToast, successToast } from "@/lib/core.function";
 import { openPdfFromFetcher } from "@/lib/pdf";
 import { ContractResource } from "../lib/contract.interface";
-import { getProductFormatoAlta } from "@/pages/products/lib/product.actions";
+import {
+  getActaFormatoAltaPdfBlob,
+  getProductFormatoAlta,
+} from "@/pages/products/lib/product.actions";
 import {
   SYSTEM_VARIABLES,
   extractVariablesFromHtml,
@@ -180,6 +183,14 @@ export default function ContractActaModal({
     setGeneratingPdf(true);
     try {
       const finalHtml = replaceVariablesInHtml(rawHtmlTemplate, variableValues, false);
+      const productId =
+        (contract as any).producto_id ||
+        ((contract as any).productos && (contract as any).productos[0]?.id) ||
+        (contract.contrato_producto_modulos && contract.contrato_producto_modulos[0]?.producto_id);
+
+      if (!productId) {
+        throw new Error("Este contrato no tiene un producto asignado para generar el PDF.");
+      }
 
       const pageStyle = paperSize === "a4" ? "A4 portrait" : "letter portrait";
       const fullDocumentHtml = `
@@ -208,7 +219,7 @@ export default function ContractActaModal({
       // Usa el mismo flujo del Formato de Alta: abre una pestaña inmediatamente,
       // muestra el estado de preparación y luego carga el documento completo.
       await openPdfFromFetcher(
-        async () => new Blob([fullDocumentHtml], { type: "text/html" }),
+        () => getActaFormatoAltaPdfBlob(productId, fullDocumentHtml, paperSize),
         `Generando Formato de Alta de ${contract.numero}...`
       );
       successToast("Formato de Alta cargado en una nueva pestaña.");

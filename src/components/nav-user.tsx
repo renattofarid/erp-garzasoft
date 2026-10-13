@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronsUpDown, LogOut, Moon, Sun, SunMoon } from "lucide-react";
+import { ChevronsUpDown, KeyRound, LogOut, Moon, Sun, SunMoon } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -24,10 +24,21 @@ import {
 import { Usuario } from "@/pages/auth/lib/auth.interface";
 import { useTheme } from "./theme-provider";
 import { useAuthStore } from "@/pages/auth/lib/auth.store";
+import ChangePasswordDialog from "@/pages/auth/components/ChangePasswordDialog";
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 export function NavUser({ user }: { user: Usuario }) {
   const { setTheme } = useTheme();
   const { clearAuth } = useAuthStore();
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get("cambiar-clave") === "1") {
+      setChangePasswordOpen(true);
+    }
+  }, [location.search]);
 
   const handleLogout = () => {
     clearAuth();
@@ -111,6 +122,11 @@ export function NavUser({ user }: { user: Usuario }) {
               </DropdownMenuSub>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setChangePasswordOpen(true)}>
+              <KeyRound />
+              Cambiar mi clave
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
               Cerrar sesión
@@ -118,6 +134,7 @@ export function NavUser({ user }: { user: Usuario }) {
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
+      <ChangePasswordDialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
     </SidebarMenu>
   );
 }

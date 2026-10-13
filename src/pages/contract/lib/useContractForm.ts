@@ -5,6 +5,7 @@ import type { z } from "zod";
 import {
   addMonths,
   addYears,
+  addDays,
   format,
   lastDayOfMonth,
   parseISO,
@@ -295,7 +296,7 @@ export const useContractForm = ({
     const newCuotas: { monto: number; fecha_vencimiento: string }[] = [];
 
     if (dueDayType === "fin_mes" && instalacion > 0) {
-      const installationDate = startOfMonth(startDate);
+      const installationDate = addDays(startDate, 1);
       newCuotas.push({
         monto: Math.round(instalacion * 100) / 100,
         fecha_vencimiento: format(installationDate, "yyyy-MM-dd"),
@@ -336,6 +337,9 @@ export const useContractForm = ({
       let cumulativeSum = 0;
 
       suggestedDates.forEach((fecha, index) => {
+        const dueDate = index === 0 && instalacion > 0
+          ? format(addDays(startDate, 1), "yyyy-MM-dd")
+          : fecha;
         if (index === 0) {
           const firstAmount =
             count === 1
@@ -344,19 +348,19 @@ export const useContractForm = ({
           cumulativeSum += firstAmount;
           newCuotas.push({
             monto: firstAmount,
-            fecha_vencimiento: fecha,
+            fecha_vencimiento: dueDate,
           });
         } else if (index === count - 1) {
           const lastAmount = Math.round((total - cumulativeSum) * 100) / 100;
           newCuotas.push({
             monto: lastAmount,
-            fecha_vencimiento: fecha,
+            fecha_vencimiento: dueDate,
           });
         } else {
           cumulativeSum += baseInstallment;
           newCuotas.push({
             monto: baseInstallment,
-            fecha_vencimiento: fecha,
+            fecha_vencimiento: dueDate,
           });
         }
       });
@@ -463,7 +467,9 @@ export const useContractForm = ({
     if (paymentMethod !== "unico") return;
 
     const currentCuotas = form.getValues("cuotas") || [];
-    const defaultDate = fechaInicio || format(new Date(), "yyyy-MM-dd");
+    const defaultDate = fechaInicio
+      ? format(addDays(parseISO(`${fechaInicio}T00:00:00`), Number(costoInstalacion || 0) > 0 ? 1 : 0), "yyyy-MM-dd")
+      : format(new Date(), "yyyy-MM-dd");
 
     if (currentCuotas.length === 0) {
       replaceCuotas([

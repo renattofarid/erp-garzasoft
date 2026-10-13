@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Eye, EyeOff, KeyRound, Save } from "lucide-react";
+import { Eye, EyeOff, KeyRound, RefreshCw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,6 +15,7 @@ import { errorToast, successToast } from "@/lib/core.function";
 import {
   getClientPortalUser,
   saveClientPortalUser,
+  resetClientPortalPassword,
 } from "../lib/client.actions";
 import { findClientById } from "../lib/client.actions";
 import { getClientDisplayName } from "../lib/client.interface";
@@ -113,6 +114,20 @@ export default function ClientCredentialsDialog({
         error?.response?.data?.message ||
         "No se pudo guardar el acceso.";
       errorToast(String(message));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReset = async () => {
+    setSaving(true);
+    try {
+      const response = await resetClientPortalPassword(clientId);
+      setLastPassword(response.data.password_visible);
+      setPasswordMessage(response.message || "La clave fue reiniciada y enviada por correo.");
+      successToast(response.message || "Clave reiniciada y enviada.");
+    } catch (error: any) {
+      errorToast(error?.response?.data?.message || "No se pudo reiniciar la clave.");
     } finally {
       setSaving(false);
     }
@@ -217,6 +232,12 @@ export default function ClientCredentialsDialog({
             <Save className="mr-2 size-4" />
             {saving ? "Guardando..." : "Guardar acceso"}
           </Button>
+          {exists && (
+            <Button variant="outline" onClick={handleReset} disabled={loading || saving}>
+              <RefreshCw className="mr-2 size-4" />
+              Reiniciar y enviar
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -99,3 +99,8 @@ export async function saveClientPortalUser(
   );
   return data;
 }
+
+export async function resetClientPortalPassword(id: number) {
+  const { data } = await api.post(`${ENDPOINT}/${id}/portal-user/reset-password`);
+  return data as ClientPortalUserResponse & { data: ClientPortalUserResponse["data"] & { recipient?: string } };
+}

@@ -86,11 +86,31 @@ export function ClientPaymentModal({ open, onOpenChange, cuota, onPaymentFinishe
           checkoutUrl: checkout.checkout_url,
           containerId: checkoutContainerId,
           onSuccess: async ({ paymentIntentId }) => {
-            try { await confirmKutiPayment(cuota.id, paymentIntentId); } catch { /* El webhook puede confirmar despues. */ }
-            setView("success");
-            successToast("Pago recibido correctamente.");
-            onPaymentFinished?.();
-            refreshTimer.current = window.setTimeout(() => onPaymentFinished?.(), 1800);
+            try {
+              let confirmation: Awaited<ReturnType<typeof confirmKutiPayment>> | null = null;
+              for (let attempt = 0; attempt < 5; attempt += 1) {
+                try {
+                  confirmation = await confirmKutiPayment(cuota.id, paymentIntentId);
+                  break;
+                } catch (error: any) {
+                  if (error?.response?.status !== 409 || attempt === 4) throw error;
+                  await new Promise((resolve) => window.setTimeout(resolve, 1500));
+                }
+              }
+
+              if (confirmation?.data?.situacion !== "pagado") {
+                throw new Error("Kuti confirmó el pago, pero la cuota aún no está totalmente pagada.");
+              }
+
+              setView("success");
+              successToast("Pago recibido y cuota marcada como pagada.");
+              onPaymentFinished?.();
+              refreshTimer.current = window.setTimeout(() => onPaymentFinished?.(), 1800);
+            } catch (error: any) {
+              setView("summary");
+              errorToast(error?.response?.data?.message || error?.message || "El pago fue recibido, pero no se pudo actualizar la cuota.");
+              onPaymentFinished?.();
+            }
           },
           onFailure: () => { errorToast("El pago no se completo. Puedes intentarlo nuevamente."); setView("summary"); },
           onExpired: () => { errorToast("El checkout vencio. Intenta nuevamente."); setView("summary"); },

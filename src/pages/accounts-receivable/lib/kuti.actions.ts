@@ -14,7 +14,11 @@ export async function createKutiCheckout(cuotaId: number) {
 }
 
 export async function confirmKutiPayment(cuotaId: number, paymentIntentId: string) {
-  await api.post(`cuotas/${cuotaId}/kuti-confirm`, { payment_intent_id: paymentIntentId });
+  const { data } = await api.post<{ data?: { cuota_id: number; situacion: string; fecha_pago?: string | null } }>(
+    `cuotas/${cuotaId}/kuti-confirm`,
+    { payment_intent_id: paymentIntentId }
+  );
+  return data;
 }
 
 export async function createKutiSubscription(contractId: number) {

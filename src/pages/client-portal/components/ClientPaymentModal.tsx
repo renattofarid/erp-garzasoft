@@ -13,7 +13,7 @@ declare global {
       open: (options: {
         checkoutUrl: string;
         containerId?: string;
-        onSuccess?: (data: { paymentIntentId: string }) => void;
+        onSuccess?: (data: { paymentIntentId?: string | { id?: string; payment_intent_id?: string }; payment_intent_id?: string }) => void;
         onFailure?: () => void;
         onExpired?: () => void;
         onError?: (error: { message?: string }) => void;
@@ -85,12 +85,20 @@ export function ClientPaymentModal({ open, onOpenChange, cuota, onPaymentFinishe
         window.Kuti.open({
           checkoutUrl: checkout.checkout_url,
           containerId: checkoutContainerId,
-          onSuccess: async ({ paymentIntentId }) => {
+          onSuccess: async ({ paymentIntentId, payment_intent_id }) => {
+            const resolvedPaymentIntentId = typeof paymentIntentId === "string"
+              ? paymentIntentId
+              : paymentIntentId?.id || paymentIntentId?.payment_intent_id || payment_intent_id;
+            if (!resolvedPaymentIntentId) {
+              setView("summary");
+              errorToast("Kuti no devolvió el identificador del pago.");
+              return;
+            }
             try {
               let confirmation: Awaited<ReturnType<typeof confirmKutiPayment>> | null = null;
               for (let attempt = 0; attempt < 5; attempt += 1) {
                 try {
-                  confirmation = await confirmKutiPayment(cuota.id, paymentIntentId);
+                  confirmation = await confirmKutiPayment(cuota.id, resolvedPaymentIntentId);
                   break;
                 } catch (error: any) {
                   if (error?.response?.status !== 409 || attempt === 4) throw error;

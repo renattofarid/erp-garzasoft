@@ -8,7 +8,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { AlertTriangle, Calculator, CheckCircle2, ExternalLink, FileText, LoaderCircle } from "lucide-react";
+import { AlertTriangle, Calculator, CheckCircle2, ExternalLink, FileText, LoaderCircle, Plus } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DatePickerFormField } from "@/components/DatePickerFormField";
@@ -31,6 +31,7 @@ import {
 } from "../lib/contract.actions";
 import type { ContractResource } from "../lib/contract.interface";
 import { errorToast } from "@/lib/core.function";
+import { ContractClientCreateDialog } from "./ContractClientCreateDialog";
 
 interface ContractBasicInfoProps {
   control: Control<any>;
@@ -43,6 +44,7 @@ interface ContractBasicInfoProps {
   installmentsTotal: number;
   hasInstallments: boolean;
   onRecalculateTotal: () => void;
+  onClientCreated: (client: ClientResource) => Promise<void> | void;
 }
 
 const RequiredMark = () => <span className="ml-1 text-red-500">*</span>;
@@ -77,6 +79,7 @@ export const ContractBasicInfo = ({
   installmentsTotal,
   hasInstallments,
   onRecalculateTotal,
+  onClientCreated,
 }: ContractBasicInfoProps) => {
   const { setValue } = useFormContext();
   const selectedClientId = useWatch({
@@ -95,6 +98,7 @@ export const ContractBasicInfo = ({
   const [isCheckingContracts, setIsCheckingContracts] = useState(false);
   const [contractsCheckFailed, setContractsCheckFailed] = useState(false);
   const [checkedClientId, setCheckedClientId] = useState<number>();
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
 
   const currentClientId = Number(selectedClientId) || undefined;
   const currentParentId = Number(selectedParentId) || undefined;
@@ -249,20 +253,34 @@ export const ContractBasicInfo = ({
           )}
         />
 
-        <FormSelect
-          control={control}
-          label="Cliente (Empresa / Corporación)"
-          name="cliente_padre_id"
-          placeholder="Selecciona una corporación, empresa o local"
-          options={rootOptions.map((client) => ({
-            label: getClientOptionLabel(client, getClientDisplayName(client)),
-            value: client.id.toString(),
-            keywords: [client.ruc, getClientDisplayName(client)].filter(
-              (value): value is string => Boolean(value)
-            ),
-          }))}
-          onChange={syncParentAndClient}
-        />
+        <div className="flex min-w-0 items-end gap-2">
+          <div className="min-w-0 flex-1">
+            <FormSelect
+              control={control}
+              label="Cliente (Empresa / Corporación)"
+              name="cliente_padre_id"
+              placeholder="Selecciona una corporación, empresa o local"
+              options={rootOptions.map((client) => ({
+                label: getClientOptionLabel(client, getClientDisplayName(client)),
+                value: client.id.toString(),
+                keywords: [client.ruc, getClientDisplayName(client)].filter(
+                  (value): value is string => Boolean(value)
+                ),
+              }))}
+              onChange={syncParentAndClient}
+            />
+          </div>
+          <Button
+            type="button"
+            size="icon"
+            className="h-10 w-10 shrink-0"
+            title="Agregar nuevo cliente"
+            aria-label="Agregar nuevo cliente"
+            onClick={() => setIsClientModalOpen(true)}
+          >
+            <Plus className="h-5 w-5" />
+          </Button>
+        </div>
 
         <FormSelect
           control={control}
@@ -539,7 +557,12 @@ export const ContractBasicInfo = ({
         </div>
       </div>
 
-    
+      <ContractClientCreateDialog
+        open={isClientModalOpen}
+        onOpenChange={setIsClientModalOpen}
+        onCreated={onClientCreated}
+      />
+
     </div>
   );
 };

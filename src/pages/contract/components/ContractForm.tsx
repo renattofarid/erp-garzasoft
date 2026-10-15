@@ -34,7 +34,7 @@ export const ContractForm = ({
   mode = "create",
   currentContractId,
 }: ContractFormProps) => {
-  const { data: clients, isLoading } = useAllClients();
+  const { data: clients, isLoading, refetch: refetchClients } = useAllClients();
   const { data: productData } = useAllProducts();
 
   const {
@@ -120,6 +120,17 @@ export const ContractForm = ({
               installmentsTotal={currentInstallmentsSum || 0}
               hasInstallments={cuotaFields.length > 0}
               onRecalculateTotal={recalculateTotalFromInstallments}
+              onClientCreated={async (client) => {
+                await refetchClients();
+                form.setValue("cliente_padre_id", client.id, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+                form.setValue("cliente_id", client.id, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
             />
 
             {contractType === "saas" && (

@@ -322,7 +322,12 @@ export const ContractColumns = ({
   {
     accessorKey: "cliente.razon_social",
     header: "Cliente",
-    cell: ({ row }) => getClientDisplayName(row.original.cliente),
+    cell: ({ row }) => {
+      const client = row.original.cliente;
+      const clientName = getClientDisplayName(client);
+
+      return client.ruc ? `${client.ruc} - ${clientName}` : clientName;
+    },
   },
   {
     accessorKey: "tipo_contrato",

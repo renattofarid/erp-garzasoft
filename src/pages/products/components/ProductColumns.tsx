@@ -10,6 +10,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+// Se mantienen las acciones y su funcionalidad, pero permanecen ocultas
+// temporalmente hasta que se vuelvan a habilitar desde aquí.
+const SHOW_ALTA_ACTIONS = false;
+
 export const ProductColumns = ({
   onEdit,
   onDelete,
@@ -95,7 +99,7 @@ export const ProductColumns = ({
         <TooltipProvider delayDuration={100} disableHoverableContent>
           <div className="flex items-center gap-1.5">
             {/* 1. Formato de Alta (Verde) */}
-            <Tooltip disableHoverableContent>
+            {SHOW_ALTA_ACTIONS && <Tooltip disableHoverableContent>
               <TooltipTrigger asChild>
                 <Button
                   type="button"
@@ -114,10 +118,10 @@ export const ProductColumns = ({
               <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
                 Formato de Alta
               </TooltipContent>
-            </Tooltip>
+            </Tooltip>}
 
             {/* 2. Ver PDF Alta (Rojo) */}
-            <Tooltip disableHoverableContent>
+            {SHOW_ALTA_ACTIONS && <Tooltip disableHoverableContent>
               <TooltipTrigger asChild>
                 <Button
                   type="button"
@@ -136,7 +140,7 @@ export const ProductColumns = ({
               <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
                 Ver PDF Alta
               </TooltipContent>
-            </Tooltip>
+            </Tooltip>}
 
             {/* 3. Editar (Amarillo) */}
             <Tooltip disableHoverableContent>

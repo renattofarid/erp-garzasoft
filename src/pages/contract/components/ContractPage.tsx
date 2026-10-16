@@ -19,6 +19,7 @@ import { ContractResource } from "../lib/contract.interface.ts";
 import { ContractInstallmentsDialog } from "./ContractInstallmentsDialog.tsx";
 import { ContractSignatureDialog } from "./ContractSignatureDialog.tsx";
 import ContractActaModal from "./ContractActaModal.tsx";
+import ContractDocumentsDialog from "./ContractDocumentsDialog.tsx";
 import { SimpleDeleteDialog } from "@/components/SimpleDeleteDialog";
 
 const initialFilters: ContractFiltersState = {
@@ -44,6 +45,8 @@ export default function ContractPage() {
   const [signatureContract, setSignatureContract] =
     useState<ContractResource | null>(null);
   const [actaContract, setActaContract] =
+    useState<ContractResource | null>(null);
+  const [documentsContract, setDocumentsContract] =
     useState<ContractResource | null>(null);
 
   const { data, meta, isLoading, refetch } = useContracts();
@@ -149,6 +152,7 @@ export default function ContractPage() {
         onViewInstallments: setInstallmentsContract,
         onSignature: setSignatureContract,
         onGenerateActa: setActaContract,
+        onUploadDocuments: setDocumentsContract,
       }),
     []
   );
@@ -222,6 +226,12 @@ export default function ContractPage() {
         open={actaContract !== null}
         onOpenChange={(open) => !open && setActaContract(null)}
         contract={actaContract}
+      />
+      <ContractDocumentsDialog
+        open={documentsContract !== null}
+        contractId={documentsContract?.id ?? null}
+        contractNumber={documentsContract?.numero}
+        onOpenChange={(open) => !open && setDocumentsContract(null)}
       />
     </div>
   );

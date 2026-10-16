@@ -66,7 +66,12 @@ export default function ContractAddPage() {
             error?.response?.data?.message ||
             "Error al crear el contrato"
         );
-      });
+    });
+  };
+
+  const goToContractList = () => {
+    setCreatedContract(null);
+    router(ContractRoute);
   };
 
   if (isLoadingNumber) {
@@ -115,7 +120,7 @@ export default function ContractAddPage() {
       <ContractCreatedDialog
         open={createdContract !== null}
         contractNumber={createdContract?.numero ?? ""}
-        onClose={() => setCreatedContract(null)}
+        onClose={goToContractList}
         onViewPdf={() => {
           if (!createdContract) return;
           openContractPdf(createdContract.id).catch(() =>
@@ -128,10 +133,7 @@ export default function ContractAddPage() {
             .then(() => successToast("Descargando contrato en Word (.docx)..."))
             .catch(() => errorToast("No se pudo descargar el Word del contrato."));
         }}
-        onGoToList={() => {
-          setCreatedContract(null);
-          router(ContractRoute);
-        }}
+        onGoToList={goToContractList}
       />
     </div>
   );

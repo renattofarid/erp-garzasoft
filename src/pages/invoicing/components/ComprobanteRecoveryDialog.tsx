@@ -207,7 +207,7 @@ export function ComprobanteRecoveryDialog({
             <div>
               <DialogTitle className="text-xl">Factura {comprobante.numero}</DialogTitle>
               <DialogDescription>
-                {getClientDisplayName(comprobante.cliente)} · Los precios ingresados incluyen IGV.
+                {comprobante.cliente ? getClientDisplayName(comprobante.cliente) : `${comprobante.receptor_nombre || "Receptor externo"} · ${comprobante.receptor_documento || ""}`} · Los precios ingresados incluyen IGV.
               </DialogDescription>
             </div>
             {hasZip && (
@@ -316,12 +316,12 @@ export function ComprobanteRecoveryDialog({
 
         <fieldset disabled={!editable || saving} className="space-y-4 disabled:opacity-70">
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/30 p-3 text-sm">
-            <span>Cliente: <strong>{getClientDisplayName(comprobante.cliente)}</strong>. El RUC y direccion se toman de su ficha.</span>
-            <Button type="button" size="sm" variant="outline" asChild>
+            <span>{comprobante.cliente ? <>Cliente: <strong>{getClientDisplayName(comprobante.cliente)}</strong>. El RUC y dirección se toman de su ficha.</> : <>Receptor externo: <strong>{comprobante.receptor_nombre}</strong> · Documento: {comprobante.receptor_documento}.</>}</span>
+            {comprobante.cliente_id && <Button type="button" size="sm" variant="outline" asChild>
               <a href={`${ClientEditRoute}/${comprobante.cliente_id}`} target="_blank" rel="noreferrer">
                 Editar cliente <ExternalLink className="ml-1 size-3.5" />
               </a>
-            </Button>
+            </Button>}
           </div>
           <div className="grid gap-3 sm:grid-cols-5">
             <div className="space-y-1.5">

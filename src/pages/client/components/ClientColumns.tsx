@@ -14,7 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Building2, KeyRound, Mail, Pencil, Phone, ReceiptText, Trash2 } from "lucide-react";
+import { Building2, KeyRound, Pencil, ReceiptText, Trash2 } from "lucide-react";
 
 function ClientActionsCell({
   id,
@@ -114,6 +114,11 @@ export const ClientColumns = ({
           <Badge variant="outline" className="capitalize">
             {row.original.tipo_ui ?? (row.original.tipo === "unico" ? "local" : row.original.tipo)}
           </Badge>
+          {row.original.tipos_local?.length ? (
+            <Badge variant="outline" className="capitalize">
+              {row.original.tipos_local.join(", ")}
+            </Badge>
+          ) : null}
           {row.original.ruc && (
             <span className="inline-flex items-center gap-1">
               <ReceiptText className="h-3.5 w-3.5" />
@@ -123,52 +128,6 @@ export const ClientColumns = ({
         </div>
       </div>
     ),
-  },
-  {
-    accessorKey: "dueno_nombre",
-    header: "Dueno",
-    cell: ({ row }) => (
-      <div className="space-y-1">
-        <div className="font-medium">{row.original.dueno_nombre}</div>
-        {(row.original.dueno_email || row.original.dueno_celular) && (
-          <div className="flex flex-col gap-1 items-start justify-center">
-            {row.original.dueno_email && (
-              <Badge variant="outline" className="flex gap-1 items-center">
-                <Mail className="h-4 w-4" />
-                <span className="font-semibold">{row.original.dueno_email}</span>
-              </Badge>
-            )}
-            {row.original.dueno_celular && (
-              <Badge variant="outline" className="flex gap-1 items-center">
-                <Phone className="h-4 w-4" />
-                <span className="font-semibold">{row.original.dueno_celular}</span>
-              </Badge>
-            )}
-          </div>
-        )}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "responsable",
-    header: "Representacion",
-    accessorFn: (row) => row,
-    cell: ({ getValue }) => {
-      const client = getValue() as ClientResource;
-
-      return (
-        <div className="space-y-2 text-sm">
-          <div>
-            <span className="font-semibold">Representante:</span>{" "}
-            <span>{client.representante_nombre || client.dueno_nombre || "-"}</span>
-          </div>
-          <div>
-            <span className="font-semibold">Responsable:</span>{" "}
-            <span>{client.responsable_nombre || "-"}</span>
-          </div>
-        </div>
-      );
-    },
   },
   {
     accessorKey: "contactos_clientes",
@@ -183,9 +142,22 @@ export const ClientColumns = ({
       return (
         <div className="space-y-1">
           {contactos.map((contacto, i) => (
-            <div key={i} className="text-sm">
-              <span className="font-semibold">{contacto.nombre}:</span>{" "}
-              <span>{contacto.celular}</span>
+            <div key={i} className="space-y-1 text-sm">
+              <div>
+                <span className="font-semibold">
+                  {contacto.dni ? `${contacto.dni} - ` : ""}
+                  {contacto.nombre}
+                </span>
+                {contacto.celular && <span>: {contacto.celular}</span>}
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {contacto.es_dueno && (
+                  <Badge variant="outline" className="text-xs">Dueño</Badge>
+                )}
+                {contacto.es_vendedor && (
+                  <Badge variant="outline" className="text-xs">Vendedor</Badge>
+                )}
+              </div>
             </div>
           ))}
         </div>

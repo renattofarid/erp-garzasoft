@@ -62,7 +62,11 @@ import {
 import { errorToast, successToast } from "@/lib/core.function";
 import { openPdfFromFetcher } from "@/lib/pdf";
 import { useAuthStore } from "@/pages/auth/lib/auth.store";
-import { getContract, openContractPdf } from "@/pages/contract/lib/contract.actions";
+import {
+  downloadContractDocument,
+  getContract,
+  openContractPdf,
+} from "@/pages/contract/lib/contract.actions";
 import { ContractResource } from "@/pages/contract/lib/contract.interface";
 import {
   castContractType,
@@ -201,6 +205,15 @@ export default function ClientPortalPage() {
     fetchPortalData();
   }, []);
 
+  const certificateDocument = useMemo(
+    () => contracts.flatMap((contract) => contract.documentos || []).find((document) => document.categoria === "certificado_digital"),
+    [contracts]
+  );
+  const certificateExpired = Boolean(
+    certificateDocument?.fecha_vencimiento &&
+    new Date(`${certificateDocument.fecha_vencimiento}T23:59:59`) < new Date()
+  );
+
   const resendPaymentNotice = async (cuotaId: number) => {
     setResendingPaymentId(cuotaId);
     try {
@@ -326,19 +339,17 @@ export default function ClientPortalPage() {
     }
   };
 
-  const openFormatoAltaPdf = async (productoId: number) => {
+  const downloadUploadedDocument = async (document: NonNullable<ContractResource["documentos"]>[number]) => {
     try {
-      const clienteId = user?.cliente_id || user?.cliente?.id;
-      const url = `productos/${productoId}/formato-alta/pdf${clienteId ? `?cliente_id=${clienteId}` : ""}`;
-      await openPdfFromFetcher(
-        async () => {
-          const res = await api.get(url, { responseType: "blob" });
-          return res.data;
-        },
-        "Generando Formato de Alta..."
-      );
+      const blob = await downloadContractDocument(document.id);
+      const url = URL.createObjectURL(blob);
+      const link = window.document.createElement("a");
+      link.href = url;
+      link.download = document.nombre_original;
+      link.click();
+      URL.revokeObjectURL(url);
     } catch {
-      errorToast("No se pudo obtener el Formato de Alta.");
+      errorToast("No se pudo descargar el documento.");
     }
   };
 
@@ -493,6 +504,7 @@ export default function ClientPortalPage() {
             <div className="flex flex-wrap items-center gap-2.5">
               {/* Filtro por Contrato */}
               <div className="w-full sm:w-44">
+                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Contrato</label>
                 <Select
                   value={installmentContractFilter}
                   onValueChange={setInstallmentContractFilter}
@@ -514,22 +526,33 @@ export default function ClientPortalPage() {
               </div>
 
               {/* Filtro por Rango de Fechas */}
-              <div className="flex items-center gap-1.5 w-full sm:w-auto">
-                <Input
-                  type="date"
-                  value={installmentDateFrom}
-                  onChange={(e) => setInstallmentDateFrom(e.target.value)}
-                  className="h-9 text-xs bg-background dark:bg-zinc-800 border-border w-32"
-                  title="Fecha vencimiento desde"
-                />
-                <span className="text-xs text-muted-foreground">-</span>
-                <Input
-                  type="date"
-                  value={installmentDateTo}
-                  onChange={(e) => setInstallmentDateTo(e.target.value)}
-                  className="h-9 text-xs bg-background dark:bg-zinc-800 border-border w-32"
-                  title="Fecha vencimiento hasta"
-                />
+              <div className="grid w-full grid-cols-2 gap-2 sm:w-[360px]">
+                <div>
+                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Desde</label>
+                  <div className="relative">
+                    <CalendarDays className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-primary" />
+                    <Input
+                      type="date"
+                      value={installmentDateFrom}
+                      onChange={(e) => setInstallmentDateFrom(e.target.value)}
+                      className="h-10 w-full min-w-0 border-border bg-background pl-8 pr-2 text-sm dark:bg-zinc-800"
+                      title="Fecha de vencimiento desde"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Hasta</label>
+                  <div className="relative">
+                    <CalendarDays className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-primary" />
+                    <Input
+                      type="date"
+                      value={installmentDateTo}
+                      onChange={(e) => setInstallmentDateTo(e.target.value)}
+                      className="h-10 w-full min-w-0 border-border bg-background pl-8 pr-2 text-sm dark:bg-zinc-800"
+                      title="Fecha de vencimiento hasta"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Botón Limpiar */}
@@ -1148,36 +1171,19 @@ export default function ClientPortalPage() {
                   Formato oficial de alta y especificaciones técnicas de tus módulos y software contratado.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3 text-xs pt-1">
-                <div className="rounded-xl bg-muted/50 p-3 space-y-1.5 border border-border/50">
-                  <div className="font-semibold text-foreground flex items-center justify-between">
-                    <span>Formato de Alta de Productos</span>
-                    <Badge variant="secondary" className="text-[10px]">Autogenerado</Badge>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    Documento de entrega con configuración inicial, usuarios principales y datos de soporte.
-                  </p>
-                </div>
-
-                {contracts.map((c) => {
-                  const firstProduct = c.contrato_producto_modulos?.[0]?.producto_id || 1;
-                  const prodName = getContractProductName(c);
-                  return (
-                    <Button
-                      key={c.id}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openFormatoAltaPdf(firstProduct)}
-                      className="w-full justify-between h-9 text-xs font-semibold border-border hover:bg-primary hover:text-primary-foreground"
-                    >
-                      <span className="flex items-center gap-1.5 truncate">
-                        <Download className="h-3.5 w-3.5 shrink-0" />
-                        <span className="truncate">Alta {c.numero} ({prodName})</span>
-                      </span>
-                      <Badge variant="secondary" className="text-[10px] font-mono shrink-0">PDF</Badge>
-                    </Button>
-                  );
-                })}
+              <CardContent className="space-y-2 text-xs pt-1">
+                {contracts.flatMap((contract) => (contract.documentos || [])
+                  .filter((document) => document.categoria === "alta_servicio")
+                  .map((document) => ({ contract, document }))).length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-border p-4 text-xs text-muted-foreground">Aún no hay documentos de esta categoría.</p>
+                ) : contracts.flatMap((contract) => (contract.documentos || [])
+                  .filter((document) => document.categoria === "alta_servicio")
+                  .map((document) => ({ contract, document }))).map(({ contract, document }) => (
+                    <div key={document.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/70 p-3">
+                      <div className="min-w-0"><p className="truncate font-semibold">{document.nombre_original}</p><p className="text-[11px] text-muted-foreground">Contrato {contract.numero}</p></div>
+                      <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1.5" onClick={() => downloadUploadedDocument(document)}><Download className="h-3.5 w-3.5" /> Descargar</Button>
+                    </div>
+                  ))}
               </CardContent>
             </Card>
 
@@ -1214,18 +1220,20 @@ export default function ClientPortalPage() {
                   </div>
                 </div>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => openFormatoAltaPdf(1)}
-                  className="w-full justify-between h-9 text-xs font-semibold border-border hover:bg-emerald-600 hover:text-white"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <Eye className="h-3.5 w-3.5" />
-                    Ver Ficha de Alta SUNAT
-                  </span>
-                  <Badge variant="secondary" className="text-[10px] font-mono">PDF</Badge>
-                </Button>
+                <div className="space-y-2">
+                  {contracts.flatMap((contract) => (contract.documentos || [])
+                    .filter((document) => document.categoria === "facturacion_electronica")
+                    .map((document) => ({ contract, document }))).length === 0 ? (
+                    <p className="rounded-xl border border-dashed border-border p-4 text-xs text-muted-foreground">Aún no hay documentos de esta categoría.</p>
+                  ) : contracts.flatMap((contract) => (contract.documentos || [])
+                    .filter((document) => document.categoria === "facturacion_electronica")
+                    .map((document) => ({ contract, document }))).map(({ contract, document }) => (
+                      <div key={document.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/70 p-3">
+                        <div className="min-w-0"><p className="truncate font-semibold">{document.nombre_original}</p><p className="text-[11px] text-muted-foreground">Contrato {contract.numero}</p></div>
+                        <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1.5" onClick={() => downloadUploadedDocument(document)}><Download className="h-3.5 w-3.5" /> Descargar</Button>
+                      </div>
+                    ))}
+                </div>
               </CardContent>
             </Card>
 
@@ -1244,7 +1252,9 @@ export default function ClientPortalPage() {
                 <div className="rounded-xl bg-amber-500/10 p-3 space-y-1.5 border border-amber-500/20">
                   <div className="font-semibold text-amber-700 dark:text-amber-300 flex items-center justify-between">
                     <span>Estado Certificado</span>
-                    <Badge className="bg-emerald-600 text-white text-[10px]">VÁLIDO Y ACTIVO</Badge>
+                    <Badge className={certificateExpired ? "bg-rose-600 text-white text-[10px]" : "bg-emerald-600 text-white text-[10px]"}>
+                      {certificateExpired ? "VENCIDO" : certificateDocument ? "VÁLIDO Y ACTIVO" : "NO REGISTRADO"}
+                    </Badge>
                   </div>
                   <p className="text-[11px] text-muted-foreground">
                     Certificado de firma digital RSA 2048-bit registrado y homologado.
@@ -1256,7 +1266,7 @@ export default function ClientPortalPage() {
                     <span className="text-muted-foreground flex items-center gap-1">
                       <CalendarDays className="h-3.5 w-3.5 text-primary" /> Fecha Vencimiento:
                     </span>
-                    <strong className="text-foreground font-mono">31/12/2026</strong>
+                    <strong className="text-foreground font-mono">{formatDisplayDate(certificateDocument?.fecha_vencimiento)}</strong>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded-lg bg-muted/50 border border-border/50">
                     <span className="text-muted-foreground flex items-center gap-1">

@@ -8,6 +8,7 @@ import {
   ContractResourceById,
   ContractResponse,
   ActiveContractsResponse,
+  ContratoDocumentoResource,
 } from "./contract.interface.ts";
 import { per_page } from "@/lib/core.function";
 
@@ -84,6 +85,54 @@ export async function saveContractActaVariables(
     { acta_variables: actaVariables }
   );
   return response.data;
+}
+
+export async function uploadContractDocuments(
+  id: number,
+  files: File[],
+  metadata: {
+    categoria: ContratoDocumentoResource["categoria"];
+    pin?: string;
+    fecha_vencimiento?: string;
+  }
+): Promise<ContratoDocumentoResource[]> {
+  const formData = new FormData();
+  files.forEach((file) => formData.append("documentos[]", file));
+  formData.append("categoria", metadata.categoria);
+  if (metadata.pin) formData.append("pin", metadata.pin);
+  if (metadata.fecha_vencimiento) formData.append("fecha_vencimiento", metadata.fecha_vencimiento);
+  const { data } = await api.post<{ data: ContratoDocumentoResource[] }>(
+    ENDPOINT + "/" + id + "/documentos",
+    formData,
+    {
+      // Sobrescribe el encabezado JSON global para que Axios envíe el boundary
+      // y el contenido binario real del FormData.
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+  return data.data;
+}
+
+export async function getContractDocuments(
+  id: number
+): Promise<ContratoDocumentoResource[]> {
+  const { data } = await api.get<{ data: ContratoDocumentoResource[] }>(
+    ENDPOINT + "/" + id + "/documentos"
+  );
+  return data.data;
+}
+
+export async function downloadContractDocument(id: number): Promise<Blob> {
+  const response = await api.get("documentos-contrato/" + id + "/descargar", {
+    responseType: "blob",
+  });
+  return response.data;
+}
+
+export async function deleteContractDocument(id: number): Promise<void> {
+  await api.delete("documentos-contrato/" + id);
 }
 
 export async function deleteContract(

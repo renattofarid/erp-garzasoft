@@ -991,7 +991,16 @@ export const ClientForm = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(submitForm)} className="space-y-5 w-full">
+      <form
+        onSubmit={(event) => {
+          // ClientForm can be rendered inside another form (for example, in
+          // the contract client quick-create dialog). Prevent its submit from
+          // reaching the parent contract form.
+          event.stopPropagation();
+          void form.handleSubmit(submitForm)(event);
+        }}
+        className="space-y-5 w-full"
+      >
         <ClientNodeSection
           control={form.control}
           basePath=""

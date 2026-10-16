@@ -23,7 +23,7 @@ interface ClientStore {
   fetchClients: (params?: Record<string, unknown>) => Promise<void>;
   fetchAllClients: () => Promise<void>;
   fetchClient: (id: number) => Promise<void>;
-  createClient: (data: ClientSchema) => Promise<void>;
+  createClient: (data: ClientSchema) => Promise<ClientResource>;
   updateClient: (id: number, data: ClientSchema) => Promise<void>;
 }
 
@@ -70,8 +70,9 @@ export const useClientStore = create<ClientStore>((set) => ({
   createClient: async (data) => {
     set({ isSubmitting: true, error: null });
     try {
-      await storeClient(data);
+      const response = await storeClient(data);
       set({ clients: null, allClients: null });
+      return response.data as unknown as ClientResource;
     } catch (err) {
       set({ error: "Error al crear el cliente" });
       throw err;

@@ -30,6 +30,12 @@ const formatSize = (bytes?: number | null) => {
   return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 };
 
+const categoryLabel: Record<ContratoDocumentoResource["categoria"], string> = {
+  alta_servicio: "Alta de servicio",
+  facturacion_electronica: "Facturación electrónica",
+  certificado_digital: "Certificado digital",
+};
+
 export default function ContractDocumentsDialog({
   contractId,
   contractNumber,
@@ -40,6 +46,9 @@ export default function ContractDocumentsDialog({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [category, setCategory] = useState<ContratoDocumentoResource["categoria"]>("alta_servicio");
+  const [pin, setPin] = useState("");
+  const [expirationDate, setExpirationDate] = useState("");
 
   useEffect(() => {
     if (!open || !contractId) return;
@@ -54,9 +63,15 @@ export default function ContractDocumentsDialog({
     if (!contractId || selectedFiles.length === 0) return;
     setUploading(true);
     try {
-      const uploaded = await uploadContractDocuments(contractId, selectedFiles);
+      const uploaded = await uploadContractDocuments(contractId, selectedFiles, {
+        categoria: category,
+        pin: category === "certificado_digital" ? pin : undefined,
+        fecha_vencimiento: category === "certificado_digital" ? expirationDate : undefined,
+      });
       setDocuments((current) => [...uploaded, ...current]);
       setSelectedFiles([]);
+      setPin("");
+      setExpirationDate("");
       successToast("Documentos subidos correctamente.");
     } catch (error: any) {
       errorToast(error?.response?.data?.message || "No se pudieron subir los documentos.");
@@ -104,7 +119,34 @@ export default function ContractDocumentsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5">
+          <div className="space-y-5">
+          <div className="grid gap-3 rounded-lg border bg-muted/30 p-3">
+            <div>
+              <label className="text-sm font-semibold">Categoría del documento</label>
+              <select
+                value={category}
+                onChange={(event) => setCategory(event.target.value as ContratoDocumentoResource["categoria"])}
+                className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm"
+              >
+                <option value="alta_servicio">Alta de servicio</option>
+                <option value="facturacion_electronica">Alta de facturación electrónica</option>
+                <option value="certificado_digital">Certificado digital</option>
+              </select>
+            </div>
+            {category === "certificado_digital" && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-sm font-semibold">PIN del certificado</label>
+                  <input type="password" value={pin} onChange={(event) => setPin(event.target.value)} className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold">Fecha de vencimiento</label>
+                  <input type="date" value={expirationDate} onChange={(event) => setExpirationDate(event.target.value)} className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm" />
+                </div>
+              </div>
+            )}
+          </div>
+
           <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-5 text-center hover:bg-primary/10">
             <FileUp className="h-8 w-8 text-primary" />
             <span className="font-semibold">Seleccionar documentos</span>
@@ -115,7 +157,7 @@ export default function ContractDocumentsDialog({
               type="file"
               multiple
               className="sr-only"
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.webp,.zip"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.webp,.zip,.pfx,.p12,.pem,.cer,.crt"
               onChange={(event) => setSelectedFiles(Array.from(event.target.files || []))}
             />
           </label>
@@ -151,7 +193,7 @@ export default function ContractDocumentsDialog({
                 <div key={document.id} className="flex items-center justify-between gap-3 rounded-lg border p-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{document.nombre_original}</p>
-                    <p className="text-xs text-muted-foreground">{formatSize(document.tamanio)}</p>
+                    <p className="text-xs text-muted-foreground">{categoryLabel[document.categoria]} · {formatSize(document.tamanio)}</p>
                   </div>
                   <div className="flex shrink-0 gap-1">
                     <Button type="button" variant="outline" size="icon" title="Descargar" onClick={() => handleDownload(document)}>

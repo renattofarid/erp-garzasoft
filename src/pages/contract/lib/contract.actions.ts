@@ -89,13 +89,28 @@ export async function saveContractActaVariables(
 
 export async function uploadContractDocuments(
   id: number,
-  files: File[]
+  files: File[],
+  metadata: {
+    categoria: ContratoDocumentoResource["categoria"];
+    pin?: string;
+    fecha_vencimiento?: string;
+  }
 ): Promise<ContratoDocumentoResource[]> {
   const formData = new FormData();
   files.forEach((file) => formData.append("documentos[]", file));
+  formData.append("categoria", metadata.categoria);
+  if (metadata.pin) formData.append("pin", metadata.pin);
+  if (metadata.fecha_vencimiento) formData.append("fecha_vencimiento", metadata.fecha_vencimiento);
   const { data } = await api.post<{ data: ContratoDocumentoResource[] }>(
     ENDPOINT + "/" + id + "/documentos",
-    formData
+    formData,
+    {
+      // Sobrescribe el encabezado JSON global para que Axios envíe el boundary
+      // y el contenido binario real del FormData.
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
   );
   return data.data;
 }

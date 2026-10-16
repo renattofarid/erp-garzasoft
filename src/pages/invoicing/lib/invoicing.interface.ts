@@ -23,7 +23,7 @@ export interface ComprobanteDetalle {
 
 export interface ComprobanteResource {
   id: number;
-  cliente_id: number;
+  cliente_id: number | null;
   receptor_documento?: string | null;
   receptor_nombre?: string | null;
   receptor_direccion?: string | null;
@@ -93,7 +93,7 @@ export interface ComprobanteLibrePayload {
 }
 
 export interface ActualizarComprobantePayload {
-  cliente_id: number;
+  cliente_id: number | null;
   tipo_documento: TipoDocumento;
   serie: string;
   correlativo: number;

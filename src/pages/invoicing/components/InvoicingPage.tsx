@@ -33,6 +33,7 @@ import {
 import { errorToast, successToast } from "@/lib/core.function";
 import { openPdfFromFetcher } from "@/lib/pdf";
 import { getAllClients } from "@/pages/client/lib/client.actions";
+import { lookupClientByRuc } from "@/pages/client/lib/client.actions";
 import {
   ClientResource,
   getClientDisplayName,
@@ -78,6 +79,8 @@ export default function InvoicingPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [freeModalOpen, setFreeModalOpen] = useState(false);
   const [freeLoading, setFreeLoading] = useState(false);
+  const [freeRecipientMode, setFreeRecipientMode] = useState<"registered" | "external">("registered");
+  const [externalLookupLoading, setExternalLookupLoading] = useState(false);
   const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false);
   const [whatsAppComprobante, setWhatsAppComprobante] =
     useState<ComprobanteResource | null>(null);
@@ -220,13 +223,19 @@ export default function InvoicingPage() {
   };
 
   const submitComprobanteLibre = async () => {
-    if (!freeForm.cliente_id) return errorToast("Selecciona un cliente.");
+    if (freeRecipientMode === "registered" && !freeForm.cliente_id) return errorToast("Selecciona un cliente.");
+    if (freeRecipientMode === "external" && !/^\d{8,11}$/.test(freeForm.receptor_documento || "")) {
+      return errorToast("Ingresa un DNI de 8 dígitos o RUC de 11 dígitos.");
+    }
     if (!freeForm.detalles.every((detail) => detail.descripcion.trim() && detail.cantidad > 0 && detail.precio_unitario > 0)) {
       return errorToast("Completa la descripción, cantidad y precio de cada detalle.");
     }
     setFreeLoading(true);
     try {
-      const result = await crearComprobanteLibre(freeForm);
+      const payload = freeRecipientMode === "registered"
+        ? { ...freeForm, receptor_documento: undefined, receptor_nombre: undefined, receptor_direccion: undefined }
+        : { ...freeForm, cliente_id: undefined };
+      const result = await crearComprobanteLibre(payload);
       setFreeModalOpen(false);
       successToast(result.estado === "X" ? result.error_text || "El facturador rechazó el comprobante." : "Comprobante creado y enviado al facturador.");
       await loadComprobantes();
@@ -235,6 +244,21 @@ export default function InvoicingPage() {
       errorToast(String(message));
     } finally {
       setFreeLoading(false);
+    }
+  };
+
+  const lookupExternalRuc = async () => {
+    const ruc = freeForm.receptor_documento || "";
+    if (!/^\d{11}$/.test(ruc)) return errorToast("Ingresa un RUC válido de 11 dígitos.");
+    setExternalLookupLoading(true);
+    try {
+      const response = await lookupClientByRuc(ruc);
+      setFreeForm((current) => ({ ...current, receptor_nombre: response.data.razon_social || response.data.nombre_comercial || current.receptor_nombre, receptor_direccion: response.data.direccion || current.receptor_direccion }));
+      successToast("Datos del RUC obtenidos correctamente.");
+    } catch (error: any) {
+      errorToast(error?.response?.data?.message || "No se encontraron datos para ese RUC.");
+    } finally {
+      setExternalLookupLoading(false);
     }
   };
 
@@ -420,7 +444,7 @@ export default function InvoicingPage() {
                     {comprobante.numero}
                   </TableCell>
                   <TableCell>
-                    {getClientDisplayName(comprobante.cliente)}
+                    {comprobante.cliente ? getClientDisplayName(comprobante.cliente) : `${comprobante.receptor_nombre || "Receptor externo"} — ${comprobante.receptor_documento || "sin documento"}`}
                   </TableCell>
                   <TableCell>
                     {comprobante.tipo_documento === "F" ? "Factura" : "Boleta"}
@@ -595,20 +619,28 @@ export default function InvoicingPage() {
           <div className="max-h-[calc(92vh-150px)] space-y-5 overflow-y-auto px-6 py-5">
             <div className="grid gap-3 rounded-xl border bg-card/80 p-4 sm:grid-cols-2 lg:grid-cols-5">
               <div className="space-y-2 lg:col-span-2">
-                <Label>Cliente / receptor</Label>
-                <select
-                  value={freeForm.cliente_id || ""}
-                  onChange={(event) => setFreeForm((current) => ({ ...current, cliente_id: Number(event.target.value) }))}
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                >
-                  <option value="">Selecciona un cliente</option>
-                  {clientes.map((cliente) => (
-                    <option key={cliente.id} value={cliente.id}>
-                      {getClientDisplayName(cliente)} — {cliente.ruc || "sin RUC"}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-muted-foreground">Factura: RUC obligatorio de 11 dígitos. Boleta: DNI o RUC válido.</p>
+                <Label>Receptor</Label>
+                <div className="flex rounded-md border bg-muted/30 p-1 text-xs">
+                  <button type="button" className={`flex-1 rounded px-2 py-1.5 ${freeRecipientMode === "registered" ? "bg-background font-semibold shadow-sm" : "text-muted-foreground"}`} onClick={() => setFreeRecipientMode("registered")}>Cliente registrado</button>
+                  <button type="button" className={`flex-1 rounded px-2 py-1.5 ${freeRecipientMode === "external" ? "bg-background font-semibold shadow-sm" : "text-muted-foreground"}`} onClick={() => setFreeRecipientMode("external")}>RUC/DNI externo</button>
+                </div>
+                {freeRecipientMode === "registered" ? (
+                  <select
+                    value={freeForm.cliente_id || ""}
+                    onChange={(event) => setFreeForm((current) => ({ ...current, cliente_id: Number(event.target.value) }))}
+                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                  >
+                    <option value="">Selecciona un cliente</option>
+                    {clientes.map((cliente) => <option key={cliente.id} value={cliente.id}>{getClientDisplayName(cliente)} — {cliente.ruc || "sin RUC"}</option>)}
+                  </select>
+                ) : (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="flex gap-2"><Input placeholder="RUC (11) o DNI (8)" value={freeForm.receptor_documento || ""} onChange={(event) => setFreeForm((current) => ({ ...current, receptor_documento: event.target.value.replace(/\D/g, "").slice(0, 11) }))} /><Button type="button" variant="outline" size="icon" onClick={lookupExternalRuc} disabled={externalLookupLoading} title="Consultar RUC">{externalLookupLoading ? "…" : "⌕"}</Button></div>
+                    <Input placeholder="Razón social o nombre" value={freeForm.receptor_nombre || ""} onChange={(event) => setFreeForm((current) => ({ ...current, receptor_nombre: event.target.value }))} />
+                    <Input className="sm:col-span-2" placeholder="Dirección (opcional)" value={freeForm.receptor_direccion || ""} onChange={(event) => setFreeForm((current) => ({ ...current, receptor_direccion: event.target.value }))} />
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">Factura: RUC obligatorio de 11 dígitos. Boleta: DNI o RUC válido. El receptor externo no se guarda como cliente.</p>
               </div>
               <div className="space-y-2">
                 <Label>Tipo</Label>

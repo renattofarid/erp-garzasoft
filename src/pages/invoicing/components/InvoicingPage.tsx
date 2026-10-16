@@ -340,36 +340,36 @@ export default function InvoicingPage() {
           subtitle={InvoicingDescription}
           icon={InvoicingIconName as any}
         />
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => setFreeModalOpen(true)}>
-            <Plus className="mr-2 size-4" />
-            Crear comprobante libre
-          </Button>
-          <Button variant="outline" onClick={() => navigate("/empresa-emisora")}>
-            Configurar emisor
-          </Button>
-          <Button variant="outline" onClick={handleReenviar}>
-            <RefreshCcw className="mr-2 size-4" />
-            Reenviar pendientes
-          </Button>
-          <Button
-            variant="outline"
-            className="border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 gap-1.5"
-            onClick={handleEnvioMasivoWhatsApp}
-            disabled={bulkWhatsAppLoading}
-          >
-            <WhatsAppIcon className="size-4 text-[#25D366]" />
-            {bulkWhatsAppLoading ? "Notificando..." : "Envío masivo WhatsApp"}
-            {pendingWhatsAppCount > 0 && (
-              <Badge className="bg-emerald-600 text-white rounded-full ml-1 px-1.5 py-0.2 text-[10px]">
-                {pendingWhatsAppCount}
-              </Badge>
-            )}
-          </Button>
-          <Button onClick={() => setModalOpen(true)}>
-            <Send className="mr-2 size-4" />
-            Emision masiva
-          </Button>
+        <div className="grid w-full shrink-0 gap-2 sm:grid-cols-2 md:w-[760px]">
+            <Button variant="outline" className="w-full whitespace-nowrap" onClick={() => setFreeModalOpen(true)}>
+              <Plus className="mr-2 size-4" />
+              Crear comprobante libre
+            </Button>
+            <Button className="w-full whitespace-nowrap" onClick={() => setModalOpen(true)}>
+              <Send className="mr-2 size-4" />
+              Emisión masiva
+            </Button>
+            <Button variant="outline" className="w-full whitespace-nowrap" onClick={() => navigate("/empresa-emisora")}>
+              Configurar emisor
+            </Button>
+            <Button variant="outline" className="w-full whitespace-nowrap" onClick={handleReenviar}>
+              <RefreshCcw className="mr-2 size-4" />
+              Reenviar pendientes
+            </Button>
+            <Button
+              variant="outline"
+              className="col-span-2 w-full whitespace-nowrap gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+              onClick={handleEnvioMasivoWhatsApp}
+              disabled={bulkWhatsAppLoading}
+            >
+              <WhatsAppIcon className="size-4 text-[#25D366]" />
+              {bulkWhatsAppLoading ? "Notificando..." : "Envío masivo WhatsApp"}
+              {pendingWhatsAppCount > 0 && (
+                <Badge className="ml-1 rounded-full bg-emerald-600 px-1.5 py-0.2 text-[10px] text-white">
+                  {pendingWhatsAppCount}
+                </Badge>
+              )}
+            </Button>
         </div>
       </div>
 

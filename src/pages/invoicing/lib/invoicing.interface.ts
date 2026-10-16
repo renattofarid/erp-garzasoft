@@ -24,6 +24,9 @@ export interface ComprobanteDetalle {
 export interface ComprobanteResource {
   id: number;
   cliente_id: number;
+  receptor_documento?: string | null;
+  receptor_nombre?: string | null;
+  receptor_direccion?: string | null;
   cliente?: ClientResource;
   tipo_documento: TipoDocumento;
   serie: string;
@@ -76,7 +79,10 @@ export interface EmisionMasivaPayload {
 }
 
 export interface ComprobanteLibrePayload {
-  cliente_id: number;
+  cliente_id?: number;
+  receptor_documento?: string;
+  receptor_nombre?: string;
+  receptor_direccion?: string;
   tipo_documento: TipoDocumento;
   serie: string;
   moneda: string;

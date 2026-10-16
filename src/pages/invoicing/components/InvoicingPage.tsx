@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Send, RefreshCcw, AlertCircle, Info } from "lucide-react";
+import { Search, Send, RefreshCcw, AlertCircle, Info, Plus, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { WhatsAppIcon, PdfIcon, ZipIcon } from "@/components/icons/DocumentIcons";
 import TitleComponent from "@/components/TitleComponent";
@@ -44,10 +44,12 @@ import {
   getComprobantePdf,
   downloadComprobanteFile,
   reenviarPendientes,
+  crearComprobanteLibre,
 } from "../lib/invoicing.actions";
 import {
   ComprobanteResource,
   EmisionMasivaPayload,
+  ComprobanteLibrePayload,
   InvoicingDescription,
   InvoicingIconName,
   InvoicingTitle,
@@ -74,6 +76,8 @@ export default function InvoicingPage() {
   const [loading, setLoading] = useState(false);
   const [bulkWhatsAppLoading, setBulkWhatsAppLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [freeModalOpen, setFreeModalOpen] = useState(false);
+  const [freeLoading, setFreeLoading] = useState(false);
   const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false);
   const [whatsAppComprobante, setWhatsAppComprobante] =
     useState<ComprobanteResource | null>(null);
@@ -85,6 +89,17 @@ export default function InvoicingPage() {
   const [clientes, setClientes] = useState<ClientResource[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+
+  const [freeForm, setFreeForm] = useState<ComprobanteLibrePayload>({
+    cliente_id: 0,
+    tipo_documento: "F",
+    serie: "F001",
+    moneda: "PEN",
+    forma_pago: "C",
+    fecha_emision: new Date().toISOString().slice(0, 10),
+    emitir: true,
+    detalles: [{ descripcion: "", cantidad: 1, precio_unitario: 0, tipo_igv: "10", unidad: "NIU" }],
+  });
 
   const pendingWhatsAppCount = useMemo(() => {
     return comprobantes.filter(
@@ -180,6 +195,47 @@ export default function InvoicingPage() {
       tipo_documento: tipo,
       serie: tipo === "F" ? "F001" : "B001",
     }));
+  };
+
+  const updateFreeTipoDocumento = (tipo: TipoDocumento) => {
+    setFreeForm((current) => ({ ...current, tipo_documento: tipo, serie: tipo === "F" ? "F001" : "B001" }));
+  };
+
+  const addFreeDetail = () => {
+    setFreeForm((current) => ({
+      ...current,
+      detalles: [...current.detalles, { descripcion: "", cantidad: 1, precio_unitario: 0, tipo_igv: "10", unidad: "NIU" }],
+    }));
+  };
+
+  const updateFreeDetail = (index: number, field: string, value: string | number) => {
+    setFreeForm((current) => ({
+      ...current,
+      detalles: current.detalles.map((detail, detailIndex) => detailIndex === index ? { ...detail, [field]: value } : detail),
+    }));
+  };
+
+  const removeFreeDetail = (index: number) => {
+    setFreeForm((current) => ({ ...current, detalles: current.detalles.filter((_, detailIndex) => detailIndex !== index) }));
+  };
+
+  const submitComprobanteLibre = async () => {
+    if (!freeForm.cliente_id) return errorToast("Selecciona un cliente.");
+    if (!freeForm.detalles.every((detail) => detail.descripcion.trim() && detail.cantidad > 0 && detail.precio_unitario > 0)) {
+      return errorToast("Completa la descripción, cantidad y precio de cada detalle.");
+    }
+    setFreeLoading(true);
+    try {
+      const result = await crearComprobanteLibre(freeForm);
+      setFreeModalOpen(false);
+      successToast(result.estado === "X" ? result.error_text || "El facturador rechazó el comprobante." : "Comprobante creado y enviado al facturador.");
+      await loadComprobantes();
+    } catch (error: any) {
+      const message = error?.response?.data?.message || Object.values(error?.response?.data?.errors || {})?.flat()?.[0] || "No se pudo crear el comprobante.";
+      errorToast(String(message));
+    } finally {
+      setFreeLoading(false);
+    }
   };
 
   const submitMasivo = async () => {
@@ -285,6 +341,10 @@ export default function InvoicingPage() {
           icon={InvoicingIconName as any}
         />
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setFreeModalOpen(true)}>
+            <Plus className="mr-2 size-4" />
+            Crear comprobante libre
+          </Button>
           <Button variant="outline" onClick={() => navigate("/empresa-emisora")}>
             Configurar emisor
           </Button>
@@ -520,6 +580,88 @@ export default function InvoicingPage() {
         comprobante={recoveryComprobante}
         onSuccess={loadComprobantes}
       />
+
+      <Dialog open={freeModalOpen} onOpenChange={setFreeModalOpen}>
+        <DialogContent className="max-h-[92vh] w-[94vw] overflow-hidden p-0 sm:max-w-[1100px]">
+          <DialogHeader>
+            <div className="border-b px-6 py-5">
+              <DialogTitle>Crear comprobante libre</DialogTitle>
+              <DialogDescription>
+                Emite una factura o boleta para cualquier cliente registrado, sin asociarla a un contrato o cuota.
+              </DialogDescription>
+            </div>
+          </DialogHeader>
+
+          <div className="max-h-[calc(92vh-150px)] space-y-5 overflow-y-auto px-6 py-5">
+            <div className="grid gap-3 rounded-xl border bg-card/80 p-4 sm:grid-cols-2 lg:grid-cols-5">
+              <div className="space-y-2 lg:col-span-2">
+                <Label>Cliente / receptor</Label>
+                <select
+                  value={freeForm.cliente_id || ""}
+                  onChange={(event) => setFreeForm((current) => ({ ...current, cliente_id: Number(event.target.value) }))}
+                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                >
+                  <option value="">Selecciona un cliente</option>
+                  {clientes.map((cliente) => (
+                    <option key={cliente.id} value={cliente.id}>
+                      {getClientDisplayName(cliente)} — {cliente.ruc || "sin RUC"}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">Factura: RUC obligatorio de 11 dígitos. Boleta: DNI o RUC válido.</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo</Label>
+                <select value={freeForm.tipo_documento} onChange={(event) => updateFreeTipoDocumento(event.target.value as TipoDocumento)} className="h-10 w-full rounded-md border bg-background px-3 text-sm">
+                  <option value="F">Factura</option>
+                  <option value="B">Boleta</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>Serie</Label>
+                <Input value={freeForm.serie} onChange={(event) => setFreeForm((current) => ({ ...current, serie: event.target.value.toUpperCase() }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Fecha de emisión</Label>
+                <Input type="date" value={freeForm.fecha_emision} max={new Date().toISOString().slice(0, 10)} onChange={(event) => setFreeForm((current) => ({ ...current, fecha_emision: event.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Forma de pago</Label>
+                <select value={freeForm.forma_pago} onChange={(event) => setFreeForm((current) => ({ ...current, forma_pago: event.target.value as "C" | "D" }))} className="h-10 w-full rounded-md border bg-background px-3 text-sm">
+                  <option value="C">Contado</option>
+                  <option value="D">Crédito</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="rounded-xl border bg-card/80 p-4">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-semibold">Detalles del comprobante</h3>
+                  <p className="text-xs text-muted-foreground">Los precios se registran con IGV incluido.</p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={addFreeDetail}><Plus className="mr-1 size-4" />Agregar detalle</Button>
+              </div>
+              <div className="space-y-3">
+                {freeForm.detalles.map((detail, index) => (
+                  <div key={index} className="grid gap-2 rounded-lg border bg-background/60 p-3 sm:grid-cols-[1fr_110px_150px_130px_40px] sm:items-end">
+                    <div className="space-y-1"><Label className="text-xs">Glosa / descripción</Label><Input value={detail.descripcion} onChange={(event) => updateFreeDetail(index, "descripcion", event.target.value)} placeholder="Servicio o producto" /></div>
+                    <div className="space-y-1"><Label className="text-xs">Cantidad</Label><Input type="number" min="0.01" step="0.01" value={detail.cantidad} onChange={(event) => updateFreeDetail(index, "cantidad", Number(event.target.value))} /></div>
+                    <div className="space-y-1"><Label className="text-xs">Precio unitario</Label><Input type="number" min="0.01" step="0.01" value={detail.precio_unitario} onChange={(event) => updateFreeDetail(index, "precio_unitario", Number(event.target.value))} /></div>
+                    <div className="space-y-1"><Label className="text-xs">IGV</Label><select value={detail.tipo_igv || "10"} onChange={(event) => updateFreeDetail(index, "tipo_igv", event.target.value)} className="h-10 w-full rounded-md border bg-background px-3 text-sm"><option value="10">Gravado 18%</option><option value="20">Exonerado</option><option value="30">Inafecto</option></select></div>
+                    <Button type="button" variant="ghost" size="icon" disabled={freeForm.detalles.length === 1} onClick={() => removeFreeDetail(index)} title="Eliminar detalle"><Trash2 className="size-4 text-destructive" /></Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 border-t px-6 py-4">
+            <Button variant="outline" onClick={() => setFreeModalOpen(false)}>Cancelar</Button>
+            <Button onClick={submitComprobanteLibre} disabled={freeLoading}>{freeLoading ? "Emitiendo..." : "Crear y emitir"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-h-[92vh] w-[94vw] overflow-hidden p-0 sm:max-w-[1180px]">

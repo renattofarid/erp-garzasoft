@@ -75,6 +75,17 @@ export interface EmisionMasivaPayload {
   detalles: ComprobanteDetalle[];
 }
 
+export interface ComprobanteLibrePayload {
+  cliente_id: number;
+  tipo_documento: TipoDocumento;
+  serie: string;
+  moneda: string;
+  forma_pago: "C" | "D";
+  fecha_emision?: string;
+  emitir: boolean;
+  detalles: ComprobanteDetalle[];
+}
+
 export interface ActualizarComprobantePayload {
   cliente_id: number;
   tipo_documento: TipoDocumento;

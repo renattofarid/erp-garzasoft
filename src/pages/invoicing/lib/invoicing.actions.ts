@@ -7,9 +7,17 @@ import {
   ComprobanteResponse,
   EmisionMasivaPayload,
   EmisionMasivaResult,
+  ComprobanteLibrePayload,
 } from "./invoicing.interface";
 
 const ENDPOINT = "comprobantes";
+
+export async function crearComprobanteLibre(
+  payload: ComprobanteLibrePayload
+): Promise<ComprobanteResource> {
+  const { data } = await api.post<{ data: ComprobanteResource }>(ENDPOINT, payload);
+  return data.data;
+}
 
 export async function getComprobantes({
   page,

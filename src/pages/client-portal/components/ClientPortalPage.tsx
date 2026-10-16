@@ -504,6 +504,7 @@ export default function ClientPortalPage() {
             <div className="flex flex-wrap items-center gap-2.5">
               {/* Filtro por Contrato */}
               <div className="w-full sm:w-44">
+                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Contrato</label>
                 <Select
                   value={installmentContractFilter}
                   onValueChange={setInstallmentContractFilter}
@@ -525,22 +526,33 @@ export default function ClientPortalPage() {
               </div>
 
               {/* Filtro por Rango de Fechas */}
-              <div className="flex items-center gap-1.5 w-full sm:w-auto">
-                <Input
-                  type="date"
-                  value={installmentDateFrom}
-                  onChange={(e) => setInstallmentDateFrom(e.target.value)}
-                  className="h-9 text-xs bg-background dark:bg-zinc-800 border-border w-32"
-                  title="Fecha vencimiento desde"
-                />
-                <span className="text-xs text-muted-foreground">-</span>
-                <Input
-                  type="date"
-                  value={installmentDateTo}
-                  onChange={(e) => setInstallmentDateTo(e.target.value)}
-                  className="h-9 text-xs bg-background dark:bg-zinc-800 border-border w-32"
-                  title="Fecha vencimiento hasta"
-                />
+              <div className="grid w-full grid-cols-2 gap-2 sm:w-[360px]">
+                <div>
+                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Desde</label>
+                  <div className="relative">
+                    <CalendarDays className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-primary" />
+                    <Input
+                      type="date"
+                      value={installmentDateFrom}
+                      onChange={(e) => setInstallmentDateFrom(e.target.value)}
+                      className="h-10 w-full min-w-0 border-border bg-background pl-8 pr-2 text-sm dark:bg-zinc-800"
+                      title="Fecha de vencimiento desde"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Hasta</label>
+                  <div className="relative">
+                    <CalendarDays className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-primary" />
+                    <Input
+                      type="date"
+                      value={installmentDateTo}
+                      onChange={(e) => setInstallmentDateTo(e.target.value)}
+                      className="h-10 w-full min-w-0 border-border bg-background pl-8 pr-2 text-sm dark:bg-zinc-800"
+                      title="Fecha de vencimiento hasta"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Botón Limpiar */}

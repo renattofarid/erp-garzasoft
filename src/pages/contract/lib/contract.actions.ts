@@ -95,8 +95,7 @@ export async function uploadContractDocuments(
   files.forEach((file) => formData.append("documentos[]", file));
   const { data } = await api.post<{ data: ContratoDocumentoResource[] }>(
     ENDPOINT + "/" + id + "/documentos",
-    formData,
-    { headers: { "Content-Type": "multipart/form-data" } }
+    formData
   );
   return data.data;
 }

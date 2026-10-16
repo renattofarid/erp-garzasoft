@@ -71,6 +71,16 @@ export interface ContractResource {
   cliente: Cliente;
   cuotas: Cuota[];
   contrato_producto_modulos: ContratoProductoModulo[];
+  documentos?: ContratoDocumentoResource[];
+}
+
+export interface ContratoDocumentoResource {
+  id: number;
+  contrato_id: number;
+  nombre_original: string;
+  mime_type?: string | null;
+  tamanio?: number | null;
+  created_at?: string | null;
 }
 
 export interface Modulo {

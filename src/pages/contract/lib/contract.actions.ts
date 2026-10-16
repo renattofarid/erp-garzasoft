@@ -8,6 +8,7 @@ import {
   ContractResourceById,
   ContractResponse,
   ActiveContractsResponse,
+  ContratoDocumentoResource,
 } from "./contract.interface.ts";
 import { per_page } from "@/lib/core.function";
 
@@ -84,6 +85,40 @@ export async function saveContractActaVariables(
     { acta_variables: actaVariables }
   );
   return response.data;
+}
+
+export async function uploadContractDocuments(
+  id: number,
+  files: File[]
+): Promise<ContratoDocumentoResource[]> {
+  const formData = new FormData();
+  files.forEach((file) => formData.append("documentos[]", file));
+  const { data } = await api.post<{ data: ContratoDocumentoResource[] }>(
+    ENDPOINT + "/" + id + "/documentos",
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } }
+  );
+  return data.data;
+}
+
+export async function getContractDocuments(
+  id: number
+): Promise<ContratoDocumentoResource[]> {
+  const { data } = await api.get<{ data: ContratoDocumentoResource[] }>(
+    ENDPOINT + "/" + id + "/documentos"
+  );
+  return data.data;
+}
+
+export async function downloadContractDocument(id: number): Promise<Blob> {
+  const response = await api.get("documentos-contrato/" + id + "/descargar", {
+    responseType: "blob",
+  });
+  return response.data;
+}
+
+export async function deleteContractDocument(id: number): Promise<void> {
+  await api.delete("documentos-contrato/" + id);
 }
 
 export async function deleteContract(

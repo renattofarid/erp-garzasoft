@@ -62,7 +62,11 @@ import {
 import { errorToast, successToast } from "@/lib/core.function";
 import { openPdfFromFetcher } from "@/lib/pdf";
 import { useAuthStore } from "@/pages/auth/lib/auth.store";
-import { getContract, openContractPdf } from "@/pages/contract/lib/contract.actions";
+import {
+  downloadContractDocument,
+  getContract,
+  openContractPdf,
+} from "@/pages/contract/lib/contract.actions";
 import { ContractResource } from "@/pages/contract/lib/contract.interface";
 import {
   castContractType,
@@ -339,6 +343,20 @@ export default function ClientPortalPage() {
       );
     } catch {
       errorToast("No se pudo obtener el Formato de Alta.");
+    }
+  };
+
+  const downloadUploadedDocument = async (document: NonNullable<ContractResource["documentos"]>[number]) => {
+    try {
+      const blob = await downloadContractDocument(document.id);
+      const url = URL.createObjectURL(blob);
+      const link = window.document.createElement("a");
+      link.href = url;
+      link.download = document.nombre_original;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      errorToast("No se pudo descargar el documento.");
     }
   };
 
@@ -1135,6 +1153,48 @@ export default function ClientPortalPage() {
               </p>
             </div>
           </div>
+
+          <Card className="border border-border/80 bg-card shadow-sm dark:bg-zinc-900/90">
+            <CardHeader className="pb-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 mb-2">
+                <FolderOpen className="h-5 w-5" />
+              </div>
+              <CardTitle className="text-base font-bold">Documentos compartidos</CardTitle>
+              <CardDescription className="text-xs">
+                Aquí encontrarás el alta y los documentos que el equipo haya cargado para tus contratos.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2 pt-1">
+              {contracts.flatMap((contract) =>
+                (contract.documentos || []).map((document) => ({ contract, document }))
+              ).length === 0 ? (
+                <p className="rounded-xl border border-dashed border-border p-4 text-xs text-muted-foreground">
+                  Todavía no hay documentos compartidos.
+                </p>
+              ) : (
+                contracts.flatMap((contract) =>
+                  (contract.documentos || []).map((document) => ({ contract, document }))
+                ).map(({ contract, document }) => (
+                  <div key={document.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/70 p-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">{document.nombre_original}</p>
+                      <p className="text-[11px] text-muted-foreground">Contrato {contract.numero}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0 gap-1.5"
+                      onClick={() => downloadUploadedDocument(document)}
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Descargar
+                    </Button>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
 
           <div className="grid gap-6 md:grid-cols-3">
             {/* DOCUMENTO DE ALTA DEL SERVICIO */}

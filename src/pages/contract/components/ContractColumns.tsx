@@ -18,6 +18,7 @@ import {
   CalendarDays,
   FileSpreadsheet,
   FileText,
+  FileUp,
   Pencil,
   PenTool,
   Trash2,
@@ -42,6 +43,7 @@ function ContractActionsCell({
   onViewInstallments,
   onSignature,
   onGenerateActa,
+  onUploadDocuments,
 }: {
   contract: ContractResource;
   overduePaymentCount: number;
@@ -52,6 +54,7 @@ function ContractActionsCell({
   onViewInstallments: (contract: ContractResource) => void;
   onSignature: (contract: ContractResource) => void;
   onGenerateActa?: (contract: ContractResource) => void;
+  onUploadDocuments: (contract: ContractResource) => void;
 }) {
   const router = useNavigate();
   const id = contract.id;
@@ -175,8 +178,8 @@ function ContractActionsCell({
           </Tooltip>
         )}
 
-        {/* 6. Formato de Alta (Verde) */}
-        {onGenerateActa && (
+        {/* El Acta / Formato de Alta se conserva, pero queda oculto temporalmente. */}
+        {false && onGenerateActa && (
           <Tooltip disableHoverableContent>
             <TooltipTrigger asChild>
               <Button
@@ -198,6 +201,27 @@ function ContractActionsCell({
             </TooltipContent>
           </Tooltip>
         )}
+
+        <Tooltip disableHoverableContent>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              className="size-8 rounded-full bg-[#0891B2] hover:bg-[#0E7490] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
+              aria-label="Subir documentos"
+              onMouseLeave={(e) => e.currentTarget.blur()}
+              onClick={(e) => {
+                e.currentTarget.blur();
+                onUploadDocuments(contract);
+              }}
+            >
+              <FileUp className="size-4 text-white" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
+            Subir documentos
+          </TooltipContent>
+        </Tooltip>
 
         {/* 7. Editar (Amarillo) */}
         <Tooltip disableHoverableContent>
@@ -255,6 +279,7 @@ export const ContractColumns = ({
   onViewInstallments,
   onSignature,
   onGenerateActa,
+  onUploadDocuments,
 }: {
   onDelete: (contract: ContractResource) => void;
   onNotification: (id: number) => void;
@@ -263,6 +288,7 @@ export const ContractColumns = ({
   onViewInstallments: (contract: ContractResource) => void;
   onSignature: (contract: ContractResource) => void;
   onGenerateActa?: (contract: ContractResource) => void;
+  onUploadDocuments: (contract: ContractResource) => void;
 }): ColumnDef<ContractResource>[] => [
   {
     accessorKey: "numero",
@@ -453,6 +479,7 @@ export const ContractColumns = ({
           onViewInstallments={onViewInstallments}
           onSignature={onSignature}
           onGenerateActa={onGenerateActa}
+          onUploadDocuments={onUploadDocuments}
         />
       );
     },

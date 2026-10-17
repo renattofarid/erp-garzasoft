@@ -190,7 +190,7 @@ function ContractActionsCell({
                 onMouseLeave={(e) => e.currentTarget.blur()}
                 onClick={(e) => {
                   e.currentTarget.blur();
-                  onGenerateActa(contract);
+                  onGenerateActa?.(contract);
                 }}
               >
                 <FileSpreadsheet className="size-4 text-white" />

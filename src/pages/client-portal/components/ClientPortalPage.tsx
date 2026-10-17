@@ -84,7 +84,6 @@ import { ComprobanteResource } from "@/pages/invoicing/lib/invoicing.interface";
 import { ClientContractSignatureModal } from "./ClientContractSignatureModal";
 import { ClientPaymentModal } from "./ClientPaymentModal";
 import { format, parseISO } from "date-fns";
-import { api } from "@/lib/config";
 import { createKutiSubscription } from "@/pages/accounts-receivable/lib/kuti.actions";
 import { resendManualPaymentNotification } from "../lib/manual-payment.actions";
 

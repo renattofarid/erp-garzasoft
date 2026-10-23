@@ -32,15 +32,13 @@ import {
 } from "@/components/ui/table";
 import { errorToast, successToast } from "@/lib/core.function";
 import { openPdfFromFetcher } from "@/lib/pdf";
-import { getAllClients } from "@/pages/client/lib/client.actions";
-import { lookupClientByRuc } from "@/pages/client/lib/client.actions";
+import { getAllClients, lookupClientByDni, lookupClientByRuc } from "@/pages/client/lib/client.actions";
 import {
   ClientResource,
   getClientDisplayName,
 } from "@/pages/client/lib/client.interface";
 import {
   emitirMasivo,
-  envioMasivoWhatsApp,
   getComprobantes,
   getComprobantePdf,
   downloadComprobanteFile,
@@ -75,12 +73,13 @@ export default function InvoicingPage() {
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-  const [bulkWhatsAppLoading, setBulkWhatsAppLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [freeModalOpen, setFreeModalOpen] = useState(false);
   const [freeLoading, setFreeLoading] = useState(false);
   const [freeRecipientMode, setFreeRecipientMode] = useState<"registered" | "external">("registered");
   const [externalLookupLoading, setExternalLookupLoading] = useState(false);
+  const [freeClientQuery, setFreeClientQuery] = useState("");
+  const [freeClientPickerOpen, setFreeClientPickerOpen] = useState(false);
   const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false);
   const [whatsAppComprobante, setWhatsAppComprobante] =
     useState<ComprobanteResource | null>(null);
@@ -103,12 +102,6 @@ export default function InvoicingPage() {
     emitir: true,
     detalles: [{ descripcion: "", cantidad: 1, precio_unitario: 0, tipo_igv: "10", unidad: "NIU" }],
   });
-
-  const pendingWhatsAppCount = useMemo(() => {
-    return comprobantes.filter(
-      (c) => !c.estado_envio_cliente || c.estado_envio_cliente === "pendiente" || c.estado_envio_cliente === "error"
-    ).length;
-  }, [comprobantes]);
 
   const [form, setForm] = useState<EmisionMasivaPayload>({
     cliente_ids: [],
@@ -144,6 +137,17 @@ export default function InvoicingPage() {
     () => clientes.filter((cliente) => cliente.no_facturado_efectivo).length,
     [clientes]
   );
+
+  const freeClientsFiltered = useMemo(() => {
+    const query = freeClientQuery.trim().toLowerCase();
+    if (!query) return clientes.slice(0, 8);
+    return clientes.filter((cliente) => {
+      const contactDocuments = (cliente.contactos_clientes || []).map((contacto) => contacto.dni || "").join(" ");
+      return [getClientDisplayName(cliente), cliente.ruc || "", contactDocuments].some((value) => value.toLowerCase().includes(query));
+    }).slice(0, 8);
+  }, [clientes, freeClientQuery]);
+
+  const freeSelectedClient = clientes.find((cliente) => cliente.id === freeForm.cliente_id);
 
   const loadComprobantes = async () => {
     setLoading(true);
@@ -247,16 +251,28 @@ export default function InvoicingPage() {
     }
   };
 
-  const lookupExternalRuc = async () => {
-    const ruc = freeForm.receptor_documento || "";
-    if (!/^\d{11}$/.test(ruc)) return errorToast("Ingresa un RUC válido de 11 dígitos.");
+  const lookupExternalDocument = async () => {
+    const identityDocument = freeForm.receptor_documento || "";
+    const isDni = /^\d{8}$/.test(identityDocument);
+    const isRuc = /^\d{11}$/.test(identityDocument);
+    if (!isDni && !isRuc) return errorToast("Ingresa un DNI de 8 dígitos o un RUC de 11 dígitos.");
     setExternalLookupLoading(true);
     try {
-      const response = await lookupClientByRuc(ruc);
-      setFreeForm((current) => ({ ...current, receptor_nombre: response.data.razon_social || response.data.nombre_comercial || current.receptor_nombre, receptor_direccion: response.data.direccion || current.receptor_direccion }));
-      successToast("Datos del RUC obtenidos correctamente.");
+      const response = isDni
+        ? await lookupClientByDni(identityDocument)
+        : await lookupClientByRuc(identityDocument);
+      const data: any = response.data;
+      const raw = data.raw || {};
+      const dniName = data.nombre_completo || [data.nombres || raw.nombres, data.apepat || raw.apepat, data.apemat || raw.apemat].filter(Boolean).join(" ");
+      const name = isDni ? dniName : data.razon_social || data.nombre_comercial;
+      setFreeForm((current) => ({
+        ...current,
+        receptor_nombre: name || current.receptor_nombre,
+        receptor_direccion: data.direccion || current.receptor_direccion,
+      }));
+      successToast(`Datos del ${isDni ? "DNI" : "RUC"} obtenidos correctamente.`);
     } catch (error: any) {
-      errorToast(error?.response?.data?.message || "No se encontraron datos para ese RUC.");
+      errorToast(error?.response?.data?.message || `No se encontraron datos para ese ${isDni ? "DNI" : "RUC"}.`);
     } finally {
       setExternalLookupLoading(false);
     }
@@ -305,19 +321,6 @@ export default function InvoicingPage() {
       await loadComprobantes();
     } catch {
       errorToast("No se pudieron reenviar los pendientes.");
-    }
-  };
-
-  const handleEnvioMasivoWhatsApp = async () => {
-    try {
-      setBulkWhatsAppLoading(true);
-      const res = await envioMasivoWhatsApp();
-      successToast(res.message || "Envío masivo por WhatsApp completado.");
-      await loadComprobantes();
-    } catch (err: any) {
-      errorToast(err?.response?.data?.message || "Error al realizar envío masivo por WhatsApp.");
-    } finally {
-      setBulkWhatsAppLoading(false);
     }
   };
 
@@ -379,20 +382,6 @@ export default function InvoicingPage() {
             <Button variant="outline" className="w-full whitespace-nowrap" onClick={handleReenviar}>
               <RefreshCcw className="mr-2 size-4" />
               Reenviar pendientes
-            </Button>
-            <Button
-              variant="outline"
-              className="col-span-2 w-full whitespace-nowrap gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
-              onClick={handleEnvioMasivoWhatsApp}
-              disabled={bulkWhatsAppLoading}
-            >
-              <WhatsAppIcon className="size-4 text-[#25D366]" />
-              {bulkWhatsAppLoading ? "Notificando..." : "Envío masivo WhatsApp"}
-              {pendingWhatsAppCount > 0 && (
-                <Badge className="ml-1 rounded-full bg-emerald-600 px-1.5 py-0.2 text-[10px] text-white">
-                  {pendingWhatsAppCount}
-                </Badge>
-              )}
             </Button>
         </div>
       </div>
@@ -617,54 +606,74 @@ export default function InvoicingPage() {
           </DialogHeader>
 
           <div className="max-h-[calc(92vh-150px)] space-y-5 overflow-y-auto px-6 py-5">
-            <div className="grid gap-3 rounded-xl border bg-card/80 p-4 sm:grid-cols-2 lg:grid-cols-5">
-              <div className="space-y-2 lg:col-span-2">
-                <Label>Receptor</Label>
-                <div className="flex rounded-md border bg-muted/30 p-1 text-xs">
-                  <button type="button" className={`flex-1 rounded px-2 py-1.5 ${freeRecipientMode === "registered" ? "bg-background font-semibold shadow-sm" : "text-muted-foreground"}`} onClick={() => setFreeRecipientMode("registered")}>Cliente registrado</button>
-                  <button type="button" className={`flex-1 rounded px-2 py-1.5 ${freeRecipientMode === "external" ? "bg-background font-semibold shadow-sm" : "text-muted-foreground"}`} onClick={() => setFreeRecipientMode("external")}>RUC/DNI externo</button>
+            <section className="space-y-4 rounded-xl border bg-card/80 p-4 sm:p-5">
+              <div className="flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <Label className="text-sm font-semibold">Receptor del comprobante</Label>
+                  <p className="mt-1 text-xs text-muted-foreground">Busca por nombre, RUC o DNI. No necesitas cargar toda la lista.</p>
                 </div>
-                {freeRecipientMode === "registered" ? (
-                  <select
-                    value={freeForm.cliente_id || ""}
-                    onChange={(event) => setFreeForm((current) => ({ ...current, cliente_id: Number(event.target.value) }))}
-                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  >
-                    <option value="">Selecciona un cliente</option>
-                    {clientes.map((cliente) => <option key={cliente.id} value={cliente.id}>{getClientDisplayName(cliente)} — {cliente.ruc || "sin RUC"}</option>)}
-                  </select>
-                ) : (
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <div className="flex gap-2"><Input placeholder="RUC (11) o DNI (8)" value={freeForm.receptor_documento || ""} onChange={(event) => setFreeForm((current) => ({ ...current, receptor_documento: event.target.value.replace(/\D/g, "").slice(0, 11) }))} /><Button type="button" variant="outline" size="icon" onClick={lookupExternalRuc} disabled={externalLookupLoading} title="Consultar RUC">{externalLookupLoading ? "…" : "⌕"}</Button></div>
-                    <Input placeholder="Razón social o nombre" value={freeForm.receptor_nombre || ""} onChange={(event) => setFreeForm((current) => ({ ...current, receptor_nombre: event.target.value }))} />
-                    <Input className="sm:col-span-2" placeholder="Dirección (opcional)" value={freeForm.receptor_direccion || ""} onChange={(event) => setFreeForm((current) => ({ ...current, receptor_direccion: event.target.value }))} />
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground">Factura: RUC obligatorio de 11 dígitos. Boleta: DNI o RUC válido. El receptor externo no se guarda como cliente.</p>
+                <div className="flex w-full rounded-lg border bg-muted/40 p-1 text-xs sm:w-auto">
+                  <button type="button" className={`flex-1 rounded-md px-3 py-2 transition ${freeRecipientMode === "registered" ? "bg-background font-semibold shadow-sm" : "text-muted-foreground"}`} onClick={() => setFreeRecipientMode("registered")}>Cliente registrado</button>
+                  <button type="button" className={`flex-1 rounded-md px-3 py-2 transition ${freeRecipientMode === "external" ? "bg-background font-semibold shadow-sm" : "text-muted-foreground"}`} onClick={() => setFreeRecipientMode("external")}>RUC/DNI externo</button>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Tipo</Label>
-                <select value={freeForm.tipo_documento} onChange={(event) => updateFreeTipoDocumento(event.target.value as TipoDocumento)} className="h-10 w-full rounded-md border bg-background px-3 text-sm">
-                  <option value="F">Factura</option>
-                  <option value="B">Boleta</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label>Serie</Label>
-                <Input value={freeForm.serie} onChange={(event) => setFreeForm((current) => ({ ...current, serie: event.target.value.toUpperCase() }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Fecha de emisión</Label>
-                <Input type="date" value={freeForm.fecha_emision} max={new Date().toISOString().slice(0, 10)} onChange={(event) => setFreeForm((current) => ({ ...current, fecha_emision: event.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Forma de pago</Label>
-                <select value={freeForm.forma_pago} onChange={(event) => setFreeForm((current) => ({ ...current, forma_pago: event.target.value as "C" | "D" }))} className="h-10 w-full rounded-md border bg-background px-3 text-sm">
-                  <option value="C">Contado</option>
-                  <option value="D">Crédito</option>
-                </select>
-              </div>
-            </div>
+
+              {freeRecipientMode === "registered" ? (
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={freeClientQuery}
+                    placeholder="Buscar cliente por nombre, RUC o DNI..."
+                    className="h-11 pl-9"
+                    onFocus={() => setFreeClientPickerOpen(true)}
+                    onChange={(event) => {
+                      setFreeClientQuery(event.target.value);
+                      setFreeForm((current) => ({ ...current, cliente_id: undefined }));
+                      setFreeClientPickerOpen(true);
+                    }}
+                  />
+                  {freeClientPickerOpen && (
+                    <>
+                      <button type="button" className="fixed inset-0 z-10 cursor-default" aria-label="Cerrar resultados" onClick={() => setFreeClientPickerOpen(false)} />
+                      <div className="absolute left-0 right-0 top-12 z-20 max-h-64 overflow-y-auto rounded-lg border bg-popover p-1 shadow-xl">
+                        {freeClientsFiltered.length === 0 ? (
+                          <p className="px-3 py-4 text-center text-sm text-muted-foreground">No se encontraron clientes.</p>
+                        ) : freeClientsFiltered.map((cliente) => (
+                          <button
+                            type="button"
+                            key={cliente.id}
+                            className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2.5 text-left hover:bg-accent"
+                            onClick={() => {
+                              setFreeForm((current) => ({ ...current, cliente_id: cliente.id }));
+                              setFreeClientQuery(`${getClientDisplayName(cliente)} — ${cliente.ruc || "sin RUC"}`);
+                              setFreeClientPickerOpen(false);
+                            }}
+                          >
+                            <span className="min-w-0"><span className="block truncate text-sm font-medium">{getClientDisplayName(cliente)}</span><span className="block text-xs text-muted-foreground">RUC: {cliente.ruc || "Sin RUC"}</span></span>
+                            {freeForm.cliente_id === cliente.id && <span className="text-primary">✓</span>}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  {freeSelectedClient && !freeClientPickerOpen && <p className="mt-2 rounded-md bg-primary/5 px-3 py-2 text-xs text-primary">Seleccionado: <strong>{getClientDisplayName(freeSelectedClient)}</strong> · {freeSelectedClient.ruc || "sin RUC"}</p>}
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="flex gap-2 lg:col-span-1"><Input placeholder="RUC (11) o DNI (8)" value={freeForm.receptor_documento || ""} onChange={(event) => setFreeForm((current) => ({ ...current, receptor_documento: event.target.value.replace(/\D/g, "").slice(0, 11) }))} /><Button type="button" variant="outline" size="icon" onClick={lookupExternalDocument} disabled={externalLookupLoading} title="Consultar RUC o DNI">{externalLookupLoading ? "…" : <Search className="size-4" />}</Button></div>
+                  <Input className="lg:col-span-2" placeholder="Razón social o nombre (opcional)" value={freeForm.receptor_nombre || ""} onChange={(event) => setFreeForm((current) => ({ ...current, receptor_nombre: event.target.value }))} />
+                  <Input placeholder="Dirección (opcional)" value={freeForm.receptor_direccion || ""} onChange={(event) => setFreeForm((current) => ({ ...current, receptor_direccion: event.target.value }))} />
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">Factura: RUC de 11 dígitos. Boleta: DNI de 8 o RUC de 11 dígitos.</p>
+            </section>
+
+            <section className="grid gap-3 rounded-xl border bg-card/80 p-4 sm:grid-cols-2 lg:grid-cols-4 sm:p-5">
+              <div className="space-y-2"><Label>Tipo de comprobante</Label><select value={freeForm.tipo_documento} onChange={(event) => updateFreeTipoDocumento(event.target.value as TipoDocumento)} className="h-10 w-full rounded-md border bg-background px-3 text-sm"><option value="F">Factura</option><option value="B">Boleta</option></select></div>
+              <div className="space-y-2"><Label>Serie</Label><Input value={freeForm.serie} onChange={(event) => setFreeForm((current) => ({ ...current, serie: event.target.value.toUpperCase() }))} /></div>
+              <div className="space-y-2"><Label>Fecha de emisión</Label><Input type="date" value={freeForm.fecha_emision} max={new Date().toISOString().slice(0, 10)} onChange={(event) => setFreeForm((current) => ({ ...current, fecha_emision: event.target.value }))} /></div>
+              <div className="space-y-2"><Label>Forma de pago</Label><select value={freeForm.forma_pago} onChange={(event) => setFreeForm((current) => ({ ...current, forma_pago: event.target.value as "C" | "D" }))} className="h-10 w-full rounded-md border bg-background px-3 text-sm"><option value="C">Contado</option><option value="D">Crédito</option></select></div>
+            </section>
 
             <div className="rounded-xl border bg-card/80 p-4">
               <div className="mb-4 flex items-center justify-between gap-3">
@@ -676,11 +685,11 @@ export default function InvoicingPage() {
               </div>
               <div className="space-y-3">
                 {freeForm.detalles.map((detail, index) => (
-                  <div key={index} className="grid gap-2 rounded-lg border bg-background/60 p-3 sm:grid-cols-[1fr_110px_150px_130px_40px] sm:items-end">
+                  <div key={index} className="grid gap-2 rounded-lg border bg-background/60 p-3 sm:grid-cols-[minmax(0,1fr)_100px_140px_175px_40px] sm:items-end">
                     <div className="space-y-1"><Label className="text-xs">Glosa / descripción</Label><Input value={detail.descripcion} onChange={(event) => updateFreeDetail(index, "descripcion", event.target.value)} placeholder="Servicio o producto" /></div>
                     <div className="space-y-1"><Label className="text-xs">Cantidad</Label><Input type="number" min="0.01" step="0.01" value={detail.cantidad} onChange={(event) => updateFreeDetail(index, "cantidad", Number(event.target.value))} /></div>
                     <div className="space-y-1"><Label className="text-xs">Precio unitario</Label><Input type="number" min="0.01" step="0.01" value={detail.precio_unitario} onChange={(event) => updateFreeDetail(index, "precio_unitario", Number(event.target.value))} /></div>
-                    <div className="space-y-1"><Label className="text-xs">IGV</Label><select value={detail.tipo_igv || "10"} onChange={(event) => updateFreeDetail(index, "tipo_igv", event.target.value)} className="h-10 w-full rounded-md border bg-background px-3 text-sm"><option value="10">Gravado 18%</option><option value="20">Exonerado</option><option value="30">Inafecto</option></select></div>
+                    <div className="min-w-0 space-y-1"><Label className="text-xs">IGV</Label><select value={detail.tipo_igv || "10"} onChange={(event) => updateFreeDetail(index, "tipo_igv", event.target.value)} className="h-10 w-full min-w-0 rounded-md border bg-background px-2 text-xs whitespace-nowrap"><option value="10">Gravado 18%</option><option value="20">Exonerado</option><option value="30">Inafecto</option></select></div>
                     <Button type="button" variant="ghost" size="icon" disabled={freeForm.detalles.length === 1} onClick={() => removeFreeDetail(index)} title="Eliminar detalle"><Trash2 className="size-4 text-destructive" /></Button>
                   </div>
                 ))}

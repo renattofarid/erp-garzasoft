@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, ExternalLink, FileCheck2, FileText, Loader2, X } from "lucide-react";
+import { Check, FileCheck2, FileText, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -10,12 +10,19 @@ import { approvePago, getPagos, rejectPago } from "../lib/accounts-receivable.ac
 import { PagoResource } from "../lib/accounts-receivable.interface";
 
 export default function PendingPaymentsPage() {
+  type ReceiptPreview = { paymentId: number; url: string; kind: "image" | "pdf" };
   const [payments, setPayments] = useState<PagoResource[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<number | null>(null);
   const [reviewPayment, setReviewPayment] = useState<PagoResource | null>(null);
   const [reviewAction, setReviewAction] = useState<"approve" | "reject" | null>(null);
   const [reviewComment, setReviewComment] = useState("");
+  const [receiptPreview, setReceiptPreview] = useState<ReceiptPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState<number | null>(null);
+
+  useEffect(() => () => {
+    if (receiptPreview?.url) URL.revokeObjectURL(receiptPreview.url);
+  }, [receiptPreview?.url]);
 
   const load = async () => {
     setLoading(true);
@@ -69,13 +76,24 @@ export default function PendingPaymentsPage() {
   };
 
   const openReceipt = async (payment: PagoResource) => {
+    if (receiptPreview?.paymentId === payment.id) {
+      setReceiptPreview(null);
+      return;
+    }
+
+    setPreviewLoading(payment.id);
     try {
       const { data } = await api.get(`pagos/${payment.id}/comprobante`, { responseType: "blob" });
       const url = URL.createObjectURL(data);
-      window.open(url, "_blank", "noopener,noreferrer");
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setReceiptPreview({
+        paymentId: payment.id,
+        url,
+        kind: data.type === "application/pdf" ? "pdf" : "image",
+      });
     } catch {
       errorToast("No se pudo abrir el comprobante.");
+    } finally {
+      setPreviewLoading(null);
     }
   };
 
@@ -98,10 +116,23 @@ export default function PendingPaymentsPage() {
               <div><p className="text-xs text-muted-foreground">Fecha reportada</p><p className="mt-1 font-medium">{payment.fecha_pago || "—"}</p></div>
             </div>
             <div className="flex flex-wrap gap-2 lg:justify-end">
-              <Button variant="outline" size="sm" onClick={() => openReceipt(payment)} disabled={!payment.comprobante}><FileText className="mr-2 h-4 w-4" /> Ver comprobante <ExternalLink className="ml-2 h-3.5 w-3.5" /></Button>
+              <Button variant="outline" size="sm" onClick={() => openReceipt(payment)} disabled={!payment.comprobante || previewLoading === payment.id}>
+                {previewLoading === payment.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                {receiptPreview?.paymentId === payment.id ? "Ocultar comprobante" : "Ver comprobante"}
+              </Button>
               <Button size="sm" onClick={() => openReview(payment, "approve")} disabled={processing === payment.id}><Check className="mr-2 h-4 w-4" /> Aprobar</Button>
               <Button variant="destructive" size="sm" onClick={() => openReview(payment, "reject")} disabled={processing === payment.id}><X className="mr-2 h-4 w-4" /> Rechazar</Button>
             </div>
+            {receiptPreview?.paymentId === payment.id && (
+              <div className="mt-1 overflow-hidden rounded-xl border border-border/80 bg-muted/20 p-2 sm:p-3 lg:col-span-2">
+                <p className="mb-2 text-xs font-medium text-muted-foreground">Vista previa del comprobante</p>
+                {receiptPreview.kind === "image" ? (
+                  <img src={receiptPreview.url} alt="Comprobante de pago" className="max-h-[28rem] w-full rounded-lg object-contain" />
+                ) : (
+                  <iframe src={receiptPreview.url} title="Vista previa del comprobante PDF" className="h-[28rem] w-full rounded-lg border-0 bg-background" />
+                )}
+              </div>
+            )}
           </div>;
         })}</div>}
       </div>

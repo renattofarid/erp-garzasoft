@@ -79,8 +79,10 @@ export function ComprobanteRecoveryDialog({
     setShowTechnicalDetails(false);
   }, [comprobante]);
 
-  const editable = Boolean(comprobante && editableStates.includes(comprobante.estado));
-  const hasZip = Boolean(comprobante?.zip_path || (comprobante && ["M", "T"].includes(comprobante.estado)));
+  const accepted = Boolean(comprobante && ["M", "T"].includes(comprobante.estado));
+  const acceptedWithoutCdr = Boolean(accepted && !comprobante?.tiene_cdr_aceptado);
+  const editable = Boolean(comprobante && (editableStates.includes(comprobante.estado) || acceptedWithoutCdr));
+  const hasZip = Boolean(comprobante?.zip_path);
   const total = useMemo(
     () => form?.detalles.reduce(
       (sum, item) => sum + Number(item.cantidad || 0) * Number(item.precio_unitario || 0),
@@ -308,9 +310,15 @@ export function ComprobanteRecoveryDialog({
           </div>
         )}
 
-        {!editable && (
+        {!editable && accepted && (
           <div className="rounded-lg border bg-muted/40 p-3 text-sm text-muted-foreground">
-            Este comprobante ya fue aceptado y no se puede modificar. Para corregirlo corresponde emitir una nota de credito.
+            Este comprobante ya cuenta con CDR/ZIP aceptado por SUNAT y no se puede modificar ni reenviar. Para corregirlo corresponde emitir una nota de credito.
+          </div>
+        )}
+
+        {acceptedWithoutCdr && (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
+            El facturador lo marcó como aceptado, pero no hay una constancia CDR/ZIP de SUNAT guardada. Puedes corregirlo y reenviarlo.
           </div>
         )}
 
@@ -385,10 +393,12 @@ export function ComprobanteRecoveryDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>
           {editable && (
             <>
-              <Button variant="outline" disabled={saving} onClick={retryWithoutChanges}>
-                <RotateCcw className={`mr-2 size-4 ${saving ? "animate-spin" : ""}`} />
-                Reenviar sin cambios
-              </Button>
+              {!acceptedWithoutCdr && (
+                <Button variant="outline" disabled={saving} onClick={retryWithoutChanges}>
+                  <RotateCcw className={`mr-2 size-4 ${saving ? "animate-spin" : ""}`} />
+                  Reenviar sin cambios
+                </Button>
+              )}
               <Button variant="secondary" disabled={saving} onClick={() => save(false)}>
                 <Save className="mr-2 size-4" /> Guardar
               </Button>

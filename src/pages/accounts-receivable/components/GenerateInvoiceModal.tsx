@@ -21,6 +21,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { CuentasPorCobrarResource } from "../lib/accounts-receivable.interface";
@@ -98,6 +99,7 @@ export function GenerateInvoiceModal({
   // Formulario Modo Sistema
   const [sistemaSerie, setSistemaSerie] = useState("F001");
   const [sistemaCorrelativo, setSistemaCorrelativo] = useState("");
+  const [sistemaDescripcion, setSistemaDescripcion] = useState("");
   const [sistemaFechaEmision, setSistemaFechaEmision] = useState(
     format(new Date(), "yyyy-MM-dd")
   );
@@ -115,6 +117,10 @@ export function GenerateInvoiceModal({
   useEffect(() => {
     if (open && cuota) {
       setSistemaFechaEmision(format(new Date(), "yyyy-MM-dd"));
+      const [year, month, day] = cuota.fecha_vencimiento.slice(0, 10).split("-");
+      setSistemaDescripcion(
+        `Cuota del contrato ${cuota.contrato?.numero} - vencimiento ${day}/${month}/${year}`
+      );
       setManualFechaEmision(format(new Date(), "yyyy-MM-dd"));
       setManualMontoTotal(Number(cuota.monto_pendiente || cuota.monto_total || 0).toFixed(2));
       setPdfFile(null);
@@ -178,6 +184,7 @@ export function GenerateInvoiceModal({
         serie: sistemaSerie,
         correlativo: sistemaCorrelativo ? parseInt(sistemaCorrelativo, 10) : undefined,
         fecha_emision: sistemaFechaEmision,
+        descripcion: sistemaDescripcion,
       };
 
       const res = await api.post(`cuotas/${cuota.id}/generar-factura`, payload);
@@ -341,6 +348,21 @@ export function GenerateInvoiceModal({
                   className="h-9 text-xs"
                 />
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Descripción del comprobante</Label>
+              <Textarea
+                value={sistemaDescripcion}
+                onChange={(e) => setSistemaDescripcion(e.target.value)}
+                maxLength={255}
+                rows={2}
+                className="min-h-16 resize-y text-xs"
+                placeholder="Descripción que aparecerá en la factura"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Puedes editar la descripción antes de emitir la factura.
+              </p>
             </div>
 
             <DialogFooter className="pt-2">

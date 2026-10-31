@@ -45,6 +45,7 @@ export interface ComprobanteResource {
   xml_path?: string | null;
   cdr_path?: string | null;
   zip_path?: string | null;
+  tiene_cdr_aceptado?: boolean;
   pdf_path?: string | null;
   cuota_id?: number | null;
   contrato_id?: number | null;

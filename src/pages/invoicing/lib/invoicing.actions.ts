@@ -56,6 +56,14 @@ export async function reenviarPendientes(): Promise<{
   return data;
 }
 
+export async function sincronizarFacturador(): Promise<{
+  message: string;
+  data: { consultados: number; actualizados: number; cdr_descargados: number; errores: Array<{ facturador: string; mensaje: string }> };
+}> {
+  const { data } = await api.post(`${ENDPOINT}/sincronizar-facturador`);
+  return data;
+}
+
 export async function getComprobantePdf(id: number): Promise<Blob> {
   const { data } = await api.get(`${ENDPOINT}/${id}/pdf`, {
     responseType: "blob",

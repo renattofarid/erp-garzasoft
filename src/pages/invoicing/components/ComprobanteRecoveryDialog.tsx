@@ -408,6 +408,18 @@ export function ComprobanteRecoveryDialog({
               </Button>
             </>
           )}
+          {!editable && (
+            <Button
+              type="button"
+              disabled
+              title={accepted
+                ? "Sincroniza con el facturador para confirmar si existe un CDR aceptado."
+                : "Este comprobante no está disponible para reenvío."}
+            >
+              <RotateCcw className="mr-2 size-4" />
+              Reenviar
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

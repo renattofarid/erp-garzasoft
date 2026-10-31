@@ -43,6 +43,7 @@ import {
   getComprobantePdf,
   downloadComprobanteFile,
   reenviarPendientes,
+  sincronizarFacturador,
   crearComprobanteLibre,
 } from "../lib/invoicing.actions";
 import {
@@ -73,6 +74,7 @@ export default function InvoicingPage() {
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [syncLoading, setSyncLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [freeModalOpen, setFreeModalOpen] = useState(false);
   const [freeLoading, setFreeLoading] = useState(false);
@@ -324,6 +326,29 @@ export default function InvoicingPage() {
     }
   };
 
+  const handleSincronizarFacturador = async () => {
+    setSyncLoading(true);
+    try {
+      const response = await sincronizarFacturador();
+      const { consultados, actualizados, cdr_descargados, errores } = response.data;
+      if (errores.length) {
+        errorToast(
+          `Sincronización parcial: ${actualizados} factura(s) actualizada(s), ${cdr_descargados} CDR descargado(s).`,
+          errores[0].mensaje
+        );
+      } else {
+        successToast(
+          `Facturador sincronizado: ${actualizados} actualizada(s), ${cdr_descargados} CDR descargado(s) de ${consultados} comprobante(s).`
+        );
+      }
+      await loadComprobantes();
+    } catch (error: any) {
+      errorToast(error?.response?.data?.message || "No se pudieron sincronizar las facturas con el facturador.");
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
   const handleOpenPdf = async (id: number) => {
     try {
       await openPdfFromFetcher(
@@ -382,6 +407,10 @@ export default function InvoicingPage() {
             <Button variant="outline" className="w-full whitespace-nowrap" onClick={handleReenviar}>
               <RefreshCcw className="mr-2 size-4" />
               Reenviar pendientes
+            </Button>
+            <Button variant="outline" className="w-full whitespace-nowrap" onClick={handleSincronizarFacturador} disabled={syncLoading}>
+              <RefreshCcw className={`mr-2 size-4 ${syncLoading ? "animate-spin" : ""}`} />
+              {syncLoading ? "Sincronizando..." : "Sincronizar facturas"}
             </Button>
         </div>
       </div>

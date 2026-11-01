@@ -64,6 +64,11 @@ export function ComprobanteRecoveryDialog({
     if (!comprobante) return;
     setForm({
       cliente_id: comprobante.cliente_id,
+      ...(comprobante.cliente_id ? {} : {
+        receptor_documento: comprobante.receptor_documento,
+        receptor_nombre: comprobante.receptor_nombre,
+        receptor_direccion: comprobante.receptor_direccion,
+      }),
       tipo_documento: comprobante.tipo_documento,
       serie: comprobante.serie,
       correlativo: comprobante.correlativo,

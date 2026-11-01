@@ -150,6 +150,25 @@ function getContractProductName(contract: ContractResource): string {
   return "Servicio ERP Garzasoft";
 }
 
+async function getAllPortalComprobantes(): Promise<ComprobanteResource[]> {
+  const firstPage = await getComprobantes({ page: 1, perPage: 100 });
+  const lastPage = Math.max(1, firstPage.meta?.last_page || 1);
+  const remainingPages: ComprobanteResource[] = [];
+
+  for (let page = 2; page <= lastPage; page += 5) {
+    const pageNumbers = Array.from(
+      { length: Math.min(5, lastPage - page + 1) },
+      (_, index) => page + index
+    );
+    const responses = await Promise.all(
+      pageNumbers.map((pageNumber) => getComprobantes({ page: pageNumber, perPage: 100 }))
+    );
+    remainingPages.push(...responses.flatMap((response) => response.data || []));
+  }
+
+  return [...(firstPage.data || []), ...remainingPages];
+}
+
 export default function ClientPortalPage() {
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
@@ -183,18 +202,19 @@ export default function ClientPortalPage() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [subscriptionLoading, setSubscriptionLoading] = useState<number | null>(null);
   const [resendingPaymentId, setResendingPaymentId] = useState<number | null>(null);
+  const [invoicePdfAction, setInvoicePdfAction] = useState<{ id: number; action: "preview" | "download" } | null>(null);
 
   const fetchPortalData = () => {
     setLoading(true);
     Promise.all([
       getContract({ params: { page: 1, per_page: 100 } }),
       getCuentasPorCobrar({ params: { page: 1, per_page: 100 } }),
-      getComprobantes({ page: 1, perPage: 100 }),
+      getAllPortalComprobantes(),
     ])
-      .then(([contractResponse, installmentResponse, invoiceResponse]) => {
+      .then(([contractResponse, installmentResponse, invoiceItems]) => {
         setContracts(contractResponse.data || []);
         setInstallments(installmentResponse.data || []);
-        setInvoices(invoiceResponse.data || []);
+        setInvoices(invoiceItems || []);
       })
       .catch(() => errorToast("No se pudo cargar la información de tu portal."))
       .finally(() => setLoading(false));
@@ -211,6 +231,12 @@ export default function ClientPortalPage() {
   const certificateExpired = Boolean(
     certificateDocument?.fecha_vencimiento &&
     new Date(`${certificateDocument.fecha_vencimiento}T23:59:59`) < new Date()
+  );
+  const issuedInvoices = useMemo(
+    () => invoices
+      .filter((invoice) => ["M", "T"].includes(invoice.estado))
+      .sort((a, b) => b.fecha_emision.localeCompare(a.fecha_emision) || b.id - a.id),
+    [invoices]
   );
 
   const resendPaymentNotice = async (cuotaId: number) => {
@@ -335,6 +361,52 @@ export default function ClientPortalPage() {
       );
     } catch (err: any) {
       errorToast(err.message || "No se pudo abrir el PDF del comprobante.");
+    }
+  };
+
+  const previewIssuedInvoice = async (invoice: ComprobanteResource) => {
+    setInvoicePdfAction({ id: invoice.id, action: "preview" });
+    try {
+      await openPdfFromFetcher(
+        () => getComprobantePdf(invoice.id),
+        `Comprobante ${invoice.numero}`
+      );
+    } catch (error: any) {
+      errorToast(error?.message || "No se pudo abrir la vista previa del comprobante.");
+    } finally {
+      setInvoicePdfAction(null);
+    }
+  };
+
+  const downloadIssuedInvoice = async (invoice: ComprobanteResource) => {
+    setInvoicePdfAction({ id: invoice.id, action: "download" });
+    try {
+      const blob = await getComprobantePdf(invoice.id);
+      const signature = await blob.slice(0, 5).text();
+      if (signature !== "%PDF-") {
+        const responseText = await blob.text();
+        let message = "El servidor no devolvió un PDF válido.";
+        try {
+          const response = JSON.parse(responseText);
+          if (response.message) message = response.message;
+        } catch {
+          // La respuesta no contenía un mensaje JSON.
+        }
+        throw new Error(message);
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = window.document.createElement("a");
+      link.href = url;
+      link.download = `comprobante-${invoice.numero}.pdf`;
+      window.document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (error: any) {
+      errorToast(error?.message || "No se pudo descargar el comprobante.");
+    } finally {
+      setInvoicePdfAction(null);
     }
   };
 
@@ -1281,6 +1353,74 @@ export default function ClientPortalPage() {
               </CardContent>
             </Card>
           </div>
+
+          <Card className="border border-border/80 bg-card shadow-sm dark:bg-zinc-900/90">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-base font-bold">
+                    <ReceiptText className="h-5 w-5 text-primary" />
+                    Comprobantes electrónicos
+                  </CardTitle>
+                  <CardDescription className="mt-1 text-xs">
+                    Previsualiza y descarga en PDF tus comprobantes aceptados. El PDF se genera desde el sistema con los datos del comprobante.
+                  </CardDescription>
+                </div>
+                <Badge variant="secondary">{issuedInvoices.length}</Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {issuedInvoices.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+                  Aún no hay comprobantes electrónicos aceptados para este cliente.
+                </p>
+              ) : (
+                <div className="divide-y divide-border rounded-xl border border-border/70">
+                  {issuedInvoices.map((invoice) => {
+                    const action = invoicePdfAction?.id === invoice.id ? invoicePdfAction.action : null;
+                    return (
+                      <div key={invoice.id} className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-foreground">{invoice.numero}</p>
+                            <Badge variant="outline" className="text-[10px]">
+                              {invoice.tipo_documento === "F" ? "Factura" : "Boleta"}
+                            </Badge>
+                          </div>
+                          <p className="mt-1 truncate text-xs text-muted-foreground">
+                            {formatDisplayDate(invoice.fecha_emision)} · {invoice.moneda} {Number(invoice.total).toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="gap-1.5"
+                            disabled={invoicePdfAction !== null}
+                            onClick={() => previewIssuedInvoice(invoice)}
+                          >
+                            {action === "preview" ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />}
+                            Vista previa
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="gap-1.5"
+                            disabled={invoicePdfAction !== null}
+                            onClick={() => downloadIssuedInvoice(invoice)}
+                          >
+                            {action === "download" ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                            Descargar PDF
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

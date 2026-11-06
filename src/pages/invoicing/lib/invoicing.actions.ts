@@ -22,16 +22,22 @@ export async function crearComprobanteLibre(
 export async function getComprobantes({
   page,
   search,
+  fechaInicio,
+  fechaFin,
   perPage,
 }: {
   page?: number;
   search?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
   perPage?: number;
 }): Promise<ComprobanteResponse> {
   const config: AxiosRequestConfig = {
     params: {
       page,
       search,
+      fecha_inicio: fechaInicio,
+      fecha_fin: fechaFin,
       per_page: perPage ?? per_page,
     },
   };

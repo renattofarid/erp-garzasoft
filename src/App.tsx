@@ -40,6 +40,7 @@ import ReportsPage from "./pages/reports/components/ReportsPage";
 import ContactPage from "./pages/contacts/components/ContactPage";
 import PendingPaymentsPage from "./pages/accounts-receivable/components/PendingPaymentsPage";
 import PaymentNotificationSettingsPage from "./pages/accounts-receivable/components/PaymentNotificationSettingsPage";
+import SaasIntegrationsPage from "./pages/saas/SaasIntegrationsPage";
 import { ContactRoute } from "./pages/contacts/lib/contact.interface";
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
@@ -214,6 +215,7 @@ export default function App() {
             element={<ProtectedRoute><PendingPaymentsPage /></ProtectedRoute>}
           />
           <Route path="/configuracion" element={<ProtectedRoute><PaymentNotificationSettingsPage /></ProtectedRoute>} />
+          <Route path="/integraciones-saas" element={<ProtectedRoute><SaasIntegrationsPage /></ProtectedRoute>} />
 
           <Route
             path="/reportes"

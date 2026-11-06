@@ -45,6 +45,9 @@ import {
 import { errorToast } from "@/lib/core.function";
 import { getDashboardSummary } from "../lib/dashboard.actions";
 import { DashboardResponse } from "../lib/dashboard.interface";
+import { api } from "@/lib/config";
+
+type SaasAlert = { branch_id: number; cliente: string; branch_name: string; overdue_quotas: number; message: string };
 
 const currency = new Intl.NumberFormat("es-PE", {
   style: "currency",
@@ -73,12 +76,16 @@ export default function HomePage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState<DashboardResponse["data"] | null>(null);
+  const [saasAlerts, setSaasAlerts] = useState<SaasAlert[]>([]);
 
   useEffect(() => {
     getDashboardSummary()
       .then((response) => setDashboard(response.data))
       .catch(() => errorToast("No se pudo cargar el dashboard."))
       .finally(() => setLoading(false));
+    api.get<{ data: SaasAlert[] }>("saas/hotelhub/alerts")
+      .then((response) => setSaasAlerts(response.data.data))
+      .catch(() => setSaasAlerts([]));
   }, []);
 
   const kpis = dashboard?.kpis;
@@ -152,6 +159,23 @@ export default function HomePage() {
             <Button variant="secondary" onClick={() => navigate("/empresa-emisora")}>
               Ir a configuración
             </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {saasAlerts.length > 0 && (
+        <Card className="border-amber-500/60 bg-amber-50 text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">
+          <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+            <div>
+              <CardTitle className="flex items-center gap-2"><AlertTriangle className="size-5 text-amber-600" />Revisión de acceso a HotelHUB</CardTitle>
+              <CardDescription className="mt-1">Hay sucursales con cuotas que alcanzaron el umbral de atraso. Revisa el pago y decide si corresponde suspender el acceso.</CardDescription>
+            </div>
+            <Button variant="outline" onClick={() => navigate("/integraciones-saas")}>Revisar sucursales ({saasAlerts.length})</Button>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {saasAlerts.slice(0, 4).map((alert) => <div key={alert.branch_id} className="rounded-md border border-amber-300/60 bg-background/70 px-3 py-2 text-sm">
+              <strong>{alert.cliente} · {alert.branch_name}</strong><span className="ml-2 text-muted-foreground">{alert.overdue_quotas} cuota(s) atrasada(s)</span>
+            </div>)}
           </CardContent>
         </Card>
       )}

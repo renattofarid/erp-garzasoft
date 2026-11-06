@@ -50,7 +50,7 @@ interface CorrelativoData {
 
 /** Helper para extraer datos de facturas PDF comunes (Garzasoft / SUNAT) */
 export function extractInvoiceDataFromPdfText(text: string) {
-  let serie = "F001";
+  let serie = "F010";
   let correlativo = "";
   let fechaEmision = "";
   let total = "";
@@ -97,7 +97,7 @@ export function GenerateInvoiceModal({
   const [correlativoInfo, setCorrelativoInfo] = useState<CorrelativoData | null>(null);
 
   // Formulario Modo Sistema
-  const [sistemaSerie, setSistemaSerie] = useState("F001");
+  const [sistemaSerie, setSistemaSerie] = useState("F010");
   const [sistemaCorrelativo, setSistemaCorrelativo] = useState("");
   const [sistemaDescripcion, setSistemaDescripcion] = useState("");
   const [sistemaFechaEmision, setSistemaFechaEmision] = useState(
@@ -106,7 +106,7 @@ export function GenerateInvoiceModal({
 
   // Formulario Modo Manual (PDF)
   const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [manualSerie, setManualSerie] = useState("F001");
+  const [manualSerie, setManualSerie] = useState("F010");
   const [manualCorrelativo, setManualCorrelativo] = useState("");
   const [manualFechaEmision, setManualFechaEmision] = useState(
     format(new Date(), "yyyy-MM-dd")
@@ -125,7 +125,7 @@ export function GenerateInvoiceModal({
       setManualMontoTotal(Number(cuota.monto_pendiente || cuota.monto_total || 0).toFixed(2));
       setPdfFile(null);
 
-      fetchSiguienteCorrelativo("F001");
+      fetchSiguienteCorrelativo("F010");
     }
   }, [open, cuota]);
 
@@ -138,7 +138,7 @@ export function GenerateInvoiceModal({
 
       const info: CorrelativoData = res.data?.data;
       setCorrelativoInfo(info);
-      setSistemaSerie(info.serie || "F001");
+      setSistemaSerie(info.serie || "F010");
       setSistemaCorrelativo(String(info.siguiente_correlativo || 1));
     } catch {
       setSistemaCorrelativo("1");
@@ -320,7 +320,7 @@ export function GenerateInvoiceModal({
                     fetchSiguienteCorrelativo(val);
                   }}
                   className="h-9 font-mono text-xs uppercase"
-                  placeholder="F001"
+                  placeholder="F010"
                 />
               </div>
 
@@ -415,7 +415,7 @@ export function GenerateInvoiceModal({
                   value={manualSerie}
                   onChange={(e) => setManualSerie(e.target.value.toUpperCase())}
                   className="h-9 font-mono text-xs uppercase"
-                  placeholder="F001"
+                  placeholder="F010"
                 />
               </div>
 

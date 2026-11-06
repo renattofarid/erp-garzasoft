@@ -73,6 +73,8 @@ export default function InvoicingPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
+  const [fechaInicio, setFechaInicio] = useState("");
+  const [fechaFin, setFechaFin] = useState("");
   const [loading, setLoading] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -154,7 +156,7 @@ export default function InvoicingPage() {
   const loadComprobantes = async () => {
     setLoading(true);
     try {
-      const response = await getComprobantes({ page, search, perPage: pageSize });
+      const response = await getComprobantes({ page, search, fechaInicio, fechaFin, perPage: pageSize });
       setComprobantes(response.data || []);
       setTotalPages(response.meta?.last_page || 1);
       setTotalItems(response.meta?.total || 0);
@@ -167,7 +169,7 @@ export default function InvoicingPage() {
 
   useEffect(() => {
     loadComprobantes();
-  }, [page, pageSize, search]);
+  }, [page, pageSize, search, fechaInicio, fechaFin]);
 
   useEffect(() => {
     getAllClients()
@@ -415,17 +417,27 @@ export default function InvoicingPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 rounded-lg border bg-card p-3">
-        <Search className="size-4 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(event) => {
-            setPage(1);
-            setSearch(event.target.value);
-          }}
-          placeholder="Buscar por cliente, RUC o serie"
-          className="border-0 bg-transparent focus-visible:ring-0"
-        />
+      <div className="grid gap-3 rounded-lg border bg-card p-3 md:grid-cols-[minmax(220px,1fr)_auto_auto] md:items-end">
+        <div className="flex items-center gap-2 rounded-md border px-3">
+          <Search className="size-4 shrink-0 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(event) => {
+              setPage(1);
+              setSearch(event.target.value);
+            }}
+            placeholder="Buscar por cliente, RUC o serie"
+            className="border-0 bg-transparent focus-visible:ring-0"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="fecha-inicio-facturacion">Fecha inicio</Label>
+          <Input id="fecha-inicio-facturacion" type="date" value={fechaInicio} max={fechaFin || undefined} onChange={(event) => { setPage(1); setFechaInicio(event.target.value); }} />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="fecha-fin-facturacion">Fecha fin</Label>
+          <Input id="fecha-fin-facturacion" type="date" value={fechaFin} min={fechaInicio || undefined} onChange={(event) => { setPage(1); setFechaFin(event.target.value); }} />
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-lg border">

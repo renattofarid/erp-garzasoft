@@ -130,6 +130,11 @@ const data = {
           icon: FileCheck2,
         },
         {
+          title: "Integraciones SaaS",
+          url: "/integraciones-saas",
+          icon: Building2,
+        },
+        {
           title: "Facturacion electronica",
           url: InvoicingRoute,
           icon: FileText,

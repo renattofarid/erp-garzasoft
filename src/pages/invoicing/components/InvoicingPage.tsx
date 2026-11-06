@@ -97,7 +97,7 @@ export default function InvoicingPage() {
   const [freeForm, setFreeForm] = useState<ComprobanteLibrePayload>({
     cliente_id: 0,
     tipo_documento: "F",
-    serie: "F001",
+    serie: "F010",
     moneda: "PEN",
     forma_pago: "C",
     fecha_emision: new Date().toISOString().slice(0, 10),
@@ -108,7 +108,7 @@ export default function InvoicingPage() {
   const [form, setForm] = useState<EmisionMasivaPayload>({
     cliente_ids: [],
     tipo_documento: "F",
-    serie: "F001",
+    serie: "F010",
     moneda: "PEN",
     forma_pago: "C",
     emitir: true,
@@ -202,12 +202,12 @@ export default function InvoicingPage() {
     setForm((current) => ({
       ...current,
       tipo_documento: tipo,
-      serie: tipo === "F" ? "F001" : "B001",
+      serie: tipo === "F" ? "F010" : "B001",
     }));
   };
 
   const updateFreeTipoDocumento = (tipo: TipoDocumento) => {
-    setFreeForm((current) => ({ ...current, tipo_documento: tipo, serie: tipo === "F" ? "F001" : "B001" }));
+    setFreeForm((current) => ({ ...current, tipo_documento: tipo, serie: tipo === "F" ? "F010" : "B001" }));
   };
 
   const addFreeDetail = () => {

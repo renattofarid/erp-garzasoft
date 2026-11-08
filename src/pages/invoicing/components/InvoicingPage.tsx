@@ -75,24 +75,51 @@ interface ClienteFacturable {
 }
 
 function listarClientesFacturables(clientes: ClientResource[]): ClienteFacturable[] {
-  const resultado: ClienteFacturable[] = [];
+  const candidatos: ClienteFacturable[] = [];
   const recorrer = (cliente: ClientResource, padres: ClientResource[]) => {
     const hijos = cliente.hijos_clientes || [];
-    if (hijos.length > 0) {
-      hijos.forEach((hijo) => recorrer(hijo, [...padres, cliente]));
-      return;
+    if (cliente.ruc) {
+      candidatos.push({
+        cliente,
+        ruc: cliente.ruc,
+        ruta: padres.map(getClientDisplayName).join(" · "),
+      });
+    } else if (hijos.length === 0 && !padres.some((padre) => padre.ruc)) {
+      candidatos.push({
+        cliente,
+        ruc: null,
+        ruta: padres.map(getClientDisplayName).join(" · "),
+      });
     }
 
-    const ruc = cliente.ruc || [...padres].reverse().find((padre) => padre.ruc)?.ruc || null;
-    resultado.push({
-      cliente,
-      ruc,
-      ruta: padres.map(getClientDisplayName).join(" · "),
-    });
+    hijos.forEach((hijo) => recorrer(hijo, [...padres, cliente]));
   };
 
   clientes.forEach((cliente) => recorrer(cliente, []));
-  return resultado;
+
+  const prioridad = (cliente: ClientResource) => {
+    if (cliente.tipo === "empresa") return 0;
+    if (cliente.tipo === "corporacion") return 1;
+    if (cliente.tipo === "local") return 2;
+    return 0;
+  };
+  const porRuc = new Map<string, ClienteFacturable>();
+  const sinRuc: ClienteFacturable[] = [];
+
+  candidatos.forEach((candidato) => {
+    if (!candidato.ruc) {
+      sinRuc.push(candidato);
+      return;
+    }
+
+    const clave = candidato.ruc.replace(/\D/g, "") || candidato.ruc;
+    const existente = porRuc.get(clave);
+    if (!existente || prioridad(candidato.cliente) < prioridad(existente.cliente)) {
+      porRuc.set(clave, candidato);
+    }
+  });
+
+  return [...porRuc.values(), ...sinRuc];
 }
 
 export default function InvoicingPage() {

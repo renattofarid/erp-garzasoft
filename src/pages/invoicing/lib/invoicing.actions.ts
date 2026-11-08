@@ -12,6 +12,14 @@ import {
 
 const ENDPOINT = "comprobantes";
 
+export async function asignarComprobanteACuentaPorCobrar(comprobanteId: number, cuotaId: number): Promise<ComprobanteResource> {
+  const { data } = await api.post<{ data: ComprobanteResource }>(
+    `${ENDPOINT}/${comprobanteId}/asignar-cuenta-por-cobrar`,
+    { cuota_id: cuotaId }
+  );
+  return data.data;
+}
+
 export async function crearComprobanteLibre(
   payload: ComprobanteLibrePayload
 ): Promise<ComprobanteResource> {

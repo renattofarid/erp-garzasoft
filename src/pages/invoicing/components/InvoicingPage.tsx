@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Send, RefreshCcw, AlertCircle, Info, Plus, Trash2 } from "lucide-react";
+import { Search, Send, RefreshCcw, AlertCircle, Info, Plus, Trash2, CircleDollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { WhatsAppIcon, PdfIcon, ZipIcon } from "@/components/icons/DocumentIcons";
 import TitleComponent from "@/components/TitleComponent";
@@ -45,6 +45,7 @@ import {
   reenviarPendientes,
   sincronizarFacturador,
   crearComprobanteLibre,
+  asignarComprobanteACuentaPorCobrar,
 } from "../lib/invoicing.actions";
 import {
   ComprobanteResource,
@@ -57,6 +58,8 @@ import {
 } from "../lib/invoicing.interface";
 import { WhatsAppComprobanteModal } from "./WhatsAppComprobanteModal";
 import { ComprobanteRecoveryDialog } from "./ComprobanteRecoveryDialog";
+import { getCuentasPorCobrar } from "@/pages/accounts-receivable/lib/accounts-receivable.actions";
+import { CuentasPorCobrarResource } from "@/pages/accounts-receivable/lib/accounts-receivable.interface";
 
 const estadoColor: Record<string, string> = {
   E: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
@@ -144,6 +147,13 @@ export default function InvoicingPage() {
   const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [recoveryComprobante, setRecoveryComprobante] =
     useState<ComprobanteResource | null>(null);
+  const [assignAccountOpen, setAssignAccountOpen] = useState(false);
+  const [assignAccountLoading, setAssignAccountLoading] = useState(false);
+  const [assignAccountSaving, setAssignAccountSaving] = useState(false);
+  const [assignAccountQuery, setAssignAccountQuery] = useState("");
+  const [assignAccountComprobante, setAssignAccountComprobante] = useState<ComprobanteResource | null>(null);
+  const [assignAccountCuotas, setAssignAccountCuotas] = useState<CuentasPorCobrarResource[]>([]);
+  const [assignAccountCuotaId, setAssignAccountCuotaId] = useState("");
 
   const [comprobantes, setComprobantes] = useState<ComprobanteResource[]>([]);
   const [clientes, setClientes] = useState<ClientResource[]>([]);
@@ -208,6 +218,19 @@ export default function InvoicingPage() {
   }, [clientesFacturables, freeClientQuery]);
 
   const freeSelectedClient = clientesFacturables.find(({ cliente }) => cliente.id === freeForm.cliente_id);
+  const cuotasFiltradas = useMemo(() => {
+    const query = assignAccountQuery.trim().toLowerCase();
+    if (!query) return assignAccountCuotas;
+    return assignAccountCuotas.filter((cuota) => {
+      const cliente = cuota.contrato?.cliente;
+      return [
+        cuota.contrato?.numero || "",
+        getClientDisplayName(cliente),
+        cliente?.ruc || "",
+        String(cuota.id),
+      ].some((value) => value.toLowerCase().includes(query));
+    });
+  }, [assignAccountCuotas, assignAccountQuery]);
 
   const loadComprobantes = async () => {
     setLoading(true);
@@ -220,6 +243,42 @@ export default function InvoicingPage() {
       errorToast("No se pudieron cargar los comprobantes.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openAssignAccountDialog = async (comprobante: ComprobanteResource) => {
+    setAssignAccountComprobante(comprobante);
+    setAssignAccountCuotaId("");
+    setAssignAccountQuery("");
+    setAssignAccountOpen(true);
+    setAssignAccountLoading(true);
+    try {
+      const response = await getCuentasPorCobrar({ params: { page: 1, per_page: 100 } });
+      setAssignAccountCuotas((response.data || []).filter((cuota) =>
+        !cuota.comprobante && Number(cuota.monto_pendiente) > 0 && cuota.situacion !== "pagado"
+      ));
+    } catch {
+      errorToast("No se pudieron cargar las cuentas por cobrar disponibles.");
+    } finally {
+      setAssignAccountLoading(false);
+    }
+  };
+
+  const submitAssignAccount = async () => {
+    if (!assignAccountComprobante || !assignAccountCuotaId) {
+      errorToast("Selecciona una cuenta por cobrar.");
+      return;
+    }
+    setAssignAccountSaving(true);
+    try {
+      await asignarComprobanteACuentaPorCobrar(assignAccountComprobante.id, Number(assignAccountCuotaId));
+      successToast("La factura se asignó a la cuenta por cobrar.");
+      setAssignAccountOpen(false);
+      await loadComprobantes();
+    } catch (error: any) {
+      errorToast(error?.response?.data?.message || "No se pudo asignar la factura.");
+    } finally {
+      setAssignAccountSaving(false);
     }
   };
 
@@ -635,6 +694,23 @@ export default function InvoicingPage() {
                           </TooltipContent>
                         </Tooltip>
 
+                        {!comprobante.cliente_id && !comprobante.cuota_id && ["M", "T"].includes(comprobante.estado) && (
+                          <Tooltip disableHoverableContent>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                size="icon"
+                                className="size-8 rounded-full bg-violet-600 text-white shadow-xs transition-all hover:scale-110 hover:bg-violet-700 active:scale-95"
+                                aria-label="Asignar a cuenta por cobrar"
+                                onClick={() => openAssignAccountDialog(comprobante)}
+                              >
+                                <CircleDollarSign className="size-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" sideOffset={6}>Asignar a cuenta por cobrar</TooltipContent>
+                          </Tooltip>
+                        )}
+
                         {/* 4. Descargar ZIP SUNAT (Naranja) */}
                         {(comprobante.zip_path || ["M", "T"].includes(comprobante.estado)) && (
                           <Tooltip disableHoverableContent>
@@ -1005,6 +1081,49 @@ export default function InvoicingPage() {
               Cancelar
             </Button>
             <Button onClick={submitMasivo}>Emitir comprobantes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={assignAccountOpen} onOpenChange={setAssignAccountOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Asignar factura a cuenta por cobrar</DialogTitle>
+            <DialogDescription>
+              Factura {assignAccountComprobante?.numero} por {assignAccountComprobante?.moneda} {Number(assignAccountComprobante?.total || 0).toFixed(2)}. Selecciona una cuota pendiente sin factura asignada.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Input
+              value={assignAccountQuery}
+              onChange={(event) => setAssignAccountQuery(event.target.value)}
+              placeholder="Buscar por contrato, cliente o RUC"
+            />
+            {assignAccountLoading ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">Cargando cuentas por cobrar…</p>
+            ) : cuotasFiltradas.length === 0 ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">No hay cuentas pendientes disponibles.</p>
+            ) : (
+              <select
+                value={assignAccountCuotaId}
+                onChange={(event) => setAssignAccountCuotaId(event.target.value)}
+                className="h-11 w-full rounded-md border bg-background px-3 text-sm"
+              >
+                <option value="">Selecciona una cuenta por cobrar</option>
+                {cuotasFiltradas.map((cuota) => (
+                  <option key={cuota.id} value={cuota.id}>
+                    {`Contrato ${cuota.contrato?.numero || "-"} · ${getClientDisplayName(cuota.contrato?.cliente)} · Cuota ${cuota.id} · Vence ${cuota.fecha_vencimiento} · Pendiente S/ ${Number(cuota.monto_pendiente).toFixed(2)}`}
+                  </option>
+                ))}
+              </select>
+            )}
+            <p className="text-xs text-muted-foreground">La asignación vincula la factura con la cuota seleccionada; no modifica su saldo pendiente.</p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setAssignAccountOpen(false)} disabled={assignAccountSaving}>Cancelar</Button>
+            <Button onClick={submitAssignAccount} disabled={assignAccountSaving || assignAccountLoading || !assignAccountCuotaId}>
+              {assignAccountSaving ? "Asignando…" : "Asignar factura"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

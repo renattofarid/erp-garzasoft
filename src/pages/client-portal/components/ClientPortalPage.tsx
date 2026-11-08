@@ -53,6 +53,13 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -60,7 +67,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { errorToast, successToast } from "@/lib/core.function";
-import { openPdfFromFetcher } from "@/lib/pdf";
 import { useAuthStore } from "@/pages/auth/lib/auth.store";
 import {
   downloadContractDocument,
@@ -203,26 +209,34 @@ export default function ClientPortalPage() {
   const [subscriptionLoading, setSubscriptionLoading] = useState<number | null>(null);
   const [resendingPaymentId, setResendingPaymentId] = useState<number | null>(null);
   const [invoicePdfAction, setInvoicePdfAction] = useState<{ id: number; action: "preview" | "download" } | null>(null);
+  const [invoicePreview, setInvoicePreview] = useState<ComprobanteResource | null>(null);
+  const [invoicePreviewUrl, setInvoicePreviewUrl] = useState<string | null>(null);
 
   const fetchPortalData = () => {
     setLoading(true);
     Promise.all([
       getContract({ params: { page: 1, per_page: 100 } }),
       getCuentasPorCobrar({ params: { page: 1, per_page: 100 } }),
-      getAllPortalComprobantes(),
     ])
-      .then(([contractResponse, installmentResponse, invoiceItems]) => {
+      .then(([contractResponse, installmentResponse]) => {
         setContracts(contractResponse.data || []);
         setInstallments(installmentResponse.data || []);
-        setInvoices(invoiceItems || []);
       })
       .catch(() => errorToast("No se pudo cargar la información de tu portal."))
       .finally(() => setLoading(false));
+
+    getAllPortalComprobantes()
+      .then((invoiceItems) => setInvoices(invoiceItems || []))
+      .catch(() => setInvoices([]));
   };
 
   useEffect(() => {
     fetchPortalData();
   }, []);
+
+  useEffect(() => () => {
+    if (invoicePreviewUrl) URL.revokeObjectURL(invoicePreviewUrl);
+  }, [invoicePreviewUrl]);
 
   const certificateDocument = useMemo(
     () => contracts.flatMap((contract) => contract.documentos || []).find((document) => document.categoria === "certificado_digital"),
@@ -232,12 +246,13 @@ export default function ClientPortalPage() {
     certificateDocument?.fecha_vencimiento &&
     new Date(`${certificateDocument.fecha_vencimiento}T23:59:59`) < new Date()
   );
-  const issuedInvoices = useMemo(
-    () => invoices
+  const issuedInvoices = useMemo(() => {
+    const byId = new Map<number, ComprobanteResource>();
+    [...invoices, ...installments.map((installment) => installment.comprobante).filter((invoice): invoice is ComprobanteResource => Boolean(invoice))]
       .filter((invoice) => ["M", "T"].includes(invoice.estado))
-      .sort((a, b) => b.fecha_emision.localeCompare(a.fecha_emision) || b.id - a.id),
-    [invoices]
-  );
+      .forEach((invoice) => byId.set(invoice.id, invoice));
+    return [...byId.values()].sort((a, b) => b.fecha_emision.localeCompare(a.fecha_emision) || b.id - a.id);
+  }, [invoices, installments]);
 
   const resendPaymentNotice = async (cuotaId: number) => {
     setResendingPaymentId(cuotaId);
@@ -347,30 +362,23 @@ export default function ClientPortalPage() {
 
   // Apertura del PDF de Factura
   const openInvoicePdf = async (cuota: CuentasPorCobrarResource) => {
-    const invoiceId = cuota.comprobante?.id || (invoices.find((i) => i.numero && cuota.comprobante?.numero === i.numero)?.id);
-
-    if (!invoiceId && !cuota.comprobante) {
+    const invoice = cuota.comprobante || invoices.find((item) => item.numero && item.numero === cuota.comprobante?.numero);
+    if (!invoice) {
       errorToast("Esta cuota aún no cuenta con una factura electrónica emitida.");
       return;
     }
-
-    try {
-      await openPdfFromFetcher(
-        () => getComprobantePdf(invoiceId || cuota.comprobante!.id),
-        "Generando factura en PDF..."
-      );
-    } catch (err: any) {
-      errorToast(err.message || "No se pudo abrir el PDF del comprobante.");
-    }
+    await previewIssuedInvoice(invoice);
   };
 
   const previewIssuedInvoice = async (invoice: ComprobanteResource) => {
     setInvoicePdfAction({ id: invoice.id, action: "preview" });
     try {
-      await openPdfFromFetcher(
-        () => getComprobantePdf(invoice.id),
-        `Comprobante ${invoice.numero}`
-      );
+      const blob = await getComprobantePdf(invoice.id);
+      const signature = await blob.slice(0, 5).text();
+      if (signature !== "%PDF-") throw new Error("El servidor no devolvió un PDF válido.");
+      const url = URL.createObjectURL(blob);
+      setInvoicePreviewUrl(url);
+      setInvoicePreview(invoice);
     } catch (error: any) {
       errorToast(error?.message || "No se pudo abrir la vista previa del comprobante.");
     } finally {
@@ -1379,19 +1387,37 @@ export default function ClientPortalPage() {
                   {issuedInvoices.map((invoice) => {
                     const action = invoicePdfAction?.id === invoice.id ? invoicePdfAction.action : null;
                     return (
-                      <div key={invoice.id} className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-foreground">{invoice.numero}</p>
-                            <Badge variant="outline" className="text-[10px]">
-                              {invoice.tipo_documento === "F" ? "Factura" : "Boleta"}
-                            </Badge>
+                      <div
+                        key={invoice.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => previewIssuedInvoice(invoice)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            previewIssuedInvoice(invoice);
+                          }
+                        }}
+                        className="group flex cursor-pointer flex-col gap-3 p-3 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex h-12 w-11 shrink-0 flex-col items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-600 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300">
+                            <FileText className="h-5 w-5" />
+                            <span className="mt-0.5 text-[8px] font-bold tracking-wide">PDF</span>
                           </div>
-                          <p className="mt-1 truncate text-xs text-muted-foreground">
-                            {formatDisplayDate(invoice.fecha_emision)} · {invoice.moneda} {Number(invoice.total).toFixed(2)}
-                          </p>
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="truncate font-semibold text-foreground group-hover:text-primary">{invoice.numero}</p>
+                              <Badge variant="outline" className="text-[10px]">
+                                {invoice.tipo_documento === "F" ? "Factura" : "Boleta"}
+                              </Badge>
+                            </div>
+                            <p className="mt-1 truncate text-xs text-muted-foreground">
+                              {formatDisplayDate(invoice.fecha_emision)} · {invoice.moneda} {Number(invoice.total).toFixed(2)} · PDF disponible
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex shrink-0 gap-2">
+                        <div className="flex shrink-0 gap-2" onClick={(event) => event.stopPropagation()}>
                           <Button
                             type="button"
                             size="sm"
@@ -1482,6 +1508,36 @@ export default function ClientPortalPage() {
           </div>
         </div>
       </div>
+
+      <Dialog
+        open={Boolean(invoicePreviewUrl && invoicePreview)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setInvoicePreview(null);
+            setInvoicePreviewUrl(null);
+          }
+        }}
+      >
+        <DialogContent className="flex h-[92vh] max-w-6xl flex-col gap-0 overflow-hidden p-0">
+          <DialogHeader className="flex flex-row items-center justify-between border-b px-5 py-3 pr-12">
+            <div className="min-w-0">
+              <DialogTitle className="truncate">{invoicePreview?.numero || "Comprobante electrónico"}</DialogTitle>
+              <DialogDescription className="mt-1">
+                {invoicePreview ? `${formatDisplayDate(invoicePreview.fecha_emision)} · ${invoicePreview.moneda} ${Number(invoicePreview.total).toFixed(2)}` : "Vista previa del PDF"}
+              </DialogDescription>
+            </div>
+            {invoicePreview && (
+              <Button type="button" className="mr-1 shrink-0 gap-2" onClick={() => downloadIssuedInvoice(invoicePreview)} disabled={invoicePdfAction?.id === invoicePreview.id && invoicePdfAction.action === "download"}>
+                {invoicePdfAction?.id === invoicePreview.id && invoicePdfAction.action === "download" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                Descargar PDF
+              </Button>
+            )}
+          </DialogHeader>
+          <div className="min-h-0 flex-1 bg-slate-100 p-2 dark:bg-zinc-950">
+            {invoicePreviewUrl && <iframe title={`Vista previa ${invoicePreview?.numero || "del comprobante"}`} src={invoicePreviewUrl} className="h-full w-full rounded-md border bg-white shadow-sm" />}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* MODAL DE FIRMA DIGITAL DEL CONTRATO */}
       <ClientContractSignatureModal

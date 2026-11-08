@@ -68,6 +68,33 @@ const estadoColor: Record<string, string> = {
   V: "bg-red-500/15 text-red-400 border-red-500/30",
 };
 
+interface ClienteFacturable {
+  cliente: ClientResource;
+  ruc: string | null;
+  ruta: string;
+}
+
+function listarClientesFacturables(clientes: ClientResource[]): ClienteFacturable[] {
+  const resultado: ClienteFacturable[] = [];
+  const recorrer = (cliente: ClientResource, padres: ClientResource[]) => {
+    const hijos = cliente.hijos_clientes || [];
+    if (hijos.length > 0) {
+      hijos.forEach((hijo) => recorrer(hijo, [...padres, cliente]));
+      return;
+    }
+
+    const ruc = cliente.ruc || [...padres].reverse().find((padre) => padre.ruc)?.ruc || null;
+    resultado.push({
+      cliente,
+      ruc,
+      ruta: padres.map(getClientDisplayName).join(" · "),
+    });
+  };
+
+  clientes.forEach((cliente) => recorrer(cliente, []));
+  return resultado;
+}
+
 export default function InvoicingPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
@@ -125,17 +152,19 @@ export default function InvoicingPage() {
     ],
   });
 
+  const clientesFacturables = useMemo(() => listarClientesFacturables(clientes), [clientes]);
+
   const selectedClientes = useMemo(
-    () => clientes.filter((cliente) => form.cliente_ids.includes(cliente.id)),
-    [clientes, form.cliente_ids]
+    () => clientesFacturables.map(({ cliente, ruc }) => ({ ...cliente, ruc: cliente.ruc || ruc })).filter((cliente) => form.cliente_ids.includes(cliente.id)),
+    [clientesFacturables, form.cliente_ids]
   );
 
   const clientesVisibles = useMemo(() => {
-    return clientes.filter((cliente) => {
+    return clientesFacturables.map(({ cliente, ruc }) => ({ ...cliente, ruc: cliente.ruc || ruc })).filter((cliente) => {
       if (cliente.no_facturado_efectivo) return false;
       return form.tipo_documento !== "F" || /^\d{11}$/.test(cliente.ruc || "");
     });
-  }, [clientes, form.tipo_documento]);
+  }, [clientesFacturables, form.tipo_documento]);
 
   const clientesNoFacturados = useMemo(
     () => clientes.filter((cliente) => cliente.no_facturado_efectivo).length,
@@ -144,14 +173,14 @@ export default function InvoicingPage() {
 
   const freeClientsFiltered = useMemo(() => {
     const query = freeClientQuery.trim().toLowerCase();
-    if (!query) return clientes.slice(0, 8);
-    return clientes.filter((cliente) => {
+    if (!query) return clientesFacturables.slice(0, 8);
+    return clientesFacturables.filter(({ cliente, ruc, ruta }) => {
       const contactDocuments = (cliente.contactos_clientes || []).map((contacto) => contacto.dni || "").join(" ");
-      return [getClientDisplayName(cliente), cliente.ruc || "", contactDocuments].some((value) => value.toLowerCase().includes(query));
+      return [getClientDisplayName(cliente), ruta, ruc || "", contactDocuments].some((value) => value.toLowerCase().includes(query));
     }).slice(0, 8);
-  }, [clientes, freeClientQuery]);
+  }, [clientesFacturables, freeClientQuery]);
 
-  const freeSelectedClient = clientes.find((cliente) => cliente.id === freeForm.cliente_id);
+  const freeSelectedClient = clientesFacturables.find(({ cliente }) => cliente.id === freeForm.cliente_id);
 
   const loadComprobantes = async () => {
     setLoading(true);
@@ -181,15 +210,15 @@ export default function InvoicingPage() {
     setForm((current) => ({
       ...current,
       cliente_ids: current.cliente_ids.filter((clienteId) =>
-        clientes.some(
-          (cliente) =>
+        clientesFacturables.some(
+          ({ cliente, ruc }) =>
             cliente.id === clienteId &&
             !cliente.no_facturado_efectivo &&
-            (form.tipo_documento !== "F" || /^\d{11}$/.test(cliente.ruc || ""))
+            (form.tipo_documento !== "F" || /^\d{11}$/.test(cliente.ruc || ruc || ""))
         )
       ),
     }));
-  }, [form.tipo_documento, clientes]);
+  }, [form.tipo_documento, clientesFacturables]);
 
   const toggleCliente = (id: number) => {
     setForm((current) => ({
@@ -679,25 +708,25 @@ export default function InvoicingPage() {
                       <div className="absolute left-0 right-0 top-12 z-20 max-h-64 overflow-y-auto rounded-lg border bg-popover p-1 shadow-xl">
                         {freeClientsFiltered.length === 0 ? (
                           <p className="px-3 py-4 text-center text-sm text-muted-foreground">No se encontraron clientes.</p>
-                        ) : freeClientsFiltered.map((cliente) => (
+                        ) : freeClientsFiltered.map(({ cliente, ruc, ruta }) => (
                           <button
                             type="button"
                             key={cliente.id}
                             className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2.5 text-left hover:bg-accent"
                             onClick={() => {
                               setFreeForm((current) => ({ ...current, cliente_id: cliente.id }));
-                              setFreeClientQuery(`${getClientDisplayName(cliente)} — ${cliente.ruc || "sin RUC"}`);
+                              setFreeClientQuery(`${getClientDisplayName(cliente)} — ${ruc || "sin RUC"}`);
                               setFreeClientPickerOpen(false);
                             }}
                           >
-                            <span className="min-w-0"><span className="block truncate text-sm font-medium">{getClientDisplayName(cliente)}</span><span className="block text-xs text-muted-foreground">RUC: {cliente.ruc || "Sin RUC"}</span></span>
+                            <span className="min-w-0"><span className="block truncate text-sm font-medium">{getClientDisplayName(cliente)}</span><span className="block truncate text-xs text-muted-foreground">{ruta ? `${ruta} · ` : ""}RUC: {ruc || "Sin RUC"}</span></span>
                             {freeForm.cliente_id === cliente.id && <span className="text-primary">✓</span>}
                           </button>
                         ))}
                       </div>
                     </>
                   )}
-                  {freeSelectedClient && !freeClientPickerOpen && <p className="mt-2 rounded-md bg-primary/5 px-3 py-2 text-xs text-primary">Seleccionado: <strong>{getClientDisplayName(freeSelectedClient)}</strong> · {freeSelectedClient.ruc || "sin RUC"}</p>}
+                  {freeSelectedClient && !freeClientPickerOpen && <p className="mt-2 rounded-md bg-primary/5 px-3 py-2 text-xs text-primary">Seleccionado: <strong>{getClientDisplayName(freeSelectedClient.cliente)}</strong> · RUC {freeSelectedClient.ruc || "sin RUC"}</p>}
                 </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

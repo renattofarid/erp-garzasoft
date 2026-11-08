@@ -46,6 +46,7 @@ import {
   sincronizarFacturador,
   crearComprobanteLibre,
   asignarComprobanteACuentaPorCobrar,
+  getCuentasPorCobrarDisponibles,
 } from "../lib/invoicing.actions";
 import {
   ComprobanteResource,
@@ -58,7 +59,6 @@ import {
 } from "../lib/invoicing.interface";
 import { WhatsAppComprobanteModal } from "./WhatsAppComprobanteModal";
 import { ComprobanteRecoveryDialog } from "./ComprobanteRecoveryDialog";
-import { getCuentasPorCobrar } from "@/pages/accounts-receivable/lib/accounts-receivable.actions";
 import { CuentasPorCobrarResource } from "@/pages/accounts-receivable/lib/accounts-receivable.interface";
 
 const estadoColor: Record<string, string> = {
@@ -125,6 +125,13 @@ function listarClientesFacturables(clientes: ClientResource[]): ClienteFacturabl
   return [...porRuc.values(), ...sinRuc];
 }
 
+function obtenerRucClienteCuenta(cliente?: CuentasPorCobrarResource["contrato"]["cliente"] | null): string | null {
+  return cliente?.ruc
+    || cliente?.parent_cliente?.ruc
+    || cliente?.parent_cliente?.parent_cliente?.ruc
+    || null;
+}
+
 export default function InvoicingPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
@@ -154,6 +161,9 @@ export default function InvoicingPage() {
   const [assignAccountComprobante, setAssignAccountComprobante] = useState<ComprobanteResource | null>(null);
   const [assignAccountCuotas, setAssignAccountCuotas] = useState<CuentasPorCobrarResource[]>([]);
   const [assignAccountCuotaId, setAssignAccountCuotaId] = useState("");
+  const [assignAccountPage, setAssignAccountPage] = useState(1);
+  const [assignAccountLastPage, setAssignAccountLastPage] = useState(1);
+  const [assignAccountTotal, setAssignAccountTotal] = useState(0);
 
   const [comprobantes, setComprobantes] = useState<ComprobanteResource[]>([]);
   const [clientes, setClientes] = useState<ClientResource[]>([]);
@@ -218,20 +228,6 @@ export default function InvoicingPage() {
   }, [clientesFacturables, freeClientQuery]);
 
   const freeSelectedClient = clientesFacturables.find(({ cliente }) => cliente.id === freeForm.cliente_id);
-  const cuotasFiltradas = useMemo(() => {
-    const query = assignAccountQuery.trim().toLowerCase();
-    if (!query) return assignAccountCuotas;
-    return assignAccountCuotas.filter((cuota) => {
-      const cliente = cuota.contrato?.cliente;
-      return [
-        cuota.contrato?.numero || "",
-        getClientDisplayName(cliente),
-        cliente?.ruc || "",
-        String(cuota.id),
-      ].some((value) => value.toLowerCase().includes(query));
-    });
-  }, [assignAccountCuotas, assignAccountQuery]);
-
   const loadComprobantes = async () => {
     setLoading(true);
     try {
@@ -246,23 +242,42 @@ export default function InvoicingPage() {
     }
   };
 
-  const openAssignAccountDialog = async (comprobante: ComprobanteResource) => {
+  const openAssignAccountDialog = (comprobante: ComprobanteResource) => {
     setAssignAccountComprobante(comprobante);
     setAssignAccountCuotaId("");
     setAssignAccountQuery("");
+    setAssignAccountPage(1);
     setAssignAccountOpen(true);
-    setAssignAccountLoading(true);
-    try {
-      const response = await getCuentasPorCobrar({ params: { page: 1, per_page: 100 } });
-      setAssignAccountCuotas((response.data || []).filter((cuota) =>
-        !cuota.comprobante && Number(cuota.monto_pendiente) > 0 && cuota.situacion !== "pagado"
-      ));
-    } catch {
-      errorToast("No se pudieron cargar las cuentas por cobrar disponibles.");
-    } finally {
-      setAssignAccountLoading(false);
-    }
   };
+
+  useEffect(() => {
+    if (!assignAccountOpen || !assignAccountComprobante) return;
+
+    let cancelled = false;
+    const timeout = window.setTimeout(async () => {
+      setAssignAccountLoading(true);
+      try {
+        const response = await getCuentasPorCobrarDisponibles(assignAccountComprobante.id, {
+          page: assignAccountPage,
+          per_page: 20,
+          search: assignAccountQuery.trim() || undefined,
+        });
+        if (cancelled) return;
+        setAssignAccountCuotas(response.data || []);
+        setAssignAccountLastPage(response.meta?.last_page || 1);
+        setAssignAccountTotal(response.meta?.total || 0);
+      } catch (error: any) {
+        if (!cancelled) errorToast(error?.response?.data?.message || "No se pudieron cargar las cuentas por cobrar disponibles.");
+      } finally {
+        if (!cancelled) setAssignAccountLoading(false);
+      }
+    }, assignAccountQuery.trim() ? 250 : 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [assignAccountOpen, assignAccountComprobante?.id, assignAccountQuery, assignAccountPage]);
 
   const submitAssignAccount = async () => {
     if (!assignAccountComprobante || !assignAccountCuotaId) {
@@ -1096,12 +1111,15 @@ export default function InvoicingPage() {
           <div className="space-y-3 py-2">
             <Input
               value={assignAccountQuery}
-              onChange={(event) => setAssignAccountQuery(event.target.value)}
-              placeholder="Buscar por contrato, cliente o RUC"
+              onChange={(event) => {
+                setAssignAccountQuery(event.target.value);
+                setAssignAccountPage(1);
+              }}
+              placeholder="Buscar por RUC, cliente o contrato"
             />
             {assignAccountLoading ? (
               <p className="py-4 text-center text-sm text-muted-foreground">Cargando cuentas por cobrar…</p>
-            ) : cuotasFiltradas.length === 0 ? (
+            ) : assignAccountCuotas.length === 0 ? (
               <p className="py-4 text-center text-sm text-muted-foreground">No hay cuentas pendientes disponibles.</p>
             ) : (
               <select
@@ -1110,13 +1128,21 @@ export default function InvoicingPage() {
                 className="h-11 w-full rounded-md border bg-background px-3 text-sm"
               >
                 <option value="">Selecciona una cuenta por cobrar</option>
-                {cuotasFiltradas.map((cuota) => (
+                {assignAccountCuotas.map((cuota) => (
                   <option key={cuota.id} value={cuota.id}>
-                    {`Contrato ${cuota.contrato?.numero || "-"} · ${getClientDisplayName(cuota.contrato?.cliente)} · Cuota ${cuota.id} · Vence ${cuota.fecha_vencimiento} · Pendiente S/ ${Number(cuota.monto_pendiente).toFixed(2)}`}
+                    {`${cuota.situacion === "vencido" ? "Vencida" : "Pendiente"} · Contrato ${cuota.contrato?.numero || "-"} · ${getClientDisplayName(cuota.contrato?.cliente)} · RUC ${obtenerRucClienteCuenta(cuota.contrato?.cliente) || "sin RUC"} · Cuota ${cuota.id} · Vence ${cuota.fecha_vencimiento} · Saldo S/ ${Number(cuota.monto_pendiente).toFixed(2)}`}
                   </option>
                 ))}
               </select>
             )}
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{assignAccountTotal} cuenta(s) disponible(s)</span>
+              <div className="flex items-center gap-2">
+                <Button type="button" size="sm" variant="outline" disabled={assignAccountLoading || assignAccountPage <= 1} onClick={() => setAssignAccountPage((page) => Math.max(1, page - 1))}>Anterior</Button>
+                <span>{assignAccountPage} / {assignAccountLastPage}</span>
+                <Button type="button" size="sm" variant="outline" disabled={assignAccountLoading || assignAccountPage >= assignAccountLastPage} onClick={() => setAssignAccountPage((page) => page + 1)}>Siguiente</Button>
+              </div>
+            </div>
             <p className="text-xs text-muted-foreground">La asignación vincula la factura con la cuota seleccionada; no modifica su saldo pendiente.</p>
           </div>
           <div className="flex justify-end gap-2">

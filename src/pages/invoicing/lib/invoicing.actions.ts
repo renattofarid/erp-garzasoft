@@ -9,6 +9,7 @@ import {
   EmisionMasivaResult,
   ComprobanteLibrePayload,
 } from "./invoicing.interface";
+import type { CuentasPorCobrarResponse } from "@/pages/accounts-receivable/lib/accounts-receivable.interface";
 
 const ENDPOINT = "comprobantes";
 
@@ -18,6 +19,17 @@ export async function asignarComprobanteACuentaPorCobrar(comprobanteId: number, 
     { cuota_id: cuotaId }
   );
   return data.data;
+}
+
+export async function getCuentasPorCobrarDisponibles(
+  comprobanteId: number,
+  params: { page?: number; per_page?: number; search?: string }
+): Promise<CuentasPorCobrarResponse> {
+  const { data } = await api.get<CuentasPorCobrarResponse>(
+    `${ENDPOINT}/${comprobanteId}/cuentas-por-cobrar-disponibles`,
+    { params }
+  );
+  return data;
 }
 
 export async function crearComprobanteLibre(

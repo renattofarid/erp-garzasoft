@@ -91,10 +91,26 @@ export async function sincronizarFacturador(): Promise<{
 }
 
 export async function getComprobantePdf(id: number): Promise<Blob> {
-  const { data } = await api.get(`${ENDPOINT}/${id}/pdf`, {
-    responseType: "blob",
-  });
-  return data;
+  try {
+    const { data } = await api.get(`${ENDPOINT}/${id}/pdf`, {
+      responseType: "blob",
+    });
+    return data;
+  } catch (error: any) {
+    const body = error?.response?.data;
+    if (body instanceof Blob) {
+      const text = await body.text();
+      let message: string | undefined;
+      try {
+        const response = JSON.parse(text);
+        message = response?.message;
+      } catch {
+        // La respuesta no era JSON.
+      }
+      if (message) throw new Error(message);
+    }
+    throw error;
+  }
 }
 
 export async function getComprobante(id: number): Promise<ComprobanteResource> {

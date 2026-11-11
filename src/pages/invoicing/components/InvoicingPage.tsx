@@ -714,8 +714,7 @@ export default function InvoicingPage() {
                             <Button
                               type="button"
                               size="icon"
-                              disabled={Boolean(comprobante.cuota_id) || !["M", "T"].includes(comprobante.estado)}
-                              className="size-8 rounded-full bg-violet-600 text-white shadow-xs transition-all hover:scale-110 hover:bg-violet-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
+                              className="size-8 rounded-full bg-violet-600 text-white shadow-xs transition-all hover:scale-110 hover:bg-violet-700 active:scale-95"
                               aria-label="Asignar a cuenta por cobrar"
                               onClick={() => openAssignAccountDialog(comprobante)}
                             >
@@ -723,11 +722,7 @@ export default function InvoicingPage() {
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="top" sideOffset={6}>
-                            {comprobante.cuota_id
-                              ? "Esta factura ya está asignada a una cuenta por cobrar"
-                              : !["M", "T"].includes(comprobante.estado)
-                                ? "Solo se pueden asignar facturas aceptadas por SUNAT"
-                                : "Asignar a cuenta por cobrar"}
+                            {comprobante.cuota_id ? "Cambiar cuenta por cobrar asignada" : "Asignar a cuenta por cobrar"}
                           </TooltipContent>
                         </Tooltip>
 
@@ -1110,7 +1105,7 @@ export default function InvoicingPage() {
           <DialogHeader>
             <DialogTitle>Asignar factura a cuenta por cobrar</DialogTitle>
             <DialogDescription>
-              Factura {assignAccountComprobante?.numero} por {assignAccountComprobante?.moneda} {Number(assignAccountComprobante?.total || 0).toFixed(2)}. Selecciona una cuota pendiente sin factura asignada.
+              Factura {assignAccountComprobante?.numero} por {assignAccountComprobante?.moneda} {Number(assignAccountComprobante?.total || 0).toFixed(2)}. {assignAccountComprobante?.cuota_id ? "Selecciona una nueva cuenta pendiente; se reemplazará el vínculo anterior." : "Selecciona una cuenta pendiente sin factura asignada."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">

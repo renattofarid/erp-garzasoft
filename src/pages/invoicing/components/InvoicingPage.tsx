@@ -709,22 +709,27 @@ export default function InvoicingPage() {
                           </TooltipContent>
                         </Tooltip>
 
-                        {!comprobante.cliente_id && !comprobante.cuota_id && ["M", "T"].includes(comprobante.estado) && (
-                          <Tooltip disableHoverableContent>
-                            <TooltipTrigger asChild>
-                              <Button
-                                type="button"
-                                size="icon"
-                                className="size-8 rounded-full bg-violet-600 text-white shadow-xs transition-all hover:scale-110 hover:bg-violet-700 active:scale-95"
-                                aria-label="Asignar a cuenta por cobrar"
-                                onClick={() => openAssignAccountDialog(comprobante)}
-                              >
-                                <CircleDollarSign className="size-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" sideOffset={6}>Asignar a cuenta por cobrar</TooltipContent>
-                          </Tooltip>
-                        )}
+                        <Tooltip disableHoverableContent>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              size="icon"
+                              disabled={Boolean(comprobante.cuota_id) || !["M", "T"].includes(comprobante.estado)}
+                              className="size-8 rounded-full bg-violet-600 text-white shadow-xs transition-all hover:scale-110 hover:bg-violet-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
+                              aria-label="Asignar a cuenta por cobrar"
+                              onClick={() => openAssignAccountDialog(comprobante)}
+                            >
+                              <CircleDollarSign className="size-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={6}>
+                            {comprobante.cuota_id
+                              ? "Esta factura ya está asignada a una cuenta por cobrar"
+                              : !["M", "T"].includes(comprobante.estado)
+                                ? "Solo se pueden asignar facturas aceptadas por SUNAT"
+                                : "Asignar a cuenta por cobrar"}
+                          </TooltipContent>
+                        </Tooltip>
 
                         {/* 4. Descargar ZIP SUNAT (Naranja) */}
                         {(comprobante.zip_path || ["M", "T"].includes(comprobante.estado)) && (

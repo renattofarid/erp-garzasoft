@@ -6,6 +6,7 @@ export async function openPdfFromFetcher(
   const previewWindow = window.open("", "_blank");
 
   if (previewWindow) {
+    previewWindow.focus();
     try {
       previewWindow.document.write(`
         <!DOCTYPE html>

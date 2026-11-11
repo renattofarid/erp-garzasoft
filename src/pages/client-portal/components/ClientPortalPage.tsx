@@ -53,13 +53,6 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -67,6 +60,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { errorToast, successToast } from "@/lib/core.function";
+import { openPdfFromFetcher } from "@/lib/pdf";
 import { useAuthStore } from "@/pages/auth/lib/auth.store";
 import {
   downloadContractDocument,
@@ -209,8 +203,6 @@ export default function ClientPortalPage() {
   const [subscriptionLoading, setSubscriptionLoading] = useState<number | null>(null);
   const [resendingPaymentId, setResendingPaymentId] = useState<number | null>(null);
   const [invoicePdfAction, setInvoicePdfAction] = useState<{ id: number; action: "preview" | "download" } | null>(null);
-  const [invoicePreview, setInvoicePreview] = useState<ComprobanteResource | null>(null);
-  const [invoicePreviewUrl, setInvoicePreviewUrl] = useState<string | null>(null);
 
   const fetchPortalData = () => {
     setLoading(true);
@@ -233,10 +225,6 @@ export default function ClientPortalPage() {
   useEffect(() => {
     fetchPortalData();
   }, []);
-
-  useEffect(() => () => {
-    if (invoicePreviewUrl) URL.revokeObjectURL(invoicePreviewUrl);
-  }, [invoicePreviewUrl]);
 
   const certificateDocument = useMemo(
     () => contracts.flatMap((contract) => contract.documentos || []).find((document) => document.categoria === "certificado_digital"),
@@ -373,12 +361,10 @@ export default function ClientPortalPage() {
   const previewIssuedInvoice = async (invoice: ComprobanteResource) => {
     setInvoicePdfAction({ id: invoice.id, action: "preview" });
     try {
-      const blob = await getComprobantePdf(invoice.id);
-      const signature = await blob.slice(0, 5).text();
-      if (signature !== "%PDF-") throw new Error("El servidor no devolvió un PDF válido.");
-      const url = URL.createObjectURL(blob);
-      setInvoicePreviewUrl(url);
-      setInvoicePreview(invoice);
+      await openPdfFromFetcher(
+        () => getComprobantePdf(invoice.id),
+        `Generando factura ${invoice.numero}...`
+      );
     } catch (error: any) {
       errorToast(error?.message || "No se pudo abrir la vista previa del comprobante.");
     } finally {
@@ -1051,6 +1037,14 @@ export default function ClientPortalPage() {
                                 <span>•</span>
                                 <span className="capitalize font-medium text-foreground/80">{contract.vigencia_contrato || "Anual"}</span>
                               </CardDescription>
+                              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1.5 text-[11px]">
+                                <Building2 className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                <span className="font-semibold text-foreground">
+                                  {contract.cliente?.razon_social || contract.cliente?.nombre_comercial || contract.cliente?.nombre_cliente || "Empresa sin nombre"}
+                                </span>
+                                <span className="text-muted-foreground">· RUC</span>
+                                <span className="font-mono font-semibold text-foreground">{contract.cliente?.ruc || "No registrado"}</span>
+                              </div>
                             </div>
                           </div>
 
@@ -1427,7 +1421,7 @@ export default function ClientPortalPage() {
                             onClick={() => previewIssuedInvoice(invoice)}
                           >
                             {action === "preview" ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />}
-                            Vista previa
+                            Abrir PDF
                           </Button>
                           <Button
                             type="button"
@@ -1508,36 +1502,6 @@ export default function ClientPortalPage() {
           </div>
         </div>
       </div>
-
-      <Dialog
-        open={Boolean(invoicePreviewUrl && invoicePreview)}
-        onOpenChange={(open) => {
-          if (!open) {
-            setInvoicePreview(null);
-            setInvoicePreviewUrl(null);
-          }
-        }}
-      >
-        <DialogContent className="flex h-[92vh] max-w-6xl flex-col gap-0 overflow-hidden p-0">
-          <DialogHeader className="flex flex-row items-center justify-between border-b px-5 py-3 pr-12">
-            <div className="min-w-0">
-              <DialogTitle className="truncate">{invoicePreview?.numero || "Comprobante electrónico"}</DialogTitle>
-              <DialogDescription className="mt-1">
-                {invoicePreview ? `${formatDisplayDate(invoicePreview.fecha_emision)} · ${invoicePreview.moneda} ${Number(invoicePreview.total).toFixed(2)}` : "Vista previa del PDF"}
-              </DialogDescription>
-            </div>
-            {invoicePreview && (
-              <Button type="button" className="mr-1 shrink-0 gap-2" onClick={() => downloadIssuedInvoice(invoicePreview)} disabled={invoicePdfAction?.id === invoicePreview.id && invoicePdfAction.action === "download"}>
-                {invoicePdfAction?.id === invoicePreview.id && invoicePdfAction.action === "download" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                Descargar PDF
-              </Button>
-            )}
-          </DialogHeader>
-          <div className="min-h-0 flex-1 bg-slate-100 p-2 dark:bg-zinc-950">
-            {invoicePreviewUrl && <iframe title={`Vista previa ${invoicePreview?.numero || "del comprobante"}`} src={invoicePreviewUrl} className="h-full w-full rounded-md border bg-white shadow-sm" />}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* MODAL DE FIRMA DIGITAL DEL CONTRATO */}
       <ClientContractSignatureModal

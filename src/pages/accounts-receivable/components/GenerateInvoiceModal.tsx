@@ -9,6 +9,7 @@ import {
   Hash,
   Calendar,
   Loader2,
+  CheckCircle2,
 } from "lucide-react";
 import {
   Dialog,
@@ -28,6 +29,7 @@ import { CuentasPorCobrarResource } from "../lib/accounts-receivable.interface";
 import { api } from "@/lib/config";
 import { errorToast, successToast } from "@/lib/core.function";
 import { format } from "date-fns";
+import { extractInvoicePdf, InvoicePdfData } from "../lib/invoicePdfParser";
 
 interface GenerateInvoiceModalProps {
   open: boolean;
@@ -46,41 +48,6 @@ interface CorrelativoData {
     ruc?: string;
     razon_social?: string;
   };
-}
-
-/** Helper para extraer datos de facturas PDF comunes (Garzasoft / SUNAT) */
-export function extractInvoiceDataFromPdfText(text: string) {
-  let serie = "F010";
-  let correlativo = "";
-  let fechaEmision = "";
-  let total = "";
-
-  // 1. Serie y Correlativo: e.g. F001-00015440 o F001-15440
-  const serieMatch = text.match(/([FB]\d{3})[-_\s:]+(\d{1,8})/i);
-  if (serieMatch) {
-    serie = serieMatch[1].toUpperCase();
-    correlativo = String(parseInt(serieMatch[2], 10));
-  }
-
-  // 2. Fecha Emisión: e.g. 31/08/2026 o 2026-08-31
-  const fechaMatch = text.match(/(?:Fecha\s*Emisi[oó]n|Emisi[oó]n)[:\s]*(\d{2}[\/-]\d{2}[\/-]\d{4})/i);
-  if (fechaMatch) {
-    const parts = fechaMatch[1].split(/[\/-]/);
-    if (parts.length === 3) {
-      fechaEmision = `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
-    }
-  }
-
-  // 3. Importe Total: e.g. Importe Total S/ 240.00
-  const totalMatch = text.match(/(?:Importe\s*Total|Total)[:\s]*(?:S\/|PEN|\$)?\s*([\d,.]+)/i);
-  if (totalMatch) {
-    const val = totalMatch[1].replace(/,/g, "");
-    if (!isNaN(parseFloat(val))) {
-      total = parseFloat(val).toFixed(2);
-    }
-  }
-
-  return { serie, correlativo, fechaEmision, total };
 }
 
 export function GenerateInvoiceModal({
@@ -112,6 +79,8 @@ export function GenerateInvoiceModal({
     format(new Date(), "yyyy-MM-dd")
   );
   const [manualMontoTotal, setManualMontoTotal] = useState("");
+  const [manualInvoice, setManualInvoice] = useState<InvoicePdfData | null>(null);
+  const [readingPdf, setReadingPdf] = useState(false);
 
   // Cargar información del correlativo al abrir el modal
   useEffect(() => {
@@ -124,6 +93,7 @@ export function GenerateInvoiceModal({
       setManualFechaEmision(format(new Date(), "yyyy-MM-dd"));
       setManualMontoTotal(Number(cuota.monto_pendiente || cuota.monto_total || 0).toFixed(2));
       setPdfFile(null);
+      setManualInvoice(null);
 
       fetchSiguienteCorrelativo("F010");
     }
@@ -147,7 +117,7 @@ export function GenerateInvoiceModal({
     }
   };
 
-  const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePdfChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -157,21 +127,23 @@ export function GenerateInvoiceModal({
     }
 
     setPdfFile(file);
-
-    // Intentar extraer texto mediante FileReader
-    const reader = new FileReader();
-    reader.onload = () => {
-      const text = String(reader.result || "");
-      const extracted = extractInvoiceDataFromPdfText(text);
-
-      if (extracted.serie) setManualSerie(extracted.serie);
-      if (extracted.correlativo) setManualCorrelativo(extracted.correlativo);
-      if (extracted.fechaEmision) setManualFechaEmision(extracted.fechaEmision);
-      if (extracted.total) setManualMontoTotal(extracted.total);
-
-      successToast("Datos de la factura PDF extraídos para su revisión.");
-    };
-    reader.readAsText(file, "latin1");
+    setManualInvoice(null);
+    setReadingPdf(true);
+    try {
+      const extracted = await extractInvoicePdf(file);
+      setManualInvoice(extracted);
+      setManualSerie(extracted.serie);
+      setManualCorrelativo(extracted.correlativo);
+      setManualFechaEmision(extracted.fechaEmision);
+      setManualMontoTotal(extracted.total.toFixed(2));
+      successToast(`Factura leída: ${extracted.detalles.length} concepto(s), total ${extracted.moneda} ${extracted.total.toFixed(2)}.`);
+    } catch (err: any) {
+      setPdfFile(null);
+      errorToast(err?.message || "No se pudieron extraer los datos del PDF. Verifique que sea una factura legible.");
+      e.target.value = "";
+    } finally {
+      setReadingPdf(false);
+    }
   };
 
   const handleSubmitSistema = async () => {
@@ -214,6 +186,26 @@ export function GenerateInvoiceModal({
       formData.append("correlativo", manualCorrelativo);
       formData.append("fecha_emision", manualFechaEmision);
       formData.append("monto_total", manualMontoTotal);
+      if (manualInvoice) {
+        formData.append("tipo_documento", manualInvoice.tipoDocumento);
+        formData.append("moneda", manualInvoice.moneda);
+        formData.append("forma_pago", manualInvoice.formaPago);
+        formData.append("subtotal", String(manualInvoice.subtotal));
+        formData.append("igv", String(manualInvoice.igv));
+        formData.append("receptor_documento", manualInvoice.documentoReceptor);
+        formData.append("receptor_nombre", manualInvoice.receptor);
+        formData.append("receptor_direccion", manualInvoice.direccionReceptor);
+        formData.append("detalles", JSON.stringify(manualInvoice.detalles));
+        formData.append("metadata_pdf", JSON.stringify({
+          emisor: manualInvoice.emisor,
+          ruc_emisor: manualInvoice.rucEmisor,
+          direccion_emisor: manualInvoice.direccionEmisor,
+          inafecta: manualInvoice.inafecta,
+          exonerada: manualInvoice.exonerada,
+          total_en_letras: manualInvoice.totalEnLetras,
+          detalles: manualInvoice.detalles,
+        }));
+      }
 
       if (pdfFile) {
         formData.append("pdf_file", pdfFile);
@@ -398,15 +390,35 @@ export function GenerateInvoiceModal({
                   className="hidden"
                   onChange={handlePdfChange}
                 />
-                <Upload className="h-7 w-7 text-muted-foreground mb-1.5" />
+                {readingPdf ? <Loader2 className="h-7 w-7 text-primary mb-1.5 animate-spin" /> : <Upload className="h-7 w-7 text-muted-foreground mb-1.5" />}
                 <p className="text-xs font-bold text-foreground">
                   {pdfFile ? pdfFile.name : "Haz clic o arrastra tu archivo PDF de la Factura"}
                 </p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {pdfFile ? `PDF seleccionado (${(pdfFile.size / 1024).toFixed(1)} KB) - Datos leídos automáticamente` : "Formato soportado: PDF oficial (SUNAT / Garzasoft)"}
+                  {readingPdf ? "Leyendo datos, conceptos e importes del PDF..." : pdfFile ? `PDF seleccionado (${(pdfFile.size / 1024).toFixed(1)} KB)` : "Formato soportado: PDF oficial (SUNAT / Garzasoft)"}
                 </p>
               </label>
             </div>
+
+            {manualInvoice && (
+              <div className="max-h-56 space-y-2 overflow-auto rounded-lg border bg-muted/20 p-3 text-xs">
+                <div className="flex items-center gap-2 font-semibold text-emerald-700"><CheckCircle2 className="h-4 w-4" /> Datos extraídos del comprobante</div>
+                <p><strong>Comprobante:</strong> {manualInvoice.tipoDocumento}{manualInvoice.serie}-{manualInvoice.correlativo} · <strong>Fecha:</strong> {manualInvoice.fechaEmision} · <strong>Moneda:</strong> {manualInvoice.moneda}</p>
+                <p><strong>Emisor:</strong> {manualInvoice.emisor} · RUC {manualInvoice.rucEmisor || "no detectado"} · {manualInvoice.direccionEmisor}</p>
+                <p><strong>Receptor:</strong> {manualInvoice.receptor} · {manualInvoice.documentoReceptor || "sin documento"} · <strong>Dirección:</strong> {manualInvoice.direccionReceptor || "No consignada"}</p>
+                <p><strong>Forma de pago:</strong> {manualInvoice.formaPago === "D" ? "Crédito" : "Contado"}</p>
+                <div className="divide-y rounded border bg-background">
+                  {manualInvoice.detalles.map((detail, index) => (
+                    <div key={`${index}-${detail.descripcion}`} className="grid grid-cols-[1fr_auto] gap-2 p-2">
+                      <span><strong>{index + 1}. {detail.descripcion}</strong><br />{detail.cantidad} {detail.unidad} · V.U. {detail.valor_unitario.toFixed(2)} · P.U. {detail.precio_unitario.toFixed(2)} · Dscto. {detail.descuento.toFixed(2)} · IGV {detail.igv.toFixed(2)}</span>
+                      <span className="self-center font-mono">{manualInvoice.moneda} {detail.subtotal.toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-right">Gravada {manualInvoice.subtotal.toFixed(2)} · IGV {manualInvoice.igv.toFixed(2)} · Inafecta {manualInvoice.inafecta.toFixed(2)} · Exonerada {manualInvoice.exonerada.toFixed(2)} · <strong>Total {manualInvoice.moneda} {manualInvoice.total.toFixed(2)}</strong></p>
+                {manualInvoice.totalEnLetras && <p><strong>En letras:</strong> {manualInvoice.totalEnLetras}</p>}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="space-y-1.5">
@@ -460,7 +472,7 @@ export function GenerateInvoiceModal({
               <Button
                 size="sm"
                 onClick={handleSubmitManual}
-                disabled={submitting}
+                disabled={submitting || readingPdf}
                 className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold"
               >
                 {submitting ? (

@@ -1037,6 +1037,14 @@ export default function ClientPortalPage() {
                                 <span>•</span>
                                 <span className="capitalize font-medium text-foreground/80">{contract.vigencia_contrato || "Anual"}</span>
                               </CardDescription>
+                              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1.5 text-[11px]">
+                                <Building2 className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                <span className="font-semibold text-foreground">
+                                  {contract.cliente?.razon_social || contract.cliente?.nombre_comercial || contract.cliente?.nombre_cliente || "Empresa sin nombre"}
+                                </span>
+                                <span className="text-muted-foreground">· RUC</span>
+                                <span className="font-mono font-semibold text-foreground">{contract.cliente?.ruc || "No registrado"}</span>
+                              </div>
                             </div>
                           </div>
 

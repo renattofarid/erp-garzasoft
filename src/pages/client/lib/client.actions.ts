@@ -100,7 +100,24 @@ export async function saveClientPortalUser(
   return data;
 }
 
-export async function resetClientPortalPassword(id: number) {
-  const { data } = await api.post(`${ENDPOINT}/${id}/portal-user/reset-password`);
+export async function resetClientPortalPassword(
+  id: number,
+  recipient?: string
+) {
+  const { data } = await api.post(`${ENDPOINT}/${id}/portal-user/reset-password`, {
+    recipient,
+  });
   return data as ClientPortalUserResponse & { data: ClientPortalUserResponse["data"] & { recipient?: string } };
+}
+
+export async function sendClientPortalCredentials(
+  id: number,
+  recipient: string,
+  password?: string
+) {
+  const { data } = await api.post(`${ENDPOINT}/${id}/portal-user/send-credentials`, {
+    recipient,
+    password,
+  });
+  return data as { status: number; message: string; data: { recipient: string } };
 }

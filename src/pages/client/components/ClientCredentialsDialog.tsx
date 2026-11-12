@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Eye, EyeOff, KeyRound, RefreshCw, Save } from "lucide-react";
+import { Eye, EyeOff, KeyRound, Mail, RefreshCw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,6 +16,7 @@ import {
   getClientPortalUser,
   saveClientPortalUser,
   resetClientPortalPassword,
+  sendClientPortalCredentials,
 } from "../lib/client.actions";
 import { findClientById } from "../lib/client.actions";
 import { getClientDisplayName } from "../lib/client.interface";
@@ -36,6 +37,7 @@ export default function ClientCredentialsDialog({
   const [showPassword, setShowPassword] = useState(false);
   const [clientName, setClientName] = useState("Cliente");
   const [exists, setExists] = useState(false);
+  const [hasRecoverablePassword, setHasRecoverablePassword] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState("");
   const [lastPassword, setLastPassword] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -43,6 +45,8 @@ export default function ClientCredentialsDialog({
     password: "",
     nombres: "",
     apellidos: "",
+    recipient: "",
+    currentPassword: "",
   });
 
   useEffect(() => {
@@ -61,12 +65,15 @@ export default function ClientCredentialsDialog({
 
         setClientName(defaultName);
         setExists(userResponse.data.exists);
+        setHasRecoverablePassword(userResponse.data.has_recoverable_password);
         setPasswordMessage(userResponse.data.password_message);
         setForm({
           usuario: portalUser?.usuario || defaultUser,
           password: "",
           nombres: portalUser?.nombres || defaultName,
           apellidos: portalUser?.apellidos || "",
+          recipient: userResponse.data.recipient || "",
+          currentPassword: "",
         });
       })
       .catch(() => errorToast("No se pudo cargar el acceso del cliente."))
@@ -78,10 +85,14 @@ export default function ClientCredentialsDialog({
       return `Nueva clave asignada: ${lastPassword}`;
     }
 
+    if (exists && !hasRecoverablePassword) {
+      return "Las claves antiguas no se pueden recuperar automáticamente. Ingresa la clave actual abajo para reenviarla sin cambiarla.";
+    }
+
     return exists
-      ? "Deja la clave vacia si no deseas cambiarla."
+      ? "Deja la clave vacía si no deseas cambiarla."
       : "Ingresa una clave para crear el acceso del cliente.";
-  }, [exists, lastPassword]);
+  }, [exists, hasRecoverablePassword, lastPassword]);
 
   const handleSave = async () => {
     if (!form.usuario.trim()) {
@@ -101,9 +112,13 @@ export default function ClientCredentialsDialog({
         password: form.password.trim() || undefined,
         nombres: form.nombres.trim() || undefined,
         apellidos: form.apellidos.trim(),
+        recipient: form.recipient.trim() || undefined,
       });
 
       setExists(true);
+      if (form.password.trim()) {
+        setHasRecoverablePassword(true);
+      }
       setLastPassword(response.data.password_visible);
       setPasswordMessage(response.data.password_message);
       setForm((current) => ({ ...current, password: "" }));
@@ -122,8 +137,12 @@ export default function ClientCredentialsDialog({
   const handleReset = async () => {
     setSaving(true);
     try {
-      const response = await resetClientPortalPassword(clientId);
+      const response = await resetClientPortalPassword(
+        clientId,
+        form.recipient.trim() || undefined
+      );
       setLastPassword(response.data.password_visible);
+      setHasRecoverablePassword(true);
       setPasswordMessage(response.message || "La clave fue reiniciada y enviada por correo.");
       successToast(response.message || "Clave reiniciada y enviada.");
     } catch (error: any) {
@@ -133,16 +152,40 @@ export default function ClientCredentialsDialog({
     }
   };
 
+  const handleSendExisting = async () => {
+    const recipient = form.recipient.trim();
+    if (!recipient) {
+      errorToast("Ingresa el correo al que se enviarán las credenciales.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const response = await sendClientPortalCredentials(
+        clientId,
+        recipient,
+        hasRecoverablePassword ? undefined : form.currentPassword
+      );
+      setHasRecoverablePassword(true);
+      setForm((current) => ({ ...current, currentPassword: "" }));
+      successToast(response.message);
+    } catch (error: any) {
+      errorToast(error?.response?.data?.message || "No se pudieron enviar las credenciales.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <KeyRound className="size-5 text-primary" />
             Usuario y clave del cliente
           </DialogTitle>
           <DialogDescription>
-            {clientName}. Puedes crear el acceso o resetear la clave del portal.
+            {clientName}. Puedes reenviar las credenciales actuales o resetear la clave.
           </DialogDescription>
         </DialogHeader>
 
@@ -221,6 +264,46 @@ export default function ClientCredentialsDialog({
               </div>
               <p className="text-xs text-muted-foreground">{passwordHelp}</p>
             </div>
+
+            {exists && !hasRecoverablePassword && (
+              <div className="space-y-2">
+                <Label htmlFor="portal-current-password">Clave actual para reenviar</Label>
+                <Input
+                  id="portal-current-password"
+                  type="password"
+                  value={form.currentPassword}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      currentPassword: event.target.value,
+                    }))
+                  }
+                  autoComplete="current-password"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Se verifica y envía sin modificar la clave.
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="portal-credentials-recipient">Enviar al correo</Label>
+              <Input
+                id="portal-credentials-recipient"
+                type="email"
+                value={form.recipient}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    recipient: event.target.value,
+                  }))
+                }
+                placeholder="correo@ejemplo.com"
+              />
+              <p className="text-xs text-muted-foreground">
+                Se usa solo para este envío; no cambia el correo del cliente.
+              </p>
+            </div>
           </div>
         )}
 
@@ -233,10 +316,24 @@ export default function ClientCredentialsDialog({
             {saving ? "Guardando..." : "Guardar acceso"}
           </Button>
           {exists && (
-            <Button variant="outline" onClick={handleReset} disabled={loading || saving}>
-              <RefreshCw className="mr-2 size-4" />
-              Reiniciar y enviar
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                onClick={handleSendExisting}
+                disabled={
+                  loading ||
+                  saving ||
+                  (!hasRecoverablePassword && !form.currentPassword.trim())
+                }
+              >
+                <Mail className="mr-2 size-4" />
+                Enviar credenciales
+              </Button>
+              <Button variant="outline" onClick={handleReset} disabled={loading || saving}>
+                <RefreshCw className="mr-2 size-4" />
+                Reiniciar y enviar
+              </Button>
+            </>
           )}
         </DialogFooter>
       </DialogContent>

@@ -133,6 +133,8 @@ export interface ClientPortalUserResponse {
     usuario: ClientPortalUser | null;
     password_visible: string | null;
     password_message: string;
+    recipient: string;
+    has_recoverable_password: boolean;
   };
 }
 
@@ -141,6 +143,7 @@ export interface ClientPortalUserPayload {
   password?: string;
   nombres?: string;
   apellidos?: string;
+  recipient?: string;
 }
 
 export interface getClientProps {

@@ -149,6 +149,10 @@ interface Cliente {
   representante_nombre: string | null;
   representante_celular: string | null;
   representante_email: string | null;
+  parent_cliente?: {
+    ruc: string | null;
+    parent_cliente?: { ruc: string | null } | null;
+  } | null;
   created_at: string;
   updated_at: string;
   deleted_at?: string;

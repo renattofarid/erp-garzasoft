@@ -351,8 +351,12 @@ export const ContractColumns = ({
     cell: ({ row }) => {
       const client = row.original.cliente;
       const clientName = getClientDisplayName(client);
+      const clientRuc =
+        client.ruc ||
+        client.parent_cliente?.ruc ||
+        client.parent_cliente?.parent_cliente?.ruc;
 
-      return client.ruc ? `${client.ruc} - ${clientName}` : clientName;
+      return clientRuc ? `${clientRuc} - ${clientName}` : clientName;
     },
   },
   {

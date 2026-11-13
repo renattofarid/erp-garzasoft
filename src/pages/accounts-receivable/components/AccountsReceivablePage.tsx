@@ -46,15 +46,19 @@ export default function CuentasPorCobrarPage() {
 
   const { data, meta, isLoading, refetch } = useCuentasPorCobrar();
 
-  useEffect(() => {
-    const params: Record<string, any> = { page, search, per_page: pageSize };
-    if (situacionFilter) params.situacion = situacionFilter;
-    if (clienteIdFilter) params.cliente_id = clienteIdFilter;
-    if (contratoIdFilter) params.contrato_id = contratoIdFilter;
-    if (fechaDesdeFilter) params.fecha_vencimiento_desde = fechaDesdeFilter;
-    if (fechaHastaFilter) params.fecha_vencimiento_hasta = fechaHastaFilter;
+  const currentQueryParams: Record<string, any> = {
+    page,
+    search,
+    per_page: pageSize,
+  };
+  if (situacionFilter) currentQueryParams.situacion = situacionFilter;
+  if (clienteIdFilter) currentQueryParams.cliente_id = clienteIdFilter;
+  if (contratoIdFilter) currentQueryParams.contrato_id = contratoIdFilter;
+  if (fechaDesdeFilter) currentQueryParams.fecha_vencimiento_desde = fechaDesdeFilter;
+  if (fechaHastaFilter) currentQueryParams.fecha_vencimiento_hasta = fechaHastaFilter;
 
-    refetch(params);
+  useEffect(() => {
+    refetch(currentQueryParams);
   }, [page, pageSize, search, situacionFilter, clienteIdFilter, contratoIdFilter, fechaDesdeFilter, fechaHastaFilter]);
 
   const handleClearFilters = () => {
@@ -71,7 +75,7 @@ export default function CuentasPorCobrarPage() {
     if (!deleteId) return;
     try {
       await deleteCuentaPorCobrar(deleteId);
-      await refetch();
+      await refetch(currentQueryParams);
       successToast("Cuenta por cobrar eliminada correctamente.");
     } catch {
       errorToast("Error al eliminar la cuenta por cobrar.");
@@ -84,7 +88,7 @@ export default function CuentasPorCobrarPage() {
     try {
       const response = await reenviarFacturaCuota(cuota.id);
       successToast(response?.message || "Factura reenviada correctamente.");
-      await refetch({ page });
+      await refetch(currentQueryParams);
     } catch (error: any) {
       errorToast(error?.response?.data?.message || "No se pudo reenviar la factura.");
     }
@@ -95,7 +99,7 @@ export default function CuentasPorCobrarPage() {
     try {
       await deleteComprobante(deleteInvoiceItem.id);
       successToast("Factura eliminada. La cuota quedó disponible para generar una nueva.");
-      await refetch({ page });
+      await refetch(currentQueryParams);
     } catch (error: any) {
       errorToast(error?.response?.data?.message || "No se pudo eliminar la factura.");
     } finally {
@@ -290,7 +294,7 @@ export default function CuentasPorCobrarPage() {
           id={editId}
           open={true}
           setOpen={() => setEditId(null)}
-          onSuccess={() => refetch()}
+          onSuccess={() => refetch(currentQueryParams)}
         />
       )}
 
@@ -299,7 +303,7 @@ export default function CuentasPorCobrarPage() {
           cuotaId={payId}
           open={true}
           setOpen={() => setPayId(null)}
-          onSuccess={() => refetch({ page })}
+          onSuccess={() => refetch(currentQueryParams)}
         />
       )}
 
@@ -323,14 +327,14 @@ export default function CuentasPorCobrarPage() {
         open={recoveryComprobante !== null}
         onOpenChange={(open) => !open && setRecoveryComprobante(null)}
         comprobante={recoveryComprobante}
-        onSuccess={() => refetch({ page })}
+        onSuccess={() => refetch(currentQueryParams)}
       />
 
       <GenerateInvoiceModal
         open={generateInvoiceCuota !== null}
         onOpenChange={(open) => !open && setGenerateInvoiceCuota(null)}
         cuota={generateInvoiceCuota}
-        onSuccess={() => refetch({ page })}
+        onSuccess={() => refetch(currentQueryParams)}
       />
     </div>
   );

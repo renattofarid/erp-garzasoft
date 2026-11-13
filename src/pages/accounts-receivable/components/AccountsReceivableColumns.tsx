@@ -119,6 +119,15 @@ export const CuentasPorCobrarColumns = ({
     ),
   },
   {
+    accessorKey: "monto_pagado",
+    header: "Monto Pagado",
+    cell: ({ row }) => (
+      <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+        S/. {Number(row.original.monto_pagado || 0).toFixed(2)}
+      </span>
+    ),
+  },
+  {
     accessorKey: "fecha_vencimiento",
     header: "Fecha de Vencimiento",
     cell: ({ getValue }) => {

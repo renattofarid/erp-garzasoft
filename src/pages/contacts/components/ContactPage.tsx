@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -363,20 +363,24 @@ export default function ContactPage() {
   const [data, setData] = useState<ContactResource[]>([]);
   const [meta, setMeta] = useState<{ total: number; last_page: number; current_page: number } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const listRequestVersion = useRef(0);
   const [editContact, setEditContact] = useState<ContactResource | null>(null);
   const [deleteContact_, setDeleteContact] = useState<ContactResource | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const load = useCallback(async () => {
+    const requestVersion = ++listRequestVersion.current;
     setIsLoading(true);
     try {
       const res = await getContacts({ params: { page, search, per_page: 12 } });
+      if (requestVersion !== listRequestVersion.current) return;
       setData(res.data);
       setMeta(res.meta as any);
     } catch {
+      if (requestVersion !== listRequestVersion.current) return;
       errorToast("Error al cargar contactos.");
     } finally {
-      setIsLoading(false);
+      if (requestVersion === listRequestVersion.current) setIsLoading(false);
     }
   }, [page, search]);
 

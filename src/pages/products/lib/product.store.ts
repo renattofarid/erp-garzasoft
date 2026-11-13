@@ -10,6 +10,8 @@ import {
 } from "./product.actions";
 import { Meta } from "@/lib/pagination.interface";
 
+let productListRequestVersion = 0;
+
 interface ProductStore {
   Products: ProductResource[] | null;
   Product: ProductResource | null;
@@ -34,9 +36,11 @@ export const useProductStore = create<ProductStore>((set) => ({
   error: null,
 
   fetchProducts: async (params?: Record<string, any>) => {
+    const requestVersion = ++productListRequestVersion;
     set({ isLoading: true, error: null });
     try {
       const response = await getProduct({ params });
+      if (requestVersion !== productListRequestVersion) return;
 
       if (Array.isArray(response)) {
         set({ Products: response, meta: null, isLoading: false });
@@ -45,6 +49,7 @@ export const useProductStore = create<ProductStore>((set) => ({
 
       set({ Products: response.data, meta: response.meta, isLoading: false });
     } catch (err) {
+      if (requestVersion !== productListRequestVersion) return;
       set({ error: "Error al cargar tipos de usuarios", isLoading: false });
     }
   },

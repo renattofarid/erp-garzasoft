@@ -9,6 +9,8 @@ import {
 import { LocalTypeSchema } from "./localType.schema";
 import { LocalTypeResource } from "./localType.interface";
 
+let localTypeListRequestVersion = 0;
+
 interface LocalTypeStore {
   localTypes: LocalTypeResource[] | null;
   localType: LocalTypeResource | null;
@@ -33,11 +35,14 @@ export const useLocalTypeStore = create<LocalTypeStore>((set) => ({
   error: null,
 
   fetchLocalTypes: async (params?: Record<string, any>) => {
+    const requestVersion = ++localTypeListRequestVersion;
     set({ isLoading: true, error: null });
     try {
       const { data, meta } = await getLocalType({ params });
+      if (requestVersion !== localTypeListRequestVersion) return;
       set({ localTypes: data, meta, isLoading: false });
     } catch {
+      if (requestVersion !== localTypeListRequestVersion) return;
       set({ error: "Error al cargar tipos de local", isLoading: false });
     }
   },

@@ -11,6 +11,8 @@ import {
 import { Meta } from "@/lib/pagination.interface";
 import { ContractSchema } from "@/pages/contract/lib/contract.schema.ts";
 
+let contractListRequestVersion = 0;
+
 interface ContractStore {
   Contracts: ContractResource[] | null;
   AllContracts: ContractResource[] | null;
@@ -40,11 +42,14 @@ export const useContractStore = create<ContractStore>((set) => ({
   error: null,
 
   fetchContracts: async (params?: Record<string, any>) => {
+    const requestVersion = ++contractListRequestVersion;
     set({ isLoading: true, error: null });
     try {
       const { data, meta } = await getContract({ params });
+      if (requestVersion !== contractListRequestVersion) return;
       set({ Contracts: data, meta, isLoading: false });
     } catch (err) {
+      if (requestVersion !== contractListRequestVersion) return;
       set({ error: "Error al cargar Contratos", isLoading: false });
     }
   },

@@ -10,6 +10,8 @@ import {
 import { TypeUserSchema } from "./typeUser.schema";
 import { Meta } from "@/lib/pagination.interface";
 
+let typeUserListRequestVersion = 0;
+
 interface TypeUserStore {
   typeUsers: TypeUserResource[] | null;
   typeUser: TypeUserResource | null;
@@ -34,11 +36,14 @@ export const useTypeUserStore = create<TypeUserStore>((set) => ({
   error: null,
 
   fetchTypeUsers: async (params?: Record<string, any>) => {
+    const requestVersion = ++typeUserListRequestVersion;
     set({ isLoading: true, error: null });
     try {
       const { data, meta } = await getTypeUser({ params });
+      if (requestVersion !== typeUserListRequestVersion) return;
       set({ typeUsers: data, meta: meta, isLoading: false });
     } catch (err) {
+      if (requestVersion !== typeUserListRequestVersion) return;
       set({ error: "Error al cargar tipos de usuarios", isLoading: false });
     }
   },

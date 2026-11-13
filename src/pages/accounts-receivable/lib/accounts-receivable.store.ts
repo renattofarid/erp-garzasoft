@@ -19,6 +19,8 @@ import {
   PagoSchema,
 } from "./accounts-receivable.schema";
 
+let cuotasListRequestVersion = 0;
+
 interface CuentasPorCobrarStore {
   // Cuotas
   cuentasPorCobrar: CuentasPorCobrarResource[] | null;
@@ -75,11 +77,14 @@ export const useCuentasPorCobrarStore = create<CuentasPorCobrarStore>(
 
     // Métodos para cuotas
     fetchCuentasPorCobrar: async (params?: Record<string, any>) => {
+      const requestVersion = ++cuotasListRequestVersion;
       set({ isLoading: true, error: null });
       try {
         const { data, meta } = await getCuentasPorCobrar({ params });
+        if (requestVersion !== cuotasListRequestVersion) return;
         set({ cuentasPorCobrar: data, meta, isLoading: false });
       } catch (err) {
+        if (requestVersion !== cuotasListRequestVersion) return;
         set({
           error: "Error al cargar las cuentas por cobrar",
           isLoading: false,

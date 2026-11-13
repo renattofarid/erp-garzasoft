@@ -6,6 +6,8 @@ import { UserResource } from "./User.interface";
 import { Meta } from "@/lib/pagination.interface";
 // import { TypeUserSchema } from "./typeUser.schema";
 
+let userListRequestVersion = 0;
+
 interface UserStore {
   Users: UserResource[] | null;
   User: UserResource | null;
@@ -33,11 +35,14 @@ export const useUserStore = create<UserStore>((set) => ({
   error: null,
 
   fetchUsers: async (params?: Record<string, any>) => {
+    const requestVersion = ++userListRequestVersion;
     set({ isLoading: true, error: null });
     try {
       const { data, meta } = await getUser({ params });
+      if (requestVersion !== userListRequestVersion) return;
       set({ Users: data, meta: meta, isLoading: false });
     } catch (err) {
+      if (requestVersion !== userListRequestVersion) return;
       set({ error: "Error al cargar tipos de usuarios", isLoading: false });
       console.log(err);
       

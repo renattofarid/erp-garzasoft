@@ -11,6 +11,8 @@ import {
 import { ClientSchema } from "./client.schema.ts";
 import { Meta } from "@/lib/pagination.interface.ts";
 
+let clientListRequestVersion = 0;
+
 interface ClientStore {
   clients: ClientResource[] | null;
   client: ClientResource | null;
@@ -38,11 +40,14 @@ export const useClientStore = create<ClientStore>((set) => ({
   error: null,
 
   fetchClients: async (params?: Record<string, unknown>) => {
+    const requestVersion = ++clientListRequestVersion;
     set({ isLoading: true, error: null });
     try {
       const { data, meta } = await getClient({ params });
+      if (requestVersion !== clientListRequestVersion) return;
       set({ clients: data, meta, isLoading: false });
     } catch {
+      if (requestVersion !== clientListRequestVersion) return;
       set({ error: "Error al cargar clientes", isLoading: false });
     }
   },

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Send, RefreshCcw, AlertCircle, Info, Plus, Trash2, CircleDollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { WhatsAppIcon, PdfIcon, ZipIcon } from "@/components/icons/DocumentIcons";
@@ -166,6 +166,7 @@ export default function InvoicingPage() {
   const [assignAccountTotal, setAssignAccountTotal] = useState(0);
 
   const [comprobantes, setComprobantes] = useState<ComprobanteResource[]>([]);
+  const comprobantesRequestVersion = useRef(0);
   const [clientes, setClientes] = useState<ClientResource[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -229,16 +230,19 @@ export default function InvoicingPage() {
 
   const freeSelectedClient = clientesFacturables.find(({ cliente }) => cliente.id === freeForm.cliente_id);
   const loadComprobantes = async () => {
+    const requestVersion = ++comprobantesRequestVersion.current;
     setLoading(true);
     try {
       const response = await getComprobantes({ page, search, fechaInicio, fechaFin, perPage: pageSize });
+      if (requestVersion !== comprobantesRequestVersion.current) return;
       setComprobantes(response.data || []);
       setTotalPages(response.meta?.last_page || 1);
       setTotalItems(response.meta?.total || 0);
     } catch {
+      if (requestVersion !== comprobantesRequestVersion.current) return;
       errorToast("No se pudieron cargar los comprobantes.");
     } finally {
-      setLoading(false);
+      if (requestVersion === comprobantesRequestVersion.current) setLoading(false);
     }
   };
 

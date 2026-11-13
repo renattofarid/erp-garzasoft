@@ -13,6 +13,8 @@ import {
   deleteContractDocument,
   downloadContractDocument,
   getContractDocuments,
+  getContractCertificateExpiry,
+  saveContractCertificateExpiry,
   uploadContractDocuments,
 } from "../lib/contract.actions";
 import type { ContratoDocumentoResource } from "../lib/contract.interface";
@@ -49,15 +51,32 @@ export default function ContractDocumentsDialog({
   const [category, setCategory] = useState<ContratoDocumentoResource["categoria"]>("alta_servicio");
   const [pin, setPin] = useState("");
   const [expirationDate, setExpirationDate] = useState("");
+  const [savingExpiry, setSavingExpiry] = useState(false);
 
   useEffect(() => {
     if (!open || !contractId) return;
     setLoading(true);
-    getContractDocuments(contractId)
-      .then(setDocuments)
+    Promise.all([getContractDocuments(contractId), getContractCertificateExpiry(contractId)])
+      .then(([loadedDocuments, expiry]) => {
+        setDocuments(loadedDocuments);
+        setExpirationDate(expiry || loadedDocuments.find((document) => document.categoria === "certificado_digital")?.fecha_vencimiento || "");
+      })
       .catch(() => errorToast("No se pudieron cargar los documentos."))
       .finally(() => setLoading(false));
   }, [contractId, open]);
+
+  const handleSaveExpiry = async () => {
+    if (!contractId || !expirationDate) return;
+    setSavingExpiry(true);
+    try {
+      await saveContractCertificateExpiry(contractId, expirationDate);
+      successToast("Fecha de vencimiento guardada. El cliente ya puede verla en su portal.");
+    } catch (error: any) {
+      errorToast(error?.response?.data?.message || "No se pudo guardar la fecha de vencimiento.");
+    } finally {
+      setSavingExpiry(false);
+    }
+  };
 
   const handleUpload = async () => {
     if (!contractId || selectedFiles.length === 0) return;
@@ -143,6 +162,15 @@ export default function ContractDocumentsDialog({
                   <label className="text-sm font-semibold">Fecha de vencimiento</label>
                   <input type="date" value={expirationDate} onChange={(event) => setExpirationDate(event.target.value)} className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm" />
                 </div>
+              </div>
+            )}
+            {category === "certificado_digital" && (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs text-muted-foreground">Puedes guardar la vigencia sin adjuntar el certificado.</p>
+                <Button type="button" variant="outline" onClick={handleSaveExpiry} disabled={!expirationDate || savingExpiry}>
+                  {savingExpiry && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Guardar solo la fecha
+                </Button>
               </div>
             )}
           </div>

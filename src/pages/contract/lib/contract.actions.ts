@@ -124,6 +124,17 @@ export async function getContractDocuments(
   return data.data;
 }
 
+export async function getContractCertificateExpiry(id: number): Promise<string | null> {
+  const { data } = await api.get<{ data: { fecha_vencimiento: string | null } }>(
+    `${ENDPOINT}/${id}/certificado-digital`
+  );
+  return data.data.fecha_vencimiento;
+}
+
+export async function saveContractCertificateExpiry(id: number, fechaVencimiento: string): Promise<void> {
+  await api.put(`${ENDPOINT}/${id}/certificado-digital`, { fecha_vencimiento: fechaVencimiento });
+}
+
 export async function downloadContractDocument(id: number): Promise<Blob> {
   const response = await api.get("documentos-contrato/" + id + "/descargar", {
     responseType: "blob",

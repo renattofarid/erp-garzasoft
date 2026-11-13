@@ -230,9 +230,13 @@ export default function ClientPortalPage() {
     () => contracts.flatMap((contract) => contract.documentos || []).find((document) => document.categoria === "certificado_digital"),
     [contracts]
   );
+  const certificateExpiry = useMemo(
+    () => contracts.find((contract) => contract.certificado_fecha_vencimiento)?.certificado_fecha_vencimiento || certificateDocument?.fecha_vencimiento,
+    [contracts, certificateDocument]
+  );
   const certificateExpired = Boolean(
-    certificateDocument?.fecha_vencimiento &&
-    new Date(`${certificateDocument.fecha_vencimiento}T23:59:59`) < new Date()
+    certificateExpiry &&
+    new Date(`${certificateExpiry}T23:59:59`) < new Date()
   );
   const issuedInvoices = useMemo(() => {
     const byId = new Map<number, ComprobanteResource>();
@@ -1326,7 +1330,7 @@ export default function ClientPortalPage() {
                   <div className="font-semibold text-amber-700 dark:text-amber-300 flex items-center justify-between">
                     <span>Estado Certificado</span>
                     <Badge className={certificateExpired ? "bg-rose-600 text-white text-[10px]" : "bg-emerald-600 text-white text-[10px]"}>
-                      {certificateExpired ? "VENCIDO" : certificateDocument ? "VÁLIDO Y ACTIVO" : "NO REGISTRADO"}
+                      {certificateExpired ? "VENCIDO" : certificateExpiry ? "VÁLIDO Y ACTIVO" : "NO REGISTRADO"}
                     </Badge>
                   </div>
                   <p className="text-[11px] text-muted-foreground">
@@ -1339,7 +1343,7 @@ export default function ClientPortalPage() {
                     <span className="text-muted-foreground flex items-center gap-1">
                       <CalendarDays className="h-3.5 w-3.5 text-primary" /> Fecha Vencimiento:
                     </span>
-                    <strong className="text-foreground font-mono">{formatDisplayDate(certificateDocument?.fecha_vencimiento)}</strong>
+                    <strong className="text-foreground font-mono">{formatDisplayDate(certificateExpiry)}</strong>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded-lg bg-muted/50 border border-border/50">
                     <span className="text-muted-foreground flex items-center gap-1">

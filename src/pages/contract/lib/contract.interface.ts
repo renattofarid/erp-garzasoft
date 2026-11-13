@@ -43,6 +43,7 @@ export interface ContractResource {
   id: number;
   fecha_inicio: string;
   fecha_fin: string;
+  certificado_fecha_vencimiento?: string | null;
   numero: string;
   tipo_contrato: ContractType;
   vigencia_contrato: VigenciaContrato;

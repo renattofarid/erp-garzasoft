@@ -78,7 +78,7 @@ export interface ContractResource {
 export interface ContratoDocumentoResource {
   id: number;
   contrato_id: number;
-  categoria: "alta_servicio" | "facturacion_electronica" | "certificado_digital" | "contrato";
+  categoria: "alta_servicio" | "facturacion_electronica" | "certificado_digital";
   nombre_original: string;
   mime_type?: string | null;
   tamanio?: number | null;

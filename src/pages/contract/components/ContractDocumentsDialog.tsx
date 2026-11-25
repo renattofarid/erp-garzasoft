@@ -33,6 +33,7 @@ const formatSize = (bytes?: number | null) => {
 };
 
 const categoryLabel: Record<ContratoDocumentoResource["categoria"], string> = {
+  contrato: "Contrato",
   alta_servicio: "Alta de servicio",
   facturacion_electronica: "Facturación electrónica",
   certificado_digital: "Certificado digital",
@@ -150,6 +151,7 @@ export default function ContractDocumentsDialog({
                 <option value="alta_servicio">Alta de servicio</option>
                 <option value="facturacion_electronica">Alta de facturación electrónica</option>
                 <option value="certificado_digital">Certificado digital</option>
+                <option value="contrato">Contrato (reemplaza el PDF generado en el portal)</option>
               </select>
             </div>
             {category === "certificado_digital" && (
@@ -185,7 +187,7 @@ export default function ContractDocumentsDialog({
               type="file"
               multiple
               className="sr-only"
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.webp,.zip,.pfx,.p12,.pem,.cer,.crt"
+              accept={category === "contrato" ? ".pdf,application/pdf" : ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.webp,.zip,.pfx,.p12,.pem,.cer,.crt"}
               onChange={(event) => setSelectedFiles(Array.from(event.target.files || []))}
             />
           </label>

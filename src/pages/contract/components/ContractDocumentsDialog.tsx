@@ -187,7 +187,7 @@ export default function ContractDocumentsDialog({
               type="file"
               multiple
               className="sr-only"
-              accept={category === "contrato" ? ".pdf,application/pdf" : ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.webp,.zip,.pfx,.p12,.pem,.cer,.crt"}
+              accept={category === "contrato" ? undefined : ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.webp,.zip,.pfx,.p12,.pem,.cer,.crt"}
               onChange={(event) => setSelectedFiles(Array.from(event.target.files || []))}
             />
           </label>

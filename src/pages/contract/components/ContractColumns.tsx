@@ -50,7 +50,7 @@ function ContractActionsCell({
   onDelete: (contract: ContractResource) => void;
   onNotification: (id: number) => void;
   onPreview: (id: number) => void;
-  onDownloadWord: (id: number, numero?: string) => void;
+  onDownloadWord: (contract: ContractResource) => void;
   onViewInstallments: (contract: ContractResource) => void;
   onSignature: (contract: ContractResource) => void;
   onGenerateActa?: (contract: ContractResource) => void;
@@ -59,6 +59,9 @@ function ContractActionsCell({
   const router = useNavigate();
   const id = contract.id;
   const isAnulado = contract.estado === "anulado";
+  const manualContractDocument = [...(contract.documentos || [])]
+    .filter((document) => document.categoria === "contrato")
+    .sort((left, right) => (right.created_at || "").localeCompare(left.created_at || ""))[0];
 
   return (
     <TooltipProvider delayDuration={100} disableHoverableContent>
@@ -92,18 +95,18 @@ function ContractActionsCell({
               type="button"
               size="icon"
               className="size-8 rounded-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-xs hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95 border-0 p-0"
-              aria-label="Descargar Word (.docx)"
+              aria-label={manualContractDocument ? "Descargar contrato subido" : "Descargar Word (.docx)"}
               onMouseLeave={(e) => e.currentTarget.blur()}
               onClick={(e) => {
                 e.currentTarget.blur();
-                onDownloadWord(id, contract.numero);
+                onDownloadWord(contract);
               }}
             >
               <FileText className="size-4 text-white" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={6} className="font-medium shadow-md pointer-events-none">
-            Descargar Word (.docx)
+            {manualContractDocument ? `Descargar contrato subido: ${manualContractDocument.nombre_original}` : "Descargar Word (.docx)"}
           </TooltipContent>
         </Tooltip>
 
@@ -284,7 +287,7 @@ export const ContractColumns = ({
   onDelete: (contract: ContractResource) => void;
   onNotification: (id: number) => void;
   onPreview: (id: number) => void;
-  onDownloadWord: (id: number, numero?: string) => void;
+  onDownloadWord: (contract: ContractResource) => void;
   onViewInstallments: (contract: ContractResource) => void;
   onSignature: (contract: ContractResource) => void;
   onGenerateActa?: (contract: ContractResource) => void;

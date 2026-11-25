@@ -144,10 +144,15 @@ export default function ContractPage() {
             errorToast("No se pudo abrir el PDF del contrato.")
           );
         },
-        onDownloadWord: (id, numero) => {
-          downloadContractWord(id, numero)
-            .then(() => successToast("Descargando contrato en Word (.docx)..."))
-            .catch(() => errorToast("No se pudo descargar el Word del contrato."));
+        onDownloadWord: (contract) => {
+          const manualContractDocument = [...(contract.documentos || [])]
+            .filter((document) => document.categoria === "contrato")
+            .sort((left, right) => (right.created_at || "").localeCompare(left.created_at || ""))[0];
+          downloadContractWord(contract.id, contract.numero, manualContractDocument)
+            .then(() => successToast(manualContractDocument
+              ? "Descargando el contrato que subiste..."
+              : "Descargando contrato generado en Word (.docx)..."))
+            .catch(() => errorToast("No se pudo descargar el contrato."));
         },
         onViewInstallments: setInstallmentsContract,
         onSignature: setSignatureContract,

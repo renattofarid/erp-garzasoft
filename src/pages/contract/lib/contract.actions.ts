@@ -181,11 +181,14 @@ export async function getContractWord(id: number): Promise<Blob> {
 
 export async function downloadContractWord(
   id: number,
-  numero = "contrato"
+  numero = "contrato",
+  manualDocument?: Pick<ContratoDocumentoResource, "id" | "nombre_original">
 ): Promise<void> {
-  const blob = await getContractWord(id);
+  const blob = manualDocument
+    ? await downloadContractDocument(manualDocument.id)
+    : await getContractWord(id);
   const cleanNumber = numero.replace(/[^a-zA-Z0-9_-]/g, "_");
-  const filename = `contrato-${cleanNumber}.docx`;
+  const filename = manualDocument?.nombre_original || `contrato-${cleanNumber}.docx`;
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

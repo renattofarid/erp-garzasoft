@@ -995,6 +995,9 @@ export default function ClientPortalPage() {
                 const PaymentIcon = getIconByPaymentType(contract.forma_pago) || ReceiptText;
                 const modulos = contract.contrato_producto_modulos || [];
                 const productName = getContractProductName(contract);
+                const manualContractDocument = [...(contract.documentos || [])]
+                  .filter((document) => document.categoria === "contrato")
+                  .sort((left, right) => (right.created_at || "").localeCompare(left.created_at || ""))[0];
 
                 const tieneFirmaArrendador = !!contract.firma_arrendador;
                 const tieneFirmaCliente = !!contract.firma_cliente;
@@ -1052,16 +1055,20 @@ export default function ClientPortalPage() {
                             </div>
                           </div>
 
-                          {/* ACCIONES DEL CONTRATO (VER PDF Y FIRMAR) */}
+                          {/* ACCIONES DEL CONTRATO Y FIRMA */}
                           <div className="flex items-center gap-2 shrink-0">
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => openContractPdf(contract.id)}
+                              onClick={() => manualContractDocument
+                                ? downloadUploadedDocument(manualContractDocument)
+                                : openContractPdf(contract.id)}
                               className="h-8 gap-1.5 text-xs font-semibold shadow-xs border-border hover:bg-primary hover:text-primary-foreground transition-colors"
                             >
-                              <Eye className="h-3.5 w-3.5" />
-                              <span>Ver PDF</span>
+                              {manualContractDocument
+                                ? <Download className="h-3.5 w-3.5" />
+                                : <Eye className="h-3.5 w-3.5" />}
+                              <span>{manualContractDocument ? "Descargar contrato" : "Ver PDF"}</span>
                             </Button>
 
                             <Button

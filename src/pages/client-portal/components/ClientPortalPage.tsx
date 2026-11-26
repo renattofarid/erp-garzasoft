@@ -1000,7 +1000,7 @@ export default function ClientPortalPage() {
                   .sort((left, right) => (right.created_at || "").localeCompare(left.created_at || ""))[0];
 
                 const tieneFirmaArrendador = !!contract.firma_arrendador;
-                const tieneFirmaCliente = !!contract.firma_cliente;
+                const tieneFirmaCliente = Boolean(contract.has_firma_cliente || contract.firma_cliente);
                 const contractInstallments = contract.cuotas || [];
                 const pendingInstallments = contractInstallments.filter((quota) => quota.situacion !== "pagado").length;
                 const subscriptionAmount = Number(contract.kuti_subscription_amount || contractInstallments.find((quota) => quota.situacion !== "pagado")?.monto || 0);

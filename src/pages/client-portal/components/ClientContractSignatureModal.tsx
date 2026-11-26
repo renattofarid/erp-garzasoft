@@ -93,6 +93,8 @@ export function ClientContractSignatureModal({
 
   if (!contract) return null;
 
+  const hasSavedSignature = Boolean(contract.has_firma_cliente || contract.firma_cliente);
+
   const getCoordinates = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
@@ -171,12 +173,13 @@ export function ClientContractSignatureModal({
     const reader = new FileReader();
     reader.onload = () => {
       setSignatureData(reader.result as string);
+      setIsEmpty(false);
     };
     reader.readAsDataURL(file);
   };
 
   const handleSaveSignature = async () => {
-    if (!signatureData) {
+    if (!signatureData && !hasSavedSignature) {
       errorToast("Por favor dibuje o cargue su firma antes de guardar.");
       return;
     }
@@ -184,7 +187,7 @@ export function ClientContractSignatureModal({
     try {
       setSubmitting(true);
       await signContractByClient(contract.id, signatureData);
-      successToast("¡Contrato firmado correctamente!");
+      successToast(signatureData ? "¡Firma del contrato actualizada!" : "Se quitó la firma del contrato.");
       onOpenChange(false);
       onSuccess();
     } catch (err: any) {
@@ -282,7 +285,10 @@ export function ClientContractSignatureModal({
                     type="button"
                     variant="destructive"
                     size="sm"
-                    onClick={() => setSignatureData(null)}
+                    onClick={() => {
+                      setSignatureData(null);
+                      setIsEmpty(true);
+                    }}
                     className="mt-3 h-8 gap-1.5 text-xs"
                   >
                     <Trash2 className="h-3.5 w-3.5" /> Quitar Firma
@@ -316,11 +322,15 @@ export function ClientContractSignatureModal({
           <Button
             size="sm"
             onClick={handleSaveSignature}
-            disabled={submitting || (!signatureData && isEmpty)}
+            disabled={submitting || (!signatureData && isEmpty && !hasSavedSignature)}
             className="gap-1.5 font-bold"
           >
             <Check className="h-4 w-4" />
-            {submitting ? "Registrando..." : "Confirmar y Firmar Contrato"}
+            {submitting
+              ? "Guardando..."
+              : signatureData
+                ? hasSavedSignature ? "Actualizar firma" : "Confirmar y Firmar Contrato"
+                : "Quitar firma guardada"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -207,7 +207,7 @@ export default function ClientPortalPage() {
   const fetchPortalData = () => {
     setLoading(true);
     Promise.all([
-      getContract({ params: { page: 1, per_page: 100 } }),
+      getContract({ params: { page: 1, per_page: 100, with_firmas: true } }),
       getCuentasPorCobrar({ params: { page: 1, per_page: 100 } }),
     ])
       .then(([contractResponse, installmentResponse]) => {
@@ -1074,19 +1074,18 @@ export default function ClientPortalPage() {
                             <Button
                               variant={tieneFirmaCliente ? "outline" : "default"}
                               size="sm"
-                              disabled={tieneFirmaCliente}
                               onClick={() => {
                                 setSelectedSignatureContract(contract);
                                 setIsSignatureModalOpen(true);
                               }}
                               className={
                                 tieneFirmaCliente
-                                  ? "h-8 gap-1.5 text-xs font-semibold border-emerald-500/40 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 cursor-not-allowed opacity-60"
+                                  ? "h-8 gap-1.5 text-xs font-semibold border-emerald-500/40 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10"
                                   : "h-8 gap-1.5 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs animate-pulse"
                               }
                             >
                               <PenTool className="h-3.5 w-3.5" />
-                              <span>{tieneFirmaCliente ? "FIRMADO" : "FIRMAR CONTRATO"}</span>
+                              <span>{tieneFirmaCliente ? "Editar firma" : "FIRMAR CONTRATO"}</span>
                             </Button>
                           </div>
                         </div>

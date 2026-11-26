@@ -234,7 +234,7 @@ export async function saveContractSignatures(
 
 export async function signContractByClient(
   id: number,
-  firma_cliente: string
+  firma_cliente: string | null
 ): Promise<ContractMutationResponse> {
   const { data } = await api.post<ContractMutationResponse>(
     `${ENDPOINT}/${id}/firmar-cliente`,

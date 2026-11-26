@@ -163,7 +163,7 @@ export function ClientContractSignatureModal({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
       errorToast("Seleccione una imagen válida (PNG, JPG).");
       return;
     }
@@ -292,7 +292,7 @@ export function ClientContractSignatureModal({
                 <label className="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-primary transition-colors bg-muted/30 min-h-[200px] flex flex-col items-center justify-center">
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/png,image/jpeg"
                     className="hidden"
                     onChange={handleFileChange}
                   />

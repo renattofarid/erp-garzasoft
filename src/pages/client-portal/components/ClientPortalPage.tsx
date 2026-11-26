@@ -927,7 +927,7 @@ export default function ClientPortalPage() {
               <div className="w-full">
                 <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Producto o servicio</label>
                 <Select value={contractProductFilter} onValueChange={setContractProductFilter}>
-                    <SelectTrigger className="h-10 border-border bg-background text-sm dark:bg-zinc-800">
+                    <SelectTrigger className="h-10 w-full min-w-0 border-border bg-background text-sm dark:bg-zinc-800">
                     <SelectValue placeholder="Todos los productos" />
                   </SelectTrigger>
                   <SelectContent>
@@ -989,7 +989,7 @@ export default function ClientPortalPage() {
               description="No se encontraron contratos registrados o que coincidan con la búsqueda."
             />
           ) : (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 xl:grid-cols-2">
               {filteredContracts.map((contract) => {
                 const ContractIcon = getIconByContractType(contract.tipo_contrato) || FileText;
                 const PaymentIcon = getIconByPaymentType(contract.forma_pago) || ReceiptText;
@@ -1006,26 +1006,26 @@ export default function ClientPortalPage() {
                 const subscriptionAmount = Number(contract.kuti_subscription_amount || contractInstallments.find((quota) => quota.situacion !== "pagado")?.monto || 0);
 
                 return (
-                  <Card key={contract.id} className="relative overflow-hidden border border-border/80 bg-card dark:bg-zinc-900/90 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                  <Card key={contract.id} className="relative min-w-0 overflow-hidden border border-border/80 bg-card dark:bg-zinc-900/90 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
                     <div className="absolute top-0 left-0 right-0 h-1.5 bg-primary" />
                     <div>
-                      <CardHeader className="pb-3 pt-5">
+                      <CardHeader className="min-w-0 px-4 pb-3 pt-5 sm:px-6">
                         {/* ETIQUETA DESTACADA DEL PRODUCTO / SERVICIO (GESREST, HOTELHUB, 360SYS, ETC.) */}
-                        <div className="mb-2">
-                          <Badge className="bg-primary/15 text-primary border-primary/30 text-xs font-extrabold uppercase tracking-wider px-3 py-1 gap-1.5 shadow-2xs">
-                            <Layers className="h-3.5 w-3.5" />
-                            <span>SERVICIO: {productName}</span>
+                        <div className="mb-3 min-w-0">
+                          <Badge className="max-w-full bg-primary/15 text-primary border-primary/30 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider gap-1.5 shadow-2xs sm:text-xs">
+                            <Layers className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">SERVICIO: {productName}</span>
                           </Badge>
                         </div>
 
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-3">
+                        <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                          <div className="flex min-w-0 items-start gap-3">
                             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary/20 text-primary border border-primary/20">
                               <ContractIcon className="h-5 w-5" />
                             </div>
-                            <div>
+                            <div className="min-w-0 flex-1">
                               <CardTitle className="text-base font-bold flex items-center gap-2 text-foreground flex-wrap">
-                                <span>Contrato {contract.numero}</span>
+                                <span className="break-words">Contrato {contract.numero}</span>
                                 <Badge
                                   variant="outline"
                                   className={
@@ -1044,31 +1044,30 @@ export default function ClientPortalPage() {
                                 <span>•</span>
                                 <span className="capitalize font-medium text-foreground/80">{contract.vigencia_contrato || "Anual"}</span>
                               </CardDescription>
-                              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1.5 text-[11px]">
+                              <div className="mt-2 flex min-w-0 flex-wrap items-start gap-x-2 gap-y-1 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-2 text-[11px] leading-snug">
                                 <Building2 className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                <span className="font-semibold text-foreground">
+                                <span className="min-w-0 flex-1 break-words font-semibold text-foreground">
                                   {contract.cliente?.razon_social || contract.cliente?.nombre_comercial || contract.cliente?.nombre_cliente || "Empresa sin nombre"}
                                 </span>
-                                <span className="text-muted-foreground">· RUC</span>
-                                <span className="font-mono font-semibold text-foreground">{contract.cliente?.ruc || "No registrado"}</span>
+                                <span className="w-full pl-5 text-muted-foreground sm:w-auto sm:pl-0">RUC <span className="font-mono font-semibold text-foreground">{contract.cliente?.ruc || "No registrado"}</span></span>
                               </div>
                             </div>
                           </div>
 
                           {/* ACCIONES DEL CONTRATO Y FIRMA */}
-                          <div className="flex items-center gap-2 shrink-0">
+                          <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 md:w-auto md:shrink-0">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => manualContractDocument
                                 ? downloadUploadedDocument(manualContractDocument)
                                 : openContractPdf(contract.id)}
-                              className="h-8 gap-1.5 text-xs font-semibold shadow-xs border-border hover:bg-primary hover:text-primary-foreground transition-colors"
+                              className="h-9 min-w-0 gap-1.5 px-2 text-[11px] font-semibold shadow-xs border-border hover:bg-primary hover:text-primary-foreground transition-colors sm:text-xs md:h-8"
                             >
                               {manualContractDocument
                                 ? <Download className="h-3.5 w-3.5" />
                                 : <Eye className="h-3.5 w-3.5" />}
-                              <span>{manualContractDocument ? "Descargar contrato" : "Ver PDF"}</span>
+                              <span className="truncate">{manualContractDocument ? "Descargar contrato" : "Ver PDF"}</span>
                             </Button>
 
                             <Button
@@ -1080,12 +1079,12 @@ export default function ClientPortalPage() {
                               }}
                               className={
                                 tieneFirmaCliente
-                                  ? "h-8 gap-1.5 text-xs font-semibold border-emerald-500/40 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10"
-                                  : "h-8 gap-1.5 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs animate-pulse"
+                                  ? "h-9 min-w-0 gap-1.5 px-2 text-[11px] font-semibold border-emerald-500/40 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 sm:text-xs md:h-8"
+                                  : "h-9 min-w-0 gap-1.5 px-2 text-[11px] font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs sm:text-xs md:h-8"
                               }
                             >
                               <PenTool className="h-3.5 w-3.5" />
-                              <span>{tieneFirmaCliente ? "Editar firma" : "FIRMAR CONTRATO"}</span>
+                              <span className="truncate">{tieneFirmaCliente ? "Editar firma" : "FIRMAR CONTRATO"}</span>
                             </Button>
                           </div>
                         </div>
@@ -1116,7 +1115,7 @@ export default function ClientPortalPage() {
                         </div>
                       </CardHeader>
 
-                      <CardContent className="space-y-4 pt-1">
+                      <CardContent className="space-y-4 px-4 pt-1 sm:px-6">
                         {/* Fechas de Vigencia */}
                         <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/50 dark:bg-zinc-800/60 border border-border/50 p-3 text-xs">
                           <div className="space-y-1">
@@ -1174,10 +1173,10 @@ export default function ClientPortalPage() {
                       </CardContent>
                     </div>
 
-                    <CardContent className="pt-0 pb-4">
+                    <CardContent className="px-4 pt-0 pb-4 sm:px-6">
                       {/* Resumen Financiero del Contrato */}
-                      <div className="flex items-center justify-between pt-3 border-t border-border text-xs">
-                        <div className="flex items-center gap-1.5 font-medium text-foreground/80">
+                      <div className="flex flex-col gap-2 border-t border-border pt-3 text-xs sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex min-w-0 items-center gap-1.5 font-medium text-foreground/80">
                           <PaymentIcon className="h-4 w-4 text-muted-foreground" />
                           <span>{castPaymentType(contract.forma_pago)}</span>
                           {contract.periodicidad_cuota && (
@@ -1191,8 +1190,8 @@ export default function ClientPortalPage() {
                           </span>
                         </div>
                       </div>
-                        <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/50">
-                          <div>
+                        <div className="mt-4 flex flex-col items-stretch justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/50 sm:flex-row sm:items-center">
+                          <div className="min-w-0">
                             <p className="text-xs font-semibold text-foreground">¿Quieres pagar automáticamente?</p>
                             <p className="mt-0.5 text-[11px] text-muted-foreground">
                               {subscriptionAmount > 0 ? `${currency.format(subscriptionAmount)} cada ${contract.periodicidad_cuota === "anual" ? "año" : "mes"}` : "Afirma tu Yape en Kuti y cobra cada periodo."}
@@ -1214,7 +1213,7 @@ export default function ClientPortalPage() {
                             variant="outline"
                             disabled={subscriptionLoading === contract.id}
                             onClick={() => activateSubscription(contract)}
-                            className="h-8 shrink-0 text-[11px] font-semibold"
+                            className="h-9 w-full shrink-0 text-[11px] font-semibold sm:w-auto"
                           >
                             {subscriptionLoading === contract.id ? "Preparando..." : "Activar cobro automático"}
                           </Button>
